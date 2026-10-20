@@ -1,0 +1,3 @@
+#pragma once
+#define SUKUT_APP_PATH L"@SUKUT_UI_OUTPUT_DIRECTORY@/Sukut.exe"
+#define SUKUT_WORKDIR L"@CMAKE_CURRENT_SOURCE_DIR@"

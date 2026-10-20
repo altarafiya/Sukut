@@ -1,0 +1,1 @@
+<set xmlns:android="http://schemas.android.com/apk/res/android" android:interpolator="@android:interpolator/fast_out_slow_in" android:shareInterpolator="true"><translate android:fromXDelta="0%p" android:toXDelta="-12%p" android:duration="260"/><alpha android:fromAlpha="1" android:toAlpha="0.85" android:duration="260"/></set>

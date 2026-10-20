@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><PlatformTarget>x64</PlatformTarget><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><UseWindowsForms>true</UseWindowsForms><RestorePackagesPath>../../deps/nuget-sukut</RestorePackagesPath></PropertyGroup>
+  <ItemGroup><PackageReference Include="FlaUI.UIA3" Version="5.0.0" /></ItemGroup>
+</Project>

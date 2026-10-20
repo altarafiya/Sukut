@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a Sukut problem on Windows or Android
+title: "[Bug] "
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Android
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Sukut version
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and audio output
+      description: For example, Windows laptop with USB headphones or Android phone with Bluetooth earbuds.
+  - type: textarea
+    id: steps
+    attributes:
+      label: What happened?
+      description: Include the steps, selected mode and any error text. Leave out personal recordings and private device identifiers.
+    validations:
+      required: true

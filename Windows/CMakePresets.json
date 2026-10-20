@@ -1,0 +1,71 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "bootstrap-msvc",
+      "displayName": "CleanWave Step 2 bootstrap (MSVC x64)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/bootstrap",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install",
+        "CMAKE_POLICY_DEFAULT_CMP0135": "NEW",
+        "CLEANWAVE_CPU_RUNTIME": "Avx"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "bootstrap-msvc-release",
+      "configurePreset": "bootstrap-msvc",
+      "configuration": "Release",
+      "targets": [
+        "cleanwave_bootstrap"
+      ],
+      "jobs": 4
+    },
+    {
+      "name": "model-verify-msvc-release",
+      "configurePreset": "bootstrap-msvc",
+      "configuration": "Release",
+      "targets": [
+        "cleanwave_model_verify"
+      ],
+      "jobs": 4
+    },
+    {
+      "name": "dsp-verify-msvc-release",
+      "configurePreset": "bootstrap-msvc",
+      "configuration": "Release",
+      "targets": [
+        "cleanwave_dsp_verify",
+        "cleanwave_offline"
+      ],
+      "jobs": 4
+    },
+    {
+      "name": "realtime-verify-msvc-release",
+      "configurePreset": "bootstrap-msvc",
+      "configuration": "Release",
+      "targets": [
+        "cleanwave_realtime_verify"
+      ],
+      "jobs": 4
+    },
+    {
+      "name": "audio-verify-msvc-release",
+      "configurePreset": "bootstrap-msvc",
+      "configuration": "Release",
+      "targets": [
+        "cleanwave_audio_probe",
+        "cleanwave_audio_verify"
+      ],
+      "jobs": 4
+    }
+  ]
+}

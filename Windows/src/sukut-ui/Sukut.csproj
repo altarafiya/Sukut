@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>Sukut</RootNamespace>
+    <AssemblyName>Sukut</AssemblyName>
+    <Version>0.2.33</Version>
+    <AssemblyVersion>0.2.33.0</AssemblyVersion>
+    <FileVersion>0.2.33.0</FileVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Sukut.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SukutDependencyRoot Condition="'$(SukutDependencyRoot)' == ''">$(MSBuildProjectDirectory)\..\..\deps</SukutDependencyRoot>
+    <RestorePackagesPath>$(SukutDependencyRoot)\nuget-sukut</RestorePackagesPath>
+    <EnableMsixTooling>false</EnableMsixTooling>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="9" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.9169" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
+    <Content Include="Assets\**\*" Exclude="Assets\Tray-*.png;Assets\*.svg;Assets\PROVENANCE.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\build\bootstrap\bin\Release\SukutEngine.dll" Link="SukutEngine.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\build\bootstrap\bin\Release\SukutVolumeGuard.exe" Link="SukutVolumeGuard.exe" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="PublishWinUIResourceIndex" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(TargetDir)$(AssemblyName).pri">
+        <RelativePath>$(AssemblyName).pri</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+  <!-- Sukut uses its own CPU TFLite engine, never Windows ML / DirectML.
+       These two SDK-transitive native binaries have no eager consumer in the
+       shipped PE graph; optional Windows ML projections are not activated. -->
+  <Target Name="ExcludeUnusedWindowsMlPayload" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Filename)%(Extension)' == 'onnxruntime.dll' Or '%(Filename)%(Extension)' == 'DirectML.dll'" />
+    </ItemGroup>
+  </Target>
+</Project>

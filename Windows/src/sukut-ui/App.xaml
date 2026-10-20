@@ -1,0 +1,110 @@
+<Application x:Class="Sukut.App"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Application.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries>
+    <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+   </ResourceDictionary.MergedDictionaries>
+   <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Default">
+     <SolidColorBrush x:Key="GainRaisedBrush" Color="#8BE0B0"/>
+     <SolidColorBrush x:Key="GainMutedBrush" Color="#F2A7AB"/>
+     <SolidColorBrush x:Key="GainReducedBrush" Color="#E7C48E"/>
+     <SolidColorBrush x:Key="ModeOffBrush" Color="#ACBBD5"/><SolidColorBrush x:Key="ModeOffWash" Color="#252B36"/>
+     <SolidColorBrush x:Key="ModeHalalBrush" Color="#8BE0B0"/><SolidColorBrush x:Key="ModeHalalWash" Color="#213229"/>
+     <SolidColorBrush x:Key="ModeOptimizedBrush" Color="#E7C48E"/><SolidColorBrush x:Key="ModeOptimizedWash" Color="#352E22"/>
+     <SolidColorBrush x:Key="ModeStrictBrush" Color="#F2A7AB"/><SolidColorBrush x:Key="ModeStrictWash" Color="#38272D"/>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+     <SolidColorBrush x:Key="GainRaisedBrush" Color="#17613C"/>
+     <SolidColorBrush x:Key="GainMutedBrush" Color="#A02C3B"/>
+     <SolidColorBrush x:Key="GainReducedBrush" Color="#795315"/>
+     <SolidColorBrush x:Key="ModeOffBrush" Color="#4F607D"/><SolidColorBrush x:Key="ModeOffWash" Color="#F0F3F9"/>
+     <SolidColorBrush x:Key="ModeHalalBrush" Color="#17613C"/><SolidColorBrush x:Key="ModeHalalWash" Color="#ECF7EF"/>
+     <SolidColorBrush x:Key="ModeOptimizedBrush" Color="#795315"/><SolidColorBrush x:Key="ModeOptimizedWash" Color="#FFF4E0"/>
+     <SolidColorBrush x:Key="ModeStrictBrush" Color="#A02C3B"/><SolidColorBrush x:Key="ModeStrictWash" Color="#FFF0F1"/>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="HighContrast">
+     <SolidColorBrush x:Key="GainRaisedBrush" Color="{ThemeResource SystemColorWindowTextColor}"/>
+     <SolidColorBrush x:Key="GainMutedBrush" Color="{ThemeResource SystemColorWindowTextColor}"/>
+     <SolidColorBrush x:Key="GainReducedBrush" Color="{ThemeResource SystemColorWindowTextColor}"/>
+     <SolidColorBrush x:Key="ModeOffBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="ModeOffWash" Color="{ThemeResource SystemColorWindowColor}"/>
+     <SolidColorBrush x:Key="ModeHalalBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="ModeHalalWash" Color="{ThemeResource SystemColorWindowColor}"/>
+     <SolidColorBrush x:Key="ModeOptimizedBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="ModeOptimizedWash" Color="{ThemeResource SystemColorWindowColor}"/>
+     <SolidColorBrush x:Key="ModeStrictBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="ModeStrictWash" Color="{ThemeResource SystemColorWindowColor}"/>
+    </ResourceDictionary>
+   </ResourceDictionary.ThemeDictionaries>
+   <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///Assets/ReadexPro.ttf#Readex Pro</FontFamily>
+   <FontFamily x:Key="SukutArabicFontFamily">ms-appx:///Assets/IBMPlexSansArabic-Regular.ttf#IBM Plex Sans Arabic</FontFamily>
+   <FontFamily x:Key="SukutTitleFontFamily">ms-appx:///Assets/IBMPlexSansArabic-SemiBold.ttf#IBM Plex Sans Arabic</FontFamily>
+   <Style x:Key="ModeOffText" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource ModeOffBrush}"/></Style>
+   <Style x:Key="ModeHalalText" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource ModeHalalBrush}"/></Style>
+   <Style x:Key="ModeOptimizedText" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource ModeOptimizedBrush}"/></Style>
+   <Style x:Key="ModeStrictText" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource ModeStrictBrush}"/></Style>
+   <Style x:Key="GainNeutral" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/></Style>
+   <Style x:Key="GainRaised" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource GainRaisedBrush}"/></Style>
+   <Style x:Key="GainMuted" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource GainMutedBrush}"/></Style>
+   <Style x:Key="GainReduced" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource GainReducedBrush}"/></Style>
+   <Style x:Key="SetupGuideCard" TargetType="Border">
+    <Setter Property="Padding" Value="16"/><Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+    <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/><Setter Property="BorderThickness" Value="1"/>
+   </Style>
+   <Style x:Key="CompactRowButton" TargetType="Button">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="64" />
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+   </Style>
+   <Style x:Key="ModeCard" TargetType="RadioButton">
+    <Setter Property="UseSystemFocusVisuals" Value="True" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="10,14" />
+    <Setter Property="MinHeight" Value="112" />
+    <Setter Property="MinWidth" Value="96" />
+    <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+    <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+    <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+    <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
+    <Setter Property="Template">
+     <Setter.Value>
+      <ControlTemplate TargetType="RadioButton">
+       <Grid x:Name="ModeRoot">
+        <VisualStateManager.VisualStateGroups>
+         <VisualStateGroup x:Name="CommonStates">
+          <VisualState x:Name="Normal" />
+          <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="HoverTint.Opacity" Value="0.14" /></VisualState.Setters></VisualState>
+          <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="HoverTint.Opacity" Value="0.24" /></VisualState.Setters></VisualState>
+          <VisualState x:Name="Disabled"><VisualState.Setters>
+           <Setter Target="ModeRoot.Opacity" Value="0.4" />
+          </VisualState.Setters></VisualState>
+         </VisualStateGroup>
+         <VisualStateGroup x:Name="CheckStates">
+          <VisualState x:Name="Unchecked" />
+          <VisualState x:Name="Indeterminate" />
+          <VisualState x:Name="Checked"><VisualState.Setters>
+           <Setter Target="ColoredCard.Opacity" Value="1" />
+           <Setter Target="ModeContent.Opacity" Value="1" />
+          </VisualState.Setters></VisualState>
+         </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="{TemplateBinding CornerRadius}"/>
+        <Border x:Name="ColoredCard" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="2" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0.16"/>
+        <Border x:Name="HoverTint" Background="{TemplateBinding BorderBrush}" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0" IsHitTestVisible="False"/>
+        <ContentPresenter x:Name="ModeContent" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Stretch" Margin="{TemplateBinding Padding}" Opacity="0.58"/>
+       </Grid>
+      </ControlTemplate>
+     </Setter.Value>
+    </Setter>
+   </Style>
+  </ResourceDictionary>
+ </Application.Resources>
+</Application>

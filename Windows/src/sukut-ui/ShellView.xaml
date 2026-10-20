@@ -1,0 +1,274 @@
+<UserControl x:Class="Sukut.ShellView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:Sukut" xmlns:toolkit="using:CommunityToolkit.WinUI.Controls" FontFamily="{StaticResource ContentControlThemeFontFamily}" FontSize="14">
+ <Grid x:Name="Root" UseLayoutRounding="True" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+  <Grid.Resources>
+   <DataTemplate x:Key="EndpointTemplate" x:DataType="local:Endpoint"><Grid ColumnSpacing="8" HorizontalAlignment="Stretch"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="{x:Bind Glyph}" FontSize="16"/><TextBlock Loaded="Typography_Loaded" Grid.Column="1" Text="{x:Bind Name}" TextReadingOrder="DetectFromContent" TextTrimming="CharacterEllipsis" Style="{StaticResource BodyTextBlockStyle}"/></Grid></DataTemplate>
+   <DataTemplate x:Key="SourceAppTemplate" x:DataType="local:SourceApp"><Grid ColumnSpacing="8" HorizontalAlignment="Stretch"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid Width="24" Height="24" VerticalAlignment="Center"><FontIcon Glyph="{x:Bind FallbackGlyph}" Visibility="{x:Bind FallbackVisibility}" FontSize="18"/><Image Source="{x:Bind Icon}" Visibility="{x:Bind IconVisibility}" Width="20" Height="20" Stretch="Uniform"/></Grid><TextBlock Loaded="Typography_Loaded" Grid.Column="1" Text="{x:Bind Name}" TextReadingOrder="DetectFromContent" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Style="{StaticResource BodyTextBlockStyle}"/></Grid></DataTemplate>
+   <x:Double x:Key="RadioButtonsColumnSpacing">8</x:Double><x:Double x:Key="RadioButtonsRowSpacing">8</x:Double>
+  </Grid.Resources>
+  <Grid.RowDefinitions><RowDefinition Height="32"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+  <TitleBar x:Name="AppTitleBar" Title="سُكوت · Sukut" FontFamily="{StaticResource SukutTitleFontFamily}" Height="32" MinHeight="32">
+   <TitleBar.IconSource><ImageIconSource><ImageIconSource.ImageSource><BitmapImage UriSource="ms-appx:///Assets/Sukut.png" DecodePixelWidth="16"/></ImageIconSource.ImageSource></ImageIconSource></TitleBar.IconSource>
+  </TitleBar>
+  <NavigationView x:Name="Navigation" Grid.Row="1" PaneDisplayMode="LeftCompact" IsPaneOpen="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SizeChanged="PageViewport_SizeChanged" IsPaneToggleButtonVisible="False" IsBackButtonVisible="Collapsed" IsSettingsVisible="True" IsTitleBarAutoPaddingEnabled="False" SelectionChanged="Navigation_SelectionChanged">
+   <NavigationView.MenuItems><NavigationViewItem x:Name="HomeNavItem" Tag="home" Content="Home" AutomationProperties.AutomationId="HomeNavItem"><NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;"/></NavigationViewItem.Icon></NavigationViewItem><NavigationViewItem x:Name="PhoneNavItem" Tag="phone" Content="Phone"><NavigationViewItem.Icon><FontIcon Glyph="&#xE8EA;"/></NavigationViewItem.Icon></NavigationViewItem></NavigationView.MenuItems>
+   <NavigationView.FooterMenuItems><NavigationViewItem x:Name="AboutNavItem" Tag="about" Content="About" AutomationProperties.AutomationId="AboutNavItem"><NavigationViewItem.Icon><FontIcon Glyph="&#xE946;"/></NavigationViewItem.Icon></NavigationViewItem></NavigationView.FooterMenuItems>
+   <Grid x:Name="PageHost" Margin="24,8,24,20" HorizontalAlignment="Stretch">
+
+    <ScrollViewer x:Name="HomePanel" x:Load="{x:Bind View.HomeLoaded, Mode=OneWay}" Loaded="HomePanel_Loaded" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+     <StackPanel Spacing="24">
+      <Grid ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <StackPanel Spacing="4"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Loaded="Typography_Loaded" Text="سُكوت" FontFamily="{StaticResource SukutTitleFontFamily}" Foreground="{ThemeResource ModeOptimizedBrush}" Style="{StaticResource TitleTextBlockStyle}"/><TextBlock Loaded="Typography_Loaded" Text="Sukut" FontFamily="{StaticResource SukutTitleFontFamily}" VerticalAlignment="Bottom" Margin="0,0,0,4" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel><TextBlock Loaded="Typography_Loaded" x:Name="HeaderSubtitle" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel>
+       <UserControl x:Name="StatusHost" Grid.Column="1" VerticalAlignment="Center">
+        <Grid><VisualStateManager.VisualStateGroups><VisualStateGroup x:Name="StatusStates"><VisualState x:Name="Off"><VisualState.Setters><Setter Target="StatusDot.Fill" Value="{ThemeResource SystemFillColorNeutralBrush}"/></VisualState.Setters></VisualState><VisualState x:Name="Active"><VisualState.Setters><Setter Target="StatusDot.Fill" Value="{ThemeResource SystemFillColorSuccessBrush}"/></VisualState.Setters></VisualState><VisualState x:Name="Recovering"><VisualState.Setters><Setter Target="StatusDot.Fill" Value="{ThemeResource SystemFillColorCautionBrush}"/></VisualState.Setters></VisualState><VisualState x:Name="Reconnecting"><VisualState.Setters><Setter Target="StatusDot.Fill" Value="{ThemeResource SystemFillColorCautionBrush}"/></VisualState.Setters></VisualState><VisualState x:Name="Attention"><VisualState.Setters><Setter Target="StatusDot.Fill" Value="{ThemeResource SystemFillColorCriticalBrush}"/></VisualState.Setters></VisualState><VisualState x:Name="Preparing"><VisualState.Setters><Setter Target="StatusDot.Visibility" Value="Collapsed"/><Setter Target="StatusProgress.Visibility" Value="Visible"/><Setter Target="StatusProgress.IsActive" Value="True"/></VisualState.Setters></VisualState></VisualStateGroup></VisualStateManager.VisualStateGroups>
+         <Border Padding="12,4" CornerRadius="{ThemeResource ControlCornerRadius}" Background="{ThemeResource SubtleFillColorSecondaryBrush}"><StackPanel Orientation="Horizontal" Spacing="8"><Grid Width="16" Height="16"><Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="{ThemeResource SystemFillColorNeutralBrush}"/><ProgressRing x:Name="StatusProgress" Width="16" Height="16" MinWidth="16" MinHeight="16" IsActive="False" Visibility="Collapsed"/></Grid><TextBlock Loaded="Typography_Loaded" x:Name="StatusLabel" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" AutomationProperties.LiveSetting="Polite"/></StackPanel></Border>
+        </Grid>
+       </UserControl>
+      </Grid>
+      <Border x:Name="AudioModesBox" AutomationProperties.AutomationId="AudioModesBox" Padding="16" CornerRadius="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"><StackPanel Spacing="12"><TextBlock Loaded="Typography_Loaded" x:Name="ModeHeading" Text="Audio mode" HorizontalAlignment="Center" Foreground="{ThemeResource ModeOptimizedBrush}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+       <Grid SizeChanged="Modes_SizeChanged"><RadioButtons x:Name="ModeChoices" MaxColumns="4" HorizontalAlignment="Center" SelectionChanged="Modes_SelectionChanged">
+        <RadioButton x:Name="OffCard" AutomationProperties.AutomationId="OffCard" Style="{StaticResource ModeCard}" Background="{ThemeResource ModeOffWash}" BorderBrush="{ThemeResource ModeOffBrush}" Foreground="{ThemeResource ModeOffBrush}" Tag="0" AutomationProperties.Name="OFF"><StackPanel Spacing="12" HorizontalAlignment="Center"><FontIcon Foreground="{ThemeResource ModeOffBrush}" Glyph="&#xE7E8;" FontSize="28" HorizontalAlignment="Center"/><TextBlock Loaded="Typography_Loaded" x:Name="OffLabel" Text="OFF" Foreground="{ThemeResource ModeOffBrush}" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel></RadioButton>
+        <RadioButton x:Name="HalalCard" AutomationProperties.AutomationId="HalalCard" Style="{StaticResource ModeCard}" Background="{ThemeResource ModeHalalWash}" BorderBrush="{ThemeResource ModeHalalBrush}" Foreground="{ThemeResource ModeHalalBrush}" Tag="1" AutomationProperties.Name="Music Filter"><StackPanel Spacing="12" HorizontalAlignment="Center"><PathIcon Foreground="{ThemeResource ModeHalalBrush}" Width="28" Height="28" HorizontalAlignment="Center" Data="F1 M13,3 L21,1 L21,12 C21,14.2 19.2,16 17,16 C14.8,16 13,14.5 13,12.5 C13,10.6 14.8,9 17,9 C17.7,9 18.4,9.2 19,9.5 L19,5 L13,6.5 L13,18 C13,20.2 11.2,22 9,22 C6.8,22 5,20.5 5,18.5 C5,16.6 6.8,15 9,15 C9.7,15 10.4,15.2 11,15.5 L11,3.5 Z M2.7,1.3 L22.7,21.3 L21.3,22.7 L1.3,2.7 Z"/><TextBlock Loaded="Typography_Loaded" x:Name="HalalLabel" Text="Music Filter" Foreground="{ThemeResource ModeHalalBrush}" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel></RadioButton>
+        <RadioButton x:Name="OptimizedCard" AutomationProperties.AutomationId="OptimizedCard" Style="{StaticResource ModeCard}" Background="{ThemeResource ModeOptimizedWash}" BorderBrush="{ThemeResource ModeOptimizedBrush}" Foreground="{ThemeResource ModeOptimizedBrush}" Tag="2" AutomationProperties.Name="Optimized Mode"><StackPanel Spacing="12" HorizontalAlignment="Center"><FontIcon Foreground="{ThemeResource ModeOptimizedBrush}" Glyph="&#xE9E9;" FontSize="28" HorizontalAlignment="Center"/><TextBlock Loaded="Typography_Loaded" x:Name="OptimizedLabel" Text="Optimized Mode" Foreground="{ThemeResource ModeOptimizedBrush}" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel></RadioButton>
+        <RadioButton x:Name="StrictCard" AutomationProperties.AutomationId="StrictCard" Style="{StaticResource ModeCard}" Background="{ThemeResource ModeStrictWash}" BorderBrush="{ThemeResource ModeStrictBrush}" Foreground="{ThemeResource ModeStrictBrush}" Tag="3" AutomationProperties.Name="Strict Mode"><StackPanel Spacing="12" HorizontalAlignment="Center"><FontIcon Foreground="{ThemeResource ModeStrictBrush}" Glyph="&#xE72E;" FontSize="28" HorizontalAlignment="Center"/><TextBlock Loaded="Typography_Loaded" x:Name="StrictLabel" Text="Strict Mode" Foreground="{ThemeResource ModeStrictBrush}" TextAlignment="Center" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel></RadioButton>
+       </RadioButtons></Grid>
+       <StackPanel x:Name="OptimizedBackgroundPanel" Spacing="6" Visibility="Collapsed"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Loaded="Typography_Loaded" x:Name="OptimizedBackgroundHeading"/><TextBlock Loaded="Typography_Loaded" x:Name="OptimizedBackgroundValue" Grid.Column="1" FlowDirection="LeftToRight" Foreground="{ThemeResource ModeOptimizedBrush}"/></Grid><local:ReleasedSlider x:Name="OptimizedBackgroundSlider" Minimum="-20" Maximum="10" StepFrequency="1" ValueChanged="OptimizedBackground_Changed" ValueCommitted="OptimizedBackground_Committed" AutomationProperties.AutomationId="OptimizedBackgroundSlider"/></StackPanel>
+      <Border x:Name="ModeDetailsBox" AutomationProperties.AutomationId="ModeDetailsBox" Padding="12" CornerRadius="8" Background="{ThemeResource SubtleFillColorSecondaryBrush}">
+        <StackPanel Spacing="8">
+         <TextBlock Loaded="Typography_Loaded" x:Name="ModeDetailTitle" FontSize="16" FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite"/>
+         <TextBlock Loaded="Typography_Loaded" x:Name="ModeDetailDescription" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+</StackPanel>
+       </Border>
+      </StackPanel></Border>
+      <InfoBar x:Name="ErrorBar" Visibility="Collapsed" IsOpen="False" IsClosable="True" Severity="Error" Closed="ErrorBar_Closed"><InfoBar.ActionButton><Button x:Name="RestartErrorButton" Click="RestartAudio_Click"/></InfoBar.ActionButton></InfoBar>
+      <InfoBar x:Name="CableVolumeTip" Visibility="Collapsed" IsOpen="False" IsClosable="True" Severity="Informational" Closed="CableVolumeTip_Closed">
+       <StackPanel Spacing="12" HorizontalAlignment="Stretch">
+        <Button x:Name="CableVolumeTipButton" Click="OpenCablePanel_Click" HorizontalAlignment="Left"/>
+       </StackPanel>
+      </InfoBar>
+      <InfoBar x:Name="OverloadTip" Visibility="Collapsed" IsOpen="False" IsClosable="True" Severity="Informational" Closed="OverloadTip_Closed">
+       <StackPanel Orientation="Horizontal" Spacing="8"><Button x:Name="RestartOverloadButton" Click="RestartAudio_Click"/><Button x:Name="BufferTipButton" Click="OpenBufferingSettings_Click"/></StackPanel>
+      </InfoBar>
+      <Border x:Name="EngineBox" AutomationProperties.AutomationId="EngineBox" Padding="8" CornerRadius="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+       <Grid ColumnSpacing="8">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Button x:Name="OutputButton" Grid.Column="0" Style="{StaticResource CompactRowButton}" AutomationProperties.AutomationId="OutputButton" Click="OutputButton_Click">
+         <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <FontIcon x:Name="OutputGlyph" Glyph="&#xE7F6;" FontSize="18" VerticalAlignment="Center" Foreground="{ThemeResource ModeOffBrush}"/>
+          <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center"><TextBlock Loaded="Typography_Loaded" x:Name="OutputLabel" Text="Audio output" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="OutputValue" Text="—" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis"/></StackPanel>
+          <FontIcon Grid.Column="2" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+         </Grid>
+         <Button.Flyout>
+          <Flyout x:Name="OutputFlyout" Placement="BottomEdgeAlignedLeft" Opened="OutputFlyout_Opened" Closed="OutputFlyout_Closed">
+           <ScrollViewer MaxHeight="420" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="OutputFlyoutContent" Spacing="12">
+             <StackPanel Spacing="8"><TextBlock Loaded="Typography_Loaded" x:Name="OutputFlyoutTitle" Style="{StaticResource BodyStrongTextBlockStyle}"/><ListView x:Name="OutputList" SelectionMode="Single" MaxHeight="160" ItemTemplate="{StaticResource EndpointTemplate}" SelectionChanged="OutputList_Changed"/></StackPanel>
+             <Border Padding="0,12,0,0" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+              <StackPanel Spacing="8"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE737;" FontSize="16" VerticalAlignment="Center" Foreground="{ThemeResource ModeOffBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="OutputSourceAppTitle" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel><ComboBox x:Name="OutputSourceAppChoice" AutomationProperties.AutomationId="OutputSourceAppChoice" IsDropDownOpen="False" MaxDropDownHeight="240" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemTemplate="{StaticResource SourceAppTemplate}" DropDownOpened="Routing_DropDownOpened" SelectionChanged="App_Changed"/></StackPanel>
+             </Border>
+            </StackPanel>
+           </ScrollViewer>
+          </Flyout>
+         </Button.Flyout>
+        </Button>
+        <Button x:Name="BufferingButton" Grid.Column="1" Style="{StaticResource CompactRowButton}" AutomationProperties.AutomationId="BufferingButton">
+         <Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <FontIcon Glyph="&#xE945;" FontSize="18" VerticalAlignment="Center" Foreground="{ThemeResource ModeOptimizedBrush}"/>
+          <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center"><TextBlock Loaded="Typography_Loaded" x:Name="BufferingLabel" Text="Audio buffering" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="BufferingValue" Text="—" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis"/></StackPanel>
+          <FontIcon Grid.Column="2" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+         </Grid>
+         <Button.Flyout>
+          <Flyout x:Name="BufferingFlyout" Placement="BottomEdgeAlignedLeft" Opening="BufferingFlyout_Opening"><ScrollViewer MaxHeight="320" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"><local:BufferingControl x:Name="HomeBuffering" Vertical="True" ValueCommitted="Buffering_Committed"/></ScrollViewer></Flyout>
+         </Button.Flyout>
+        </Button>
+       </Grid>
+      </Border>
+     </StackPanel>
+    </ScrollViewer>
+    <ScrollViewer x:Name="SettingsPanel" x:Load="{x:Bind View.SettingsLoaded, Mode=OneWay}" Loaded="SettingsPanel_Loaded" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+     <StackPanel Spacing="24">
+      <TextBlock Loaded="Typography_Loaded" x:Name="SettingsHeading" Style="{StaticResource TitleTextBlockStyle}"/>
+      <StackPanel Spacing="10">
+       <TextBlock Loaded="Typography_Loaded" x:Name="GeneralSettingsHeading" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="{ThemeResource ModeOffBrush}"/>
+       <StackPanel Spacing="4">
+        <toolkit:SettingsCard x:Name="LanguageCard"><toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE774;" FontSize="20"/></toolkit:SettingsCard.HeaderIcon><ComboBox DropDownOpened="TypographyPopup_Opened" x:Name="LanguageChoice" Width="160" SelectionChanged="Language_Changed"><ComboBoxItem Content="English"/><ComboBoxItem Content="العربية"/></ComboBox></toolkit:SettingsCard>
+        <toolkit:SettingsCard x:Name="ThemeCard"><toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" FontSize="20"/></toolkit:SettingsCard.HeaderIcon><ComboBox DropDownOpened="TypographyPopup_Opened" x:Name="ThemeChoice" Width="160" SelectionChanged="Theme_Changed"><ComboBoxItem x:Name="SystemTheme"/><ComboBoxItem x:Name="LightTheme"/><ComboBoxItem x:Name="DarkTheme"/></ComboBox></toolkit:SettingsCard>
+        <toolkit:SettingsCard x:Name="TrayCard"><toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE73F;" FontSize="20"/></toolkit:SettingsCard.HeaderIcon><ToggleSwitch x:Name="TraySwitch" IsOn="True" Toggled="TraySwitch_Toggled"/></toolkit:SettingsCard>
+       </StackPanel>
+      </StackPanel>
+      <StackPanel Spacing="10">
+       <TextBlock Loaded="Typography_Loaded" x:Name="AudioSettingsHeading" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="{ThemeResource ModeOptimizedBrush}"/>
+       <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"><StackPanel Spacing="12">
+        <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE994;" FontSize="20" Foreground="{ThemeResource ModeOptimizedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="AmplificationHeading" Grid.Column="1" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap"/><TextBlock Loaded="Typography_Loaded" x:Name="AmplificationValue" Grid.Column="2" Foreground="{ThemeResource ModeOptimizedBrush}" FontWeight="SemiBold" FlowDirection="LeftToRight"/></Grid>
+        <local:ReleasedSlider x:Name="AmplificationSlider" Minimum="0" Maximum="12" StepFrequency="1" TickFrequency="3" TickPlacement="Outside" Value="0" ValueChanged="Amplification_Changed" ValueCommitted="Amplification_Committed" IsThumbToolTipEnabled="True"/>
+        <TextBlock Loaded="Typography_Loaded" x:Name="AmplificationNote" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+       </StackPanel></Border>
+      </StackPanel>
+      <StackPanel Spacing="10">
+       <TextBlock Loaded="Typography_Loaded" x:Name="HelpSettingsHeading" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="{ThemeResource ModeOffBrush}"/>
+       <Button x:Name="CablePanelButton" Click="OpenCablePanel_Click" AutomationProperties.AutomationId="CablePanelButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="16"><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE713;" FontSize="20" Foreground="{ThemeResource ModeOptimizedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="CablePanelLabel" Grid.Column="1" TextWrapping="Wrap" VerticalAlignment="Center"/></Grid></Button>
+       <Border x:Name="EffectsHelp" Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"><StackPanel Spacing="12">
+        <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE7F6;" FontSize="20" Foreground="{ThemeResource ModeHalalBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="EffectsHelpHeader" Grid.Column="1" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" VerticalAlignment="Center"/></Grid>
+        <TextBlock Loaded="Typography_Loaded" x:Name="EffectsHelpText" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+        <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+         <Button x:Name="SoundSettingsButton" Click="OpenSoundSettings_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE7F6;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="SoundSettingsLabel" Grid.Column="1" TextWrapping="Wrap" VerticalAlignment="Center"/></Grid></Button>
+         <Button x:Name="ChooseSourceAppButton" Grid.Column="1" Click="ChooseSourceApp_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE737;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="ChooseSourceAppLabel" Grid.Column="1" TextWrapping="Wrap" VerticalAlignment="Center"/></Grid></Button>
+        </Grid>
+       </StackPanel></Border>
+       <toolkit:SettingsCard x:Name="SetupCard"><toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8A5;" FontSize="20"/></toolkit:SettingsCard.HeaderIcon><Button x:Name="RunSetupButton" Click="RunSetup_Click"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE768;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="RunSetupLabel"/></StackPanel></Button></toolkit:SettingsCard>
+      </StackPanel>
+      <StackPanel Spacing="10">
+       <TextBlock Loaded="Typography_Loaded" x:Name="AdvancedHeader" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="{ThemeResource ModeOffBrush}"/>
+       <Border x:Name="AdvancedSection" Padding="12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"><StackPanel Spacing="12">
+        <StackPanel Spacing="6"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE737;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="AppCard" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel><ComboBox x:Name="AppChoice" DropDownOpened="Routing_DropDownOpened" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MaxDropDownHeight="240" ItemTemplate="{StaticResource SourceAppTemplate}" SelectionChanged="App_Changed"/></StackPanel>
+        <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+         <StackPanel Spacing="6"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8AB;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="InputCard" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel><ComboBox x:Name="InputChoice" DropDownOpened="Routing_DropDownOpened" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MaxDropDownHeight="240" ItemTemplate="{StaticResource EndpointTemplate}" SelectionChanged="Route_Changed"/></StackPanel>
+         <StackPanel Grid.Column="1" Spacing="6"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE720;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="CaptureCard" Style="{StaticResource BodyStrongTextBlockStyle}"/></StackPanel><ComboBox x:Name="CaptureChoice" DropDownOpened="Routing_DropDownOpened" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MaxDropDownHeight="240" ItemTemplate="{StaticResource EndpointTemplate}" SelectionChanged="Route_Changed"/></StackPanel>
+        </Grid>
+        <Button x:Name="RefreshButton" Click="Refresh_Click" HorizontalAlignment="Right"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE72C;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="RefreshLabel"/></StackPanel></Button>
+       </StackPanel></Border>
+      </StackPanel>
+     </StackPanel>
+    </ScrollViewer>
+    <UserControl x:Name="PhonePanel" x:Load="{x:Bind View.PhoneLoaded, Mode=OneWay}" Loaded="PhonePanel_Loaded"><Grid RowSpacing="12"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><ScrollViewer x:Name="PhoneScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PhoneContent" Spacing="16" Padding="0,0,8,12"/></ScrollViewer><Border x:Name="PhoneFooter" Grid.Row="1" Padding="0,12,0,0" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"/></Grid></UserControl>
+    <ScrollViewer x:Name="AboutPanel" x:Load="{x:Bind View.AboutLoaded, Mode=OneWay}" Loaded="AboutPanel_Loaded" Unloaded="AboutPanel_Unloaded" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+     <Grid x:Name="AboutContent" MaxWidth="560" HorizontalAlignment="Center" Margin="0,12"><StackPanel Spacing="12">
+      <Image Width="80" Height="80"><Image.Source><BitmapImage UriSource="ms-appx:///Assets/Sukut.png" DecodePixelWidth="80"/></Image.Source></Image>
+      <TextBlock Loaded="Typography_Loaded" Text="سُكوت · Sukut" FontFamily="{StaticResource SukutTitleFontFamily}" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center"/>
+      <TextBlock Loaded="Typography_Loaded" x:Name="AboutVersion" Text="0.2.25" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
+      <TextBlock Loaded="Typography_Loaded" x:Name="DevelopedLabel" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
+      <Grid HorizontalAlignment="Center" UseLayoutRounding="True">
+       <TextBlock Loaded="Typography_Loaded" x:Name="BrandName" Text="الطرفية" FontFamily="ms-appx:///Assets/Handjet.ttf#Handjet" FontSize="64" FontWeight="Bold" UseLayoutRounding="True" SizeChanged="BrandName_SizeChanged"><TextBlock.Foreground><LinearGradientBrush><GradientStop Color="#FF3737" Offset="0"/><GradientStop Color="#3BFF37" Offset="0.5"/><GradientStop Color="#373FFF" Offset="1"/></LinearGradientBrush></TextBlock.Foreground></TextBlock>
+       <Path x:Name="SparkleOne" Width="20" Height="20" Data="M10,0 C10,7 7,10 0,10 C7,10 10,13 10,20 C10,13 13,10 20,10 C13,10 10,7 10,0 Z" Fill="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,-24,0"/>
+       <Path x:Name="SparkleTwo" Width="16" Height="16" Data="M8,0 C8,5 5,8 0,8 C5,8 8,11 8,16 C8,11 11,8 16,8 C11,8 8,5 8,0 Z" Fill="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-24,0,0,0"/>
+      </Grid>
+      <TextBlock Loaded="Typography_Loaded" x:Name="FontCredit" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorDisabledBrush}" HorizontalAlignment="Stretch" TextAlignment="Center" TextWrapping="Wrap"/>
+      <Expander x:Name="ChangelogExpander" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,16,0,0"><StackPanel Spacing="20">
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogIntro" TextWrapping="Wrap" FontWeight="SemiBold"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogCurrent" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogWinUI" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogMemory" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogLatency" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogModes" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogTray" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogGuide" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogRouting" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogDesign" TextWrapping="Wrap"/>
+       <TextBlock Loaded="Typography_Loaded" x:Name="ChangelogMeasurementNote" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+      </StackPanel></Expander>
+     </StackPanel></Grid>
+    </ScrollViewer>
+   </Grid>
+  </NavigationView>
+        <Grid x:Name="SetupPanel" Grid.Row="1" Margin="24" x:Load="{x:Bind View.SetupLoaded, Mode=OneWay}" Loaded="SetupPanel_Loaded">
+            <Grid RowSpacing="16" MaxWidth="560">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions><Ellipse x:Name="SetupReadySwatch" Visibility="Collapsed" Fill="{ThemeResource SystemFillColorSuccessBrush}"/><Ellipse x:Name="SetupMissingSwatch" Visibility="Collapsed" Fill="{ThemeResource SystemFillColorCautionBrush}"/>
+                <StackPanel Spacing="8">
+                    <TextBlock Loaded="Typography_Loaded" x:Name="SetupStepLabel" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ProgressBar x:Name="SetupProgress" Minimum="0" Maximum="5" Value="1" />
+                </StackPanel>
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="16">
+                        <InfoBar x:Name="SetupErrorBar" Visibility="Collapsed" IsOpen="False" IsClosable="True" Severity="Error" Closed="ErrorBar_Closed"/>
+                        <StackPanel x:Name="SetupWelcomePage" Spacing="16">
+                            <Image Width="72" Height="72" HorizontalAlignment="Left"><Image.Source><BitmapImage UriSource="ms-appx:///Assets/Sukut.png" DecodePixelWidth="72" /></Image.Source></Image>
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupWelcomeTitle" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupWelcomeDescription" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <StackPanel Spacing="8">
+                                <TextBlock Loaded="Typography_Loaded" x:Name="SetupLanguageLabel" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <ComboBox DropDownOpened="TypographyPopup_Opened" x:Name="SetupLanguageChoice" Width="240" SelectionChanged="SetupLanguage_Changed">
+                                    <ComboBoxItem Content="English" />
+                                    <ComboBoxItem Content="العربية" />
+                                </ComboBox>
+                            </StackPanel>
+                            <Border Style="{StaticResource SetupGuideCard}"><StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE95B;" FontSize="20" Foreground="{ThemeResource GainReducedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupOverviewCable" TextWrapping="WrapWholeWords"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE7F6;" FontSize="20" Foreground="{ThemeResource GainRaisedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupOverviewOutput" TextWrapping="WrapWholeWords"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE767;" FontSize="20" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupOverviewVolume" TextWrapping="WrapWholeWords"/></StackPanel>
+                            </StackPanel></Border>
+                        </StackPanel>
+                        <StackPanel x:Name="SetupCablePage" Visibility="Collapsed" Spacing="16">
+                            <FontIcon Glyph="&#xE95B;" FontSize="32" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupCableTitle" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupCableDescription" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Border Style="{StaticResource SetupGuideCard}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Ellipse x:Name="SetupCableDot" Fill="{ThemeResource SystemFillColorCautionBrush}" Width="8" Height="8" VerticalAlignment="Center" />
+                                    <TextBlock Loaded="Typography_Loaded" x:Name="SetupCableStatus" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                            <StackPanel x:Name="SetupInstallInstructions" Spacing="8">
+                                <TextBlock Loaded="Typography_Loaded" x:Name="SetupInstallSteps" TextWrapping="Wrap" />
+                                <HyperlinkButton x:Name="SetupDownloadButton" NavigateUri="https://vb-audio.com/Cable/" HorizontalAlignment="Left" Padding="0" />
+                            </StackPanel>
+                            <Button x:Name="SetupRefreshButton" Click="SetupRefresh_Click" HorizontalAlignment="Left" />
+                        </StackPanel>
+                        <StackPanel x:Name="SetupOutputPage" Visibility="Collapsed" Spacing="16">
+                            <FontIcon Glyph="&#xE7F6;" FontSize="32" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupOutputTitle" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupOutputDescription" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <ComboBox x:Name="SetupOutputChoice" DropDownOpened="Routing_DropDownOpened" HorizontalAlignment="Stretch" SelectionChanged="SetupOutput_Changed">
+
+                            </ComboBox>
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupOutputHint" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Border Style="{StaticResource SetupGuideCard}"><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE73E;" FontSize="20" Foreground="{ThemeResource GainRaisedBrush}" VerticalAlignment="Top"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupPhysicalHint" Grid.Column="1" TextWrapping="Wrap"/></Grid></Border>
+                        <local:BufferingControl x:Name="SetupBuffering" ValueCommitted="Buffering_Committed"/>
+                        </StackPanel>
+                        <StackPanel x:Name="SetupVolumePage" Visibility="Collapsed" Spacing="16">
+                            <FontIcon Glyph="&#xE767;" FontSize="32" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupVolumeTitle" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap"/>
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupVolumeDescription" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                            <Border Style="{StaticResource SetupGuideCard}"><StackPanel Spacing="12">
+                                <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE713;" FontSize="22" Foreground="{ThemeResource GainReducedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupVolumeOpenTitle" Grid.Column="1" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/></Grid>
+                                <Button x:Name="SetupCablePanelButton" Click="OpenCablePanel_Click" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE713;" FontSize="16"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupCablePanelLabel"/></StackPanel></Button>
+                            <Expander x:Name="SetupPanelScreenshot" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <Button Tag="vb-cable-panel.png" Click="GuideScreenshot_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0"><Image AutomationProperties.Name="VB-CABLE control panel" MaxHeight="240" Stretch="Uniform"><Image.Source><BitmapImage UriSource="ms-appx:///Assets/Setup/vb-cable-panel.png" DecodePixelWidth="700"/></Image.Source></Image></Button>
+                            </Expander>
+                            </StackPanel></Border>
+                            <Border Style="{StaticResource SetupGuideCard}"><StackPanel Spacing="12">
+                                <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE713;" FontSize="22" Foreground="{ThemeResource GainReducedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupVolumeEnableTitle" Grid.Column="1" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/></Grid>
+                                <TextBlock Loaded="Typography_Loaded" TextWrapping="Wrap"><Run x:Name="SetupVolumeLead"/><Run Text="Options" Foreground="{ThemeResource GainReducedBrush}" FontWeight="SemiBold"/><Run x:Name="SetupVolumeThen"/><Run Text="Enable Windows Volume Control" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" FontWeight="SemiBold"/><Run x:Name="SetupVolumeTail"/></TextBlock>
+                                <Expander x:Name="SetupVolumeScreenshot" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><StackPanel Spacing="8">
+                                    <TextBlock Loaded="Typography_Loaded" x:Name="SetupCheckedHint" TextWrapping="Wrap" Foreground="{ThemeResource GainRaisedBrush}"/>
+                                    <Button Tag="vb-cable-options-menu.png" Click="GuideScreenshot_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0"><Image AutomationProperties.Name="VB-CABLE Options menu: remove the Windows Volume Control checkmark shown" MaxWidth="344" MaxHeight="260" Stretch="Uniform"><Image.Source><BitmapImage UriSource="ms-appx:///Assets/Setup/vb-cable-options-menu.png" DecodePixelWidth="344"/></Image.Source></Image></Button>
+                                </StackPanel></Expander>
+                            </StackPanel></Border>
+
+                        </StackPanel>
+                        <StackPanel x:Name="SetupReadyPage" Visibility="Collapsed" Spacing="16">
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupReadyTitle" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupReadyDevice" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupRoutingHint" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Border Style="{StaticResource SetupGuideCard}">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE8D6;" FontSize="20" Foreground="{ThemeResource GainRaisedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupHalalHint" Grid.Column="1" TextWrapping="Wrap"/></Grid>
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE72E;" FontSize="20" Foreground="{ThemeResource GainMutedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupStrictHint" Grid.Column="1" TextWrapping="Wrap"/></Grid>
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE9E9;" FontSize="20" Foreground="{ThemeResource GainReducedBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupOptimizedHint" Grid.Column="1" TextWrapping="Wrap"/></Grid>
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE7E8;" FontSize="20" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupOffHint" Grid.Column="1" TextWrapping="Wrap"/></Grid>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Loaded="Typography_Loaded" x:Name="SetupTrayHint" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Border Style="{StaticResource SetupGuideCard}"><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE73F;" FontSize="20" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupReadyVolumeHint" Grid.Column="1" TextWrapping="Wrap"/></Grid></Border>
+                            <Border Style="{StaticResource SetupGuideCard}" Padding="18">
+                                <TextBlock x:Name="SetupPrayer" Text="ادعوا لخالي بالرَّحمة، ولزوجته بالشِّفاء،&#10;ولجميع المسلمين." TextWrapping="Wrap" TextAlignment="Center" FlowDirection="RightToLeft" FontFamily="Assets/IBMPlexSansArabic-Regular.ttf#IBM Plex Sans Arabic" FontSize="18" Foreground="{ThemeResource GainReducedBrush}" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+                <Grid Grid.Row="2" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="SetupBackButton" Click="SetupBack_Click" />
+                    <Button x:Name="SetupNextButton" Grid.Column="3" Style="{StaticResource AccentButtonStyle}" Click="SetupNext_Click" />
+                </Grid>
+            </Grid>
+        </Grid>
+ </Grid>
+</UserControl>

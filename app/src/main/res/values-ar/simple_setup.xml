@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+ <string name="guide_restart_note">بعد إعادة تشغيل الهاتف، شغّل Shizuku مجددًا بإحدى الطريقتين. لا يلزم تثبيته أو إقرانه من جديد إلا إذا طلب ذلك.</string>
+ <string name="change_sound_quality">تغيير جودة الصوت</string>
+ <string name="guide_pc_title">الإعداد بالحاسوب · USB</string>
+ <string name="guide_pc_body">وصّل هاتفك بحاسوب عبر كابل USB للبيانات.\nفي ويندوز، افتح سُكوت ← الهاتف واتبع الدليل خطوة بخطوة.\nعُد إلى هنا بعد تشغيل Shizuku، ثم اسمح لسُكوت بالوصول.</string>
+ <string name="guide_wireless_title">الإعداد من الهاتف · Wi-Fi</string>
+ <string name="guide_wireless_body">ثبّت Shizuku من Google Play.\nفعّل خيارات المطوّر: من «حول الهاتف»، اضغط «رقم الإصدار» سبع مرات (أو «إصدار النظام» في شاومي).\nاتصل بشبكة Wi-Fi. من خيارات المطوّر، فعّل «تصحيح USB» و«التصحيح اللاسلكي».\nافتح Shizuku ← الاقتران. من التصحيح اللاسلكي، اختر «إقران الجهاز برمز»، ثم أدخل الرمز في إشعار Shizuku.\nعُد إلى Shizuku واضغط «تشغيل». ثم عُد إلى هنا واسمح لسُكوت بالوصول.</string>
+ <string name="guide_developer_options">فتح إعدادات التصحيح</string>
+ <string name="guide_wireless_picture">أين أجد التصحيح اللاسلكي؟</string>
+ <string name="guide_shizuku_picture">أين أجد الاقتران والتشغيل في Shizuku؟</string>
+ <string name="guide_show_steps">عرض الخطوات</string>
+ <string name="guide_hide_steps">إخفاء الخطوات</string>
+ <string name="guide_wireless_min_api">يلزم أندرويد ١١ أو أحدث للإعداد اللاسلكي. استخدم طريقة الحاسوب على هذا الهاتف.</string>
+ <string name="guide_google_play">فتح Google Play</string>
+ <string name="guide_about_phone">فتح «حول الهاتف»</string>
+</resources>

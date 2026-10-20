@@ -1,0 +1,16 @@
+<resources>
+ <string name="engine_performance">أداء المعالجة</string>
+ <string name="performance_lowest">أقل تأخير</string>
+ <string name="performance_balanced">متوازن</string>
+ <string name="performance_custom">مخصّص</string>
+ <string name="performance_lowest_detail">أسرع استجابة، إذا استطاع هاتفك مواكبتها.</string>
+ <string name="performance_balanced_detail">صوت أكثر جاهزية. الخيار الموصى به.</string>
+ <string name="performance_quality_detail">مؤثرات الجهاز عند دعمها، مع تأخير أكبر.</string>
+ <string name="performance_custom_detail">اختر طريقة الإخراج والتخزين المؤقت.</string>
+ <string name="performance_help">جودة ترشيح الموسيقى نفسها في كل الأوضاع. زيادة التخزين المؤقت تقلّل التقطّع، لكنها تزيد التأخير.</string>
+ <string name="performance_done">تم</string>
+ <string name="background_level">مستوى الخلفية</string>
+ <string name="buffer_delay_warning">قد يقل التقطّع مع تخزين مؤقت أكبر، لكن يتأخر الصوت عند التشغيل أو التقديم.</string>
+ <string name="use_balanced">استخدام المتوازن</string>
+ <string name="use_maximum">استخدام الأقصى</string>
+</resources>

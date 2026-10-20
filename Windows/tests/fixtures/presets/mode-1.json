@@ -1,0 +1,53 @@
+{
+  "activeMode": 1,
+  "activePreset": {
+    "Mode": 1,
+    "Name": "Halal",
+    "MusicDb": -80,
+    "BackgroundDb": -80,
+    "VoiceDb": 6,
+    "MuteMusic": true,
+    "MuteBackground": true,
+    "MusicLinear": 0,
+    "BackgroundLinear": 0,
+    "VoiceLinear": 1.9952624
+  },
+  "presets": {
+    "off": {
+      "Mode": 0,
+      "Name": "Off",
+      "MusicDb": 0,
+      "BackgroundDb": 0,
+      "VoiceDb": 0,
+      "MuteMusic": false,
+      "MuteBackground": false,
+      "MusicLinear": 1,
+      "BackgroundLinear": 1,
+      "VoiceLinear": 1
+    },
+    "halal": {
+      "Mode": 1,
+      "Name": "Halal",
+      "MusicDb": -80,
+      "BackgroundDb": -80,
+      "VoiceDb": 6,
+      "MuteMusic": true,
+      "MuteBackground": true,
+      "MusicLinear": 0,
+      "BackgroundLinear": 0,
+      "VoiceLinear": 1.9952624
+    },
+    "optimized": {
+      "Mode": 2,
+      "Name": "Optimized",
+      "MusicDb": -20,
+      "BackgroundDb": 0,
+      "VoiceDb": 0,
+      "MuteMusic": false,
+      "MuteBackground": false,
+      "MusicLinear": 0.1,
+      "BackgroundLinear": 1,
+      "VoiceLinear": 1
+    }
+  }
+}

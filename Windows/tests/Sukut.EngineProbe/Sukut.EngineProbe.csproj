@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+ <ItemGroup>
+  <Compile Include="../../src/sukut-ui/Engine.cs" Link="Engine.cs"/>
+  <Compile Include="../../src/sukut-ui/NativeReplyBuffer.cs" Link="NativeReplyBuffer.cs"/>
+  <Compile Include="../../src/sukut-ui/SukutJsonContext.cs" Link="SukutJsonContext.cs"/>
+  <Compile Include="../../src/sukut-ui/UiPreferences.cs" Link="UiPreferences.cs"/>
+ </ItemGroup>
+</Project>

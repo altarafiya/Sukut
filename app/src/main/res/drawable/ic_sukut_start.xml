@@ -1,0 +1,7 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="96dp" android:height="96dp" android:viewportWidth="24" android:viewportHeight="24">
+ <path android:fillColor="#00000000" android:strokeColor="#3C3025" android:strokeWidth="1.7" android:strokeLineCap="round" android:pathData="M20.4,8.5A9,9 0,1 0,20.4 15.5"/>
+ <group android:name="sound_bars" android:pivotX="12" android:pivotY="12">
+  <path android:fillColor="#00000000" android:strokeColor="#B28B51" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M7,11L7,14M10.3,8L10.3,17M13.7,6.5L13.7,15M17,9L17,12"/>
+ </group>
+ <path android:name="mute_stroke" android:fillColor="#00000000" android:strokeColor="#B28B51" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M4,20L21,3"/>
+</vector>

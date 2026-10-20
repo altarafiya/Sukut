@@ -1,0 +1,15 @@
+{
+  "runtime": "TensorFlow Lite 2.16.1",
+  "abi": "arm64-v8a",
+  "change": "One read-only CPU vendor display label normalized to Generic. No executable sections or model data changed.",
+  "section": ".rodata",
+  "offset": 122628,
+  "bytes_changed": 7,
+  "original_library_sha256": "a4f950ebb6ddb191cfaf77a4c821b577c5a3200a02b3b338bfa68d00c7446623",
+  "library_sha256": "0ab0161c5d42f9ffc126a1ba3a6068fb85be196522cfba089f79d78671d685cc",
+  "executable_sections_unchanged": true,
+  "executable_sections": {
+    ".text": "be358e0a0f3f327955cc5e01f37b1f35edbdfbb5e439f61a4cc1eb1e6144184e",
+    ".plt": "94507b7c528d563443cf3e2d20d835792ce005318f423446b7650ad0586290c9"
+  }
+}

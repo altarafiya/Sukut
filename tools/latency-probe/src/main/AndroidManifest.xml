@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <application android:label="Sukut latency probe" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false">
+        <activity android:name=".ProbeActivity" android:exported="true" android:showWhenLocked="true" android:turnScreenOn="true"/>
+    </application>
+</manifest>

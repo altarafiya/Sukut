@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-label="Windows and Android available. Linux coming soon.">
+<rect width="1200" height="260" rx="24" fill="#f7f3eb"/>
+<g fill="#fffdf9" stroke="#dfd4c3"><rect x="24" y="24" width="368" height="212" rx="18"/><rect x="416" y="24" width="368" height="212" rx="18"/><rect x="808" y="24" width="368" height="212" rx="18"/></g>
+<g fill="#937043"><rect x="181" y="61" width="24" height="24"/><rect x="210" y="61" width="24" height="24"/><rect x="181" y="90" width="24" height="24"/><rect x="210" y="90" width="24" height="24"/></g>
+<g fill="#578879" stroke="#578879" stroke-width="3" stroke-linecap="round"><path d="M570 102a30 30 0 0 1 60 0Z"/><path d="m580 77-8-12m48 12 8-12"/><rect x="570" y="107" width="60" height="15" rx="4"/></g>
+<g fill="#fff"><circle cx="585" cy="91" r="3"/><circle cx="615" cy="91" r="3"/></g>
+<g fill="none" stroke="#a0988d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="962" y="60" width="61" height="55" rx="9"/><path d="m975 75 10 11-10 11m17 0h15"/></g>
+<g font-family="Segoe UI,Arial,sans-serif" font-size="24" font-weight="600" fill="#44372d" text-anchor="middle"><text x="208" y="163">Windows</text><text x="600" y="163">Android</text><text x="992" y="163" fill="#888177">Linux</text></g>
+<g font-family="Segoe UI,Arial,sans-serif" font-size="17" fill="#827362" text-anchor="middle"><text x="208" y="196">Available now</text><text x="600" y="196">Available now</text><text x="992" y="196">Coming soon</text></g>
+</svg>

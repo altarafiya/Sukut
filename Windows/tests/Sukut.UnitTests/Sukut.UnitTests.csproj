@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><TargetFramework>net8.0-windows</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><IsTestProject>true</IsTestProject><IsPackable>false</IsPackable></PropertyGroup>
+ <ItemGroup>
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+  <PackageReference Include="xunit" Version="2.9.3" />
+  <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
+  <Compile Include="../../src/sukut-ui/Engine.cs" Link="Engine.cs" />
+  <Compile Include="../../src/sukut-ui/NativeReplyBuffer.cs" Link="NativeReplyBuffer.cs" />
+  <Compile Include="../../src/sukut-ui/UiPreferences.cs" Link="UiPreferences.cs" />
+  <Compile Include="../../src/sukut-ui/SukutJsonContext.cs" Link="SukutJsonContext.cs" />
+  <Compile Include="../../src/sukut-ui/SettingsStore.cs" Link="SettingsStore.cs" />
+  <Compile Include="../../src/sukut-ui/AudioRestartPolicy.cs" Link="AudioRestartPolicy.cs" />
+  <Compile Include="../../src/sukut-ui/PhoneTools.cs" Link="PhoneTools.cs" />
+  <Content Include="../fixtures/presets/mode-*.json" Link="fixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+ </ItemGroup>
+</Project>

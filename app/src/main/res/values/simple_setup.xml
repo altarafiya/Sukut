@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+ <string name="guide_restart_note">After a phone restart, start Shizuku again using either method. You do not need to reinstall it or repeat pairing unless Shizuku asks.</string>
+ <string name="change_sound_quality">Change sound quality</string>
+ <string name="guide_pc_title">Set up with a PC · USB</string>
+ <string name="guide_pc_body">Connect your phone to a PC with a USB data cable.\nOn Windows, open Sukut → Phone. Follow its step-by-step guide.\nBack here, allow Sukut when Shizuku is running.</string>
+ <string name="guide_wireless_title">Set up on this phone · Wi-Fi</string>
+ <string name="guide_wireless_body">Install Shizuku from Google Play.\nEnable Developer options: in About phone, tap Build number seven times (OS version on Xiaomi).\nConnect to Wi-Fi. In Developer options, enable USB debugging and Wireless debugging.\nOpen Shizuku → Pairing. In Wireless debugging, choose Pair device with pairing code. Enter the code in the Shizuku notification.\nReturn to Shizuku and tap Start. Come back here and allow Sukut.</string>
+ <string name="guide_developer_options">Open debugging settings</string>
+ <string name="guide_wireless_picture">Find Wireless debugging</string>
+ <string name="guide_shizuku_picture">Find Pairing and Start in Shizuku</string>
+ <string name="guide_show_steps">Show steps</string>
+ <string name="guide_hide_steps">Hide steps</string>
+ <string name="guide_wireless_min_api">Wireless setup needs Android 11 or later. Use the PC method on this phone.</string>
+ <string name="guide_google_play">Open Google Play</string>
+ <string name="guide_about_phone">Open About phone</string>
+</resources>

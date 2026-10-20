@@ -1,0 +1,16 @@
+<resources>
+ <string name="engine_performance">Engine performance</string>
+ <string name="performance_lowest">Lowest latency</string>
+ <string name="performance_balanced">Balanced</string>
+ <string name="performance_custom">Custom</string>
+ <string name="performance_lowest_detail">Fastest response. Best when your phone keeps up.</string>
+ <string name="performance_balanced_detail">A little more audio ready. Recommended.</string>
+ <string name="performance_quality_detail">Phone sound effects, when supported. More delay.</string>
+ <string name="performance_custom_detail">Choose output and buffering yourself.</string>
+ <string name="performance_help">Same music filtering in every mode. More buffering helps prevent pauses, but adds delay.</string>
+ <string name="performance_done">Done</string>
+ <string name="background_level">Background level</string>
+ <string name="buffer_delay_warning">More buffering can reduce gaps. It also delays sound after play or seek.</string>
+ <string name="use_balanced">Use Balanced</string>
+ <string name="use_maximum">Use Maximum</string>
+</resources>

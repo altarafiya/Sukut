@@ -1,0 +1,6 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+ <!-- Android normalizes the drawable to 288 dp, then masks its center.
+      An explicit transparent canvas keeps the complete mark inside that mask. -->
+ <item android:width="288dp" android:height="288dp"><shape><solid android:color="@android:color/transparent"/></shape></item>
+ <item android:width="128dp" android:height="128dp" android:gravity="center" android:drawable="@drawable/sukut_mark"/>
+</layer-list>

@@ -1,0 +1,4 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android" android:drawable="@drawable/ic_sukut_start">
+ <target android:name="sound_bars" android:animation="@animator/sukut_start_bars"/>
+ <target android:name="mute_stroke" android:animation="@animator/sukut_start_stroke"/>
+</animated-vector>
