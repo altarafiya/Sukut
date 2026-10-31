@@ -4,7 +4,8 @@ Build `../scripts/build-installer.ps1` after building Android and publishing Win
 The script requires Inno Setup 7.1.0 at `../deps/inno-7.1.0/ISCC.exe`, validates
 the current Android APK, its bundled checksum, the pinned VB-CABLE archive and
 the vendor setup signature, stages the app without an extra ZIP, and compiles
-`../dist/installer-final/Sukut-0.2.33-Setup.exe`. Build records are generated locally; see the root AGENTS.md.
+`../dist/installer-final/Sukut-0.2.27-Setup.exe`. Build records are under
+`../docs/redesign/release-0.2.27/`.
 
 ## Appearance and language
 
@@ -15,7 +16,7 @@ alignment. Pre-setting right alignment would mirror it back to the left.
 
 Arabic setup, buttons, progress, confirmations and removal copy use plain
 Arabic in `Languages/Arabic-Sukut.isl` and `Sukut.iss`. Extra vowel marks were
-removed in0.2.33; only the product name keeps its familiar damma (سُكوت).
+removed in0.2.27; only the product name keeps its familiar damma (سُكوت).
 Arabic body/button text is13pt, welcome heading26pt and driver heading18pt.
 English sizes remain10/22/16pt. Native dialog scaling makes room for larger text. Rare platform error
 messages use the credited upstream Inno translation; Windows and original
@@ -59,9 +60,8 @@ The author's [licensing page](https://vb-audio.com/Services/licensing.htm),
 VB-CABLE with its identity, donation link and applicable donationware model.
 The original older archive readme has additional integration/agreement wording;
 it is preserved unchanged and shown when installing the driver. Keep this
-distinction in any public distribution review; A+B/C+D are not included. This
-private build does not establish Audio-model redistribution rights. No store
-or public upload is performed.
+distinction in any public distribution review; A+B/C+D are not included. No
+store or public upload is performed.
 
 Archive/vendor hashes and source URLs: `../deps/installer/sources.json`.
 Fresh-machine installation of an absent driver, UAC/reboot, and uninstall have

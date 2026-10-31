@@ -6,10 +6,12 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Wireless-debugging discovery and loopback activation only. No audio uploads. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" android:anyDensity="true" />
     <queries>
-        <package android:name="moe.shizuku.privileged.api" />
         <package android:name="com.miui.misound" />
         <intent><action android:name="miui.intent.action.HEADSET_SETTINGS" /></intent>
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
@@ -28,12 +30,12 @@
         android:theme="@style/Theme.CleanWave">
 
         <provider
-            android:name="rikka.shizuku.ShizukuProvider"
-            android:authorities="${applicationId}.shizuku"
+            android:name=".WorkerProvider"
+            android:authorities="${applicationId}.worker"
             android:multiprocess="false"
             android:enabled="true"
             android:exported="true"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+            android:permission="android.permission.DUMP" />
 
         <activity
             android:name=".MainActivity"
@@ -44,12 +46,18 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
         <activity
             android:name=".SettingsActivity"
             android:exported="false" />
         <activity android:name=".SetupActivity" android:exported="false" />
+        <activity android:name=".LocalActivationActivity" android:exported="false" />
+        <service android:name=".LocalActivationService" android:exported="false" android:foregroundServiceType="shortService" />
 
         <service
             android:name=".CleanerService"

@@ -1,0 +1,28 @@
+<resources>
+ <string name="background_style">الخلفية</string>
+ <string name="background_solid">سادة</string>
+ <string name="background_tinted">ملوّنة</string>
+ <string name="tint_color">لون مخصّص</string>
+ <string name="tint_hex">رمز اللون</string>
+ <string name="tint_hue">درجة اللون</string>
+ <string name="tint_apply">تطبيق اللون</string>
+ <string name="tint_picker_hint">اختر درجة أو أدخل رمز اللون. يُستخدم في المظهر الملوّن.</string>
+ <string name="tint_hex_error">أدخل ست خانات، مثل ‎#326A56.</string>
+ <string name="audio_mode_help">المساعدة في أوضاع الصوت</string>
+ <string name="help_filter_1">يزيل الموسيقى مع إبقاء الكلام والأصوات الأخرى.</string>
+ <string name="help_filter_2">خيار مناسب للاستماع اليومي.</string>
+ <string name="help_optimized_1">يزيل الموسيقى ويتيح لك تحديد مقدار أصوات الخلفية.</string>
+ <string name="help_optimized_2">استخدم شريط الرئيسية: خفّضه لخلفية أهدأ، وارفعه لسماع أصوات أكثر.</string>
+ <string name="help_strict_1">يركّز على الكلام بكتم الموسيقى وأصوات الخلفية.</string>
+ <string name="help_strict_2">قد تختفي بعض المؤثرات الصوتية أيضًا.</string>
+ <string name="help_start_title">التشغيل والإيقاف</string>
+ <string name="help_start_1">اختر وضعًا، ثم اضغط زر التشغيل للبدء واضغطه مجدّدًا للإيقاف. اختيار الوضع أثناء التوقف لا يشغّل سُكوت.</string>
+ <string name="help_effects_1">يتيح للهاتف إضافة مؤثرات Dolby والمعادل المدعومة إلى الصوت المعالَج.</string>
+ <string name="help_effects_2">يُنصح بإبقائه مفعّلًا لسماعات البلوتوث بجميع أنواعها ومكبرات الصوت اللاسلكية. قد يتجاوز تعطيله Dolby ومؤثرات الهاتف الأخرى. فعّل المؤثرات المطلوبة من إعدادات الهاتف.</string>
+ <string name="help_effects_3">قد يزيد تأخير الصوت. يستخدم التعطيل مسارًا مباشرًا أسرع قد يتجاوز مؤثرات الهاتف.</string>
+ <string name="help_buffer_lowest">الأقل — يصل الصوت أسرع، لكنه قد يتقطّع عند انشغال الهاتف.</string>
+ <string name="help_buffer_balanced">متوازن — انتظار قصير لصوت أسلس. ابدأ بهذا الخيار.</string>
+ <string name="help_buffer_maximum">الأكبر — انتظار أطول قد يقلّل التوقفات عند انشغال الهاتف، لكن الصوت يصل متأخرًا.</string>
+ <string name="help_good_to_know">معلومة مفيدة</string>
+ <string name="help_same_filter">تغيّر هذه الخيارات التشغيل فقط، لا قوة إزالة الموسيقى. يتوقف الصوت قليلًا عند تغيير أيّ منها أثناء التشغيل.</string>
+</resources>

@@ -56,7 +56,7 @@ class WindowFftTest {
 
     private fun loadQ15(name: String, count: Int): FloatArray {
         val file = File("src/engine/assets/$name")
-        val bytes = file.readBytes()
+        val bytes = AssetSeal.open(file.readBytes())
         require(bytes.size == count * 2)
         return FloatArray(count) { i ->
             val lo = bytes[i * 2].toInt() and 0xff

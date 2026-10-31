@@ -1,9 +1,12 @@
-; Rebuild through scripts/build-installer.ps1: validates the latest Android bundle.
+﻿; Rebuild through scripts/build-installer.ps1: validates the latest Android bundle.
 #ifndef AppVersion
-  #define AppVersion "0.2.33"
+  #define AppVersion "0.4"
 #endif
 #ifndef AndroidVersion
-  #define AndroidVersion "0.3.31"
+  #define AndroidVersion "0.4"
+#endif
+#ifndef AppNumericVersion
+  #define AppNumericVersion "0.4.0"
 #endif
 #ifndef PayloadDir
   #define PayloadDir "..\dist\Sukut-" + AppVersion + "-win-x64"
@@ -36,7 +39,7 @@ WizardImageFile=Assets\QuietWave-Light.png
 WizardImageFileDynamicDark=Assets\QuietWave.png
 WizardSmallImageFile=..\src\sukut-ui\Assets\Sukut.png
 SetupIconFile=..\src\sukut-ui\Assets\Sukut.ico
-UninstallDisplayIcon={app}\app\Sukut.exe
+UninstallDisplayIcon={app}\Sukut.exe
 UninstallDisplayName=Sukut
 CloseApplications=no
 RestartApplications=no
@@ -54,7 +57,7 @@ Compression=lzma2/max
 SolidCompression=yes
 LZMANumBlockThreads=2
 SetupLogging=yes
-VersionInfoVersion={#AppVersion}.0
+VersionInfoVersion={#AppNumericVersion}.0
 VersionInfoDescription=Sukut setup
 VersionInfoCompany=الطرفية
 
@@ -128,8 +131,8 @@ Source: "Assets\SukutHandjet.ttf"; Flags: dontcopy
 Source: "{#PayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,*.log,runtime\*"
 
 [Icons]
-Name: "{autoprograms}\Sukut"; Filename: "{app}\Sukut.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app\Sukut.exe"
-Name: "{autodesktop}\Sukut"; Filename: "{app}\Sukut.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app\Sukut.exe"; Tasks: desktopicon
+Name: "{autoprograms}\Sukut"; Filename: "{app}\Sukut.exe"; WorkingDir: "{app}"; IconFilename: "{app}\Sukut.exe"
+Name: "{autodesktop}\Sukut"; Filename: "{app}\Sukut.exe"; WorkingDir: "{app}"; IconFilename: "{app}\Sukut.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\Sukut.exe"; Description: "{cm:Launch}"; Flags: postinstall nowait skipifsilent runasoriginaluser; Check: CanLaunch

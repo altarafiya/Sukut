@@ -19,7 +19,8 @@ public sealed partial class ShellView
         int value = Math.Clamp((int)Math.Round(slider.Value), -20, 10);
         if (_preferences.OptimizedBackgroundDb == value) return;
         _preferences.OptimizedBackgroundDb = value;
-        RenderModeDetails(_mode); Save();
+        // Keep the chosen tile's controls while Off (_mode is 0 then).
+        RenderModeDetails(_selectedMode); Save();
         _backgroundCommitPending = true;
         await ApplyCommittedBackground();
     }

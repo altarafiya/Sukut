@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- The Phone page's Allow access button (Linux/data/sukut-usb-access). -->
+<policyconfig>
+  <vendor>Sukut</vendor>
+  <vendor_url>https://altarafiya.github.io/Sukut</vendor_url>
+  <icon_name>io.github.altarafiya.Sukut</icon_name>
+  <action id="io.github.altarafiya.Sukut.usb-access">
+    <description>Let Sukut use phones connected by USB</description>
+    <description xml:lang="ar">السماح لسُكوت باستخدام الهواتف المتصلة عبر USB</description>
+    <message>Sukut needs permission to let your account use phones connected by USB.</message>
+    <message xml:lang="ar">يحتاج سُكوت إلى إذن ليتمكّن حسابك من استخدام الهواتف المتصلة عبر USB.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/sukut/sukut-usb-access</annotate>
+  </action>
+</policyconfig>

@@ -1,0 +1,28 @@
+<resources>
+ <string name="background_style">Background</string>
+ <string name="background_solid">Solid</string>
+ <string name="background_tinted">Tinted</string>
+ <string name="tint_color">Custom colour</string>
+ <string name="tint_hex">Hex colour</string>
+ <string name="tint_hue">Hue</string>
+ <string name="tint_apply">Apply colour</string>
+ <string name="tint_picker_hint">Choose a shade or enter a hex colour. Applies to the tinted theme.</string>
+ <string name="tint_hex_error">Use six hex digits, for example #326A56.</string>
+ <string name="audio_mode_help">Audio mode help</string>
+ <string name="help_filter_1">Removes music while keeping speech and other sounds.</string>
+ <string name="help_filter_2">A good starting point for everyday listening.</string>
+ <string name="help_optimized_1">Removes music and lets you choose how much background sound remains.</string>
+ <string name="help_optimized_2">Use the Home slider: lower for a quieter background, higher for more ambience.</string>
+ <string name="help_strict_1">Focuses on speech by muting music and background sound.</string>
+ <string name="help_strict_2">Some sound effects may also disappear.</string>
+ <string name="help_start_title">Start and stop</string>
+ <string name="help_start_1">Choose a mode, then press the power button to start. Press it again to stop. Choosing a mode while stopped keeps Sukut off.</string>
+ <string name="help_effects_1">Lets your phone add supported Dolby and equaliser effects to the filtered sound.</string>
+ <string name="help_effects_2">Keep on for Bluetooth speakers, headphones and earbuds. With it off, Dolby and other phone effects may be bypassed. Enable the effects you want in your phone settings.</string>
+ <string name="help_effects_3">Can add audio delay. Off uses faster direct playback, which may skip phone effects.</string>
+ <string name="help_buffer_lowest">Lowest — sound arrives sooner, but may stutter when the phone is busy.</string>
+ <string name="help_buffer_balanced">Balanced — a short wait for smoother sound. Start here.</string>
+ <string name="help_buffer_maximum">Maximum — a longer wait that can reduce pauses on busy phones. Sound arrives later.</string>
+ <string name="help_good_to_know">Good to know</string>
+ <string name="help_same_filter">These options change playback, not music-removal strength. Changing either while playing briefly restarts audio.</string>
+</resources>

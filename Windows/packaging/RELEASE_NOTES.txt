@@ -1,0 +1,23 @@
+Sukut — Windows 0.4.2
+1 November 2026
+
+- Fixed Bluetooth playback selection and switching while filtering is running.
+- Automatically selects a newly connected audio output and shows a notification.
+- Stopping Sukut returns Windows playback to the selected device, also when an older device was disconnected.
+- The tray shows an Optimized-mode background slider; the change applies when you release it.
+- The tray's audio-buffering icon and colour match the selected preset.
+- The tray and main window stay in sync; tray resources are released when it closes.
+- Includes signed Android 0.4/code54/com.altarafiyah.sukut and USB activation for its audio worker.
+
+Extract the complete folder and open Sukut.exe. Exit an older Sukut tray instance first.
+The model, gains and buffer durations are unchanged.
+See VERIFICATION.json for completed checks and their limits. No new battery, RAM or latency percentage is claimed.
+
+سُكوت — ويندوز 0.4.2
+- إصلاح اختيار أجهزة البلوتوث والتبديل بينها أثناء الترشيح.
+- اختيار مخرج الصوت المتصل حديثًا تلقائيًا وإظهار إشعار بالتبديل.
+- يعيد إيقاف سُكوت تشغيل صوت ويندوز إلى الجهاز المحدد، مع تحسين الاستعادة عند فصل جهاز قديم.
+- شريط حديث لمستوى الخلفية في الوضع المحسّن داخل منطقة الإشعارات، ويُطبَّق التغيير عند إفلاته.
+- يتغيّر رمز التخزين المؤقت للصوت ولونه في منطقة الإشعارات بحسب الخيار المحدد.
+- تحسين المزامنة بين منطقة الإشعارات والنافذة الرئيسية.
+- يتضمّن أندرويد 0.4 وتفعيل عامل الصوت عبر USB.

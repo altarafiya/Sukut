@@ -4,10 +4,10 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <RootNamespace>Sukut</RootNamespace>
-    <AssemblyName>Sukut</AssemblyName>
-    <Version>0.2.33</Version>
-    <AssemblyVersion>0.2.33.0</AssemblyVersion>
-    <FileVersion>0.2.33.0</FileVersion>
+    <AssemblyName>SukutWindow</AssemblyName>
+    <Version>0.4.2</Version>
+    <AssemblyVersion>0.4.2.0</AssemblyVersion>
+    <FileVersion>0.4.2.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Sukut.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
@@ -20,7 +20,9 @@
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj\**;bin\**</DefaultItemExcludes>
     <SukutDependencyRoot Condition="'$(SukutDependencyRoot)' == ''">$(MSBuildProjectDirectory)\..\..\deps</SukutDependencyRoot>
+    <SukutNativeDirectory Condition="'$(SukutNativeDirectory)' == ''">$(MSBuildProjectDirectory)\..\..\build\bootstrap\bin\Release</SukutNativeDirectory>
     <RestorePackagesPath>$(SukutDependencyRoot)\nuget-sukut</RestorePackagesPath>
     <EnableMsixTooling>false</EnableMsixTooling>
   </PropertyGroup>
@@ -28,22 +30,61 @@
     <DebugSymbols>false</DebugSymbols>
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
+    <!-- Precompiled code: faster window start, no JIT work when opened from the tray. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(SukutStoreBuild)' == 'true'">
+    <WindowsPackageType>MSIX</WindowsPackageType>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <AppxAutoIncrementPackageRevision>false</AppxAutoIncrementPackageRevision>
+    <AppxBundle>Never</AppxBundle>
+    <GenerateAppInstallerFile>false</GenerateAppInstallerFile>
+    <GenerateAppxPackageOnBuild>true</GenerateAppxPackageOnBuild>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SukutStoreBuild)' == 'true'">
+    <AppxManifest Include="$(SukutStoreInput)\Package.appxmanifest" />
+    <Content Include="$(SukutStoreInput)\sukut-package.json" Link="sukut-package.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(SukutStoreInput)\logos\*.png" Link="StoreAssets\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\assets\engine\separator.tflite;..\..\assets\engine\window_576_q15.bin;..\..\assets\engine\window_960_q15.bin" Link="Assets\engine\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(SukutStoreInput)\licenses\**\*" Link="licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(SukutStoreInput)\THIRD_PARTY_NOTICES.txt" Link="THIRD_PARTY_NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(SukutStoreInput)\native-runtime\*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The package entry point: the native tray host that owns the engine. -->
+    <Content Include="$(SukutNativeDirectory)\Sukut.exe" Link="Sukut.exe" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+  <Target Name="RequireStoreInputs" BeforeTargets="PrepareForBuild" Condition="'$(SukutStoreBuild)' == 'true'">
+    <Error Condition="!Exists('$(SukutStoreInput)\Package.appxmanifest')" Text="Generate the exact Partner Center Store inputs with Windows/store/prepare-store.ps1 first." />
+  </Target>
+  <!-- The SDK's upload-manifest copy is incremental only on project files,
+       so changing XAML alone can leave Upload/resources.pri stale. Refresh
+       the current resource index before the upload payload is collected. -->
+  <Target Name="RefreshStoreUploadResources" BeforeTargets="_ComputeAppxPackagePayload"
+          Condition="'$(SukutStoreBuild)' == 'true' And '$(BuildAppxUploadPackageForUap)' == 'true'">
+    <Error Condition="'@(ProjectPriFile)' == ''" Text="The current Store resource index was not generated." />
+    <Copy SourceFiles="@(ProjectPriFile)" DestinationFiles="$(ProjectPriUploadFullPath)" SkipUnchangedFiles="false" />
+  </Target>
   <ItemGroup>
     <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="9" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.9169" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <Content Include="Assets\**\*" Exclude="Assets\Tray-*.png;Assets\*.svg;Assets\PROVENANCE.md" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\..\build\bootstrap\bin\Release\SukutEngine.dll" Link="SukutEngine.dll" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\..\build\bootstrap\bin\Release\SukutVolumeGuard.exe" Link="SukutVolumeGuard.exe" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(SukutNativeDirectory)\SukutEngine.dll" Link="SukutEngine.dll" CopyToOutputDirectory="Always" />
+    <Content Include="$(SukutNativeDirectory)\SukutVolumeGuard.exe" Link="SukutVolumeGuard.exe" CopyToOutputDirectory="Always" />
   </ItemGroup>
-  <Target Name="PublishWinUIResourceIndex" AfterTargets="ComputeFilesToPublish">
+  <Target Name="PublishWinUIResourceIndex" AfterTargets="ComputeFilesToPublish" Condition="'$(SukutStoreBuild)' != 'true'">
     <ItemGroup>
       <ResolvedFileToPublish Include="$(TargetDir)$(AssemblyName).pri">
         <RelativePath>$(AssemblyName).pri</RelativePath>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+  <Target Name="ExcludeUnusedWindowsMlStorePayload" AfterTargets="AddMicrosoftWindowsAppSDKPayloadFilesFromComponents" Condition="'$(SukutStoreBuild)' == 'true'">
+    <ItemGroup>
+      <None Remove="@(None)" Condition="'%(Filename)%(Extension)' == 'onnxruntime.dll' Or '%(Filename)%(Extension)' == 'DirectML.dll'" />
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(Filename)%(Extension)' == 'onnxruntime.dll' Or '%(Filename)%(Extension)' == 'DirectML.dll'" />
     </ItemGroup>
   </Target>
   <!-- Sukut uses its own CPU TFLite engine, never Windows ML / DirectML.

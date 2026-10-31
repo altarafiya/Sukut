@@ -22,8 +22,8 @@ public sealed partial class ShellView
             _showBuffering = false;
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
-                if (_quitting || !_visible || BufferingButton?.IsLoaded != true) return;
-                BufferingButton.Flyout?.ShowAt(BufferingButton);
+                if (_quitting || !_visible || PlaybackBox?.IsLoaded != true) return;
+                PlaybackBox.StartBringIntoView();
             });
         }
     }

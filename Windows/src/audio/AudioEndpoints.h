@@ -29,6 +29,10 @@ EndpointInfo InspectAudioEndpoint(const std::wstring& id);
 // installed VB-Audio CABLE pair; additional drivers require their own mapping.
 void ValidateAudioRoute(const AudioRoute& route,
                         const std::vector<EndpointInfo>& endpoints);
+// Lease release only: never leave Windows on an unconsumed virtual cable when
+// the saved physical endpoint was disconnected during filtering.
+std::wstring ChooseRestoreOutput(const std::wstring& preferred, const std::wstring& cable,
+                                 const std::vector<EndpointInfo>& endpoints);
 std::string Utf8(const std::wstring& text);
 std::string EscapeJson(const std::string& text);
 

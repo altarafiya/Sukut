@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-/** Private research cleaner using the carved Audio separator graph and reconstructed DSP. */
+/** Sukut's live cleaner: separation model, streaming DSP, standby and output mixing. */
 class StreamingCleaner(
     modelBuffer: ByteBuffer,
     riseWindowBytes: ByteArray,
@@ -16,7 +16,10 @@ class StreamingCleaner(
     override val firstInputFrames = StreamingDsp.FIRST_INPUT_FRAMES
     override val outputFrames = StreamingDsp.HOP_FRAMES
 
-    private val dsp = StreamingDsp(modelBuffer, riseWindowBytes, hopWindowBytes)
+    private val dsp = StreamingDsp(modelBuffer, riseWindowBytes, hopWindowBytes, tryFastKernels = true)
+        .apply { guardHighBand = true }
+    // Five seconds of exact digital silence before the route may rest.
+    private val standby = SilenceStandby(holdPackets = 250)
     private val firstDecoded = FloatArray(firstInputFrames * 2)
     private val hopDecoded = FloatArray(inputFrames * 2)
     private val dry = FloatArray(outputFrames * 2)
@@ -33,6 +36,7 @@ class StreamingCleaner(
     )
     private data class Mix(val voice: Int, val music: Int, val other: Int)
     @Volatile private var mix = Mix(4096, 1295, 410)
+    @Volatile private var screenOff = false
 
     init {
         // Warm both JTransforms and the TFLite graph before the live route starts.
@@ -48,6 +52,12 @@ class StreamingCleaner(
     override fun process(input: ByteArray, first: Boolean, output: ByteArray, backlog: Int) {
         val frames = if (first) firstInputFrames else inputFrames
         require(input.size == frames * 4 && output.size == outputFrames * 4)
+        // Nothing is playing: skip FFTs, the model and synthesis entirely. The
+        // history is already all zero, and any nonzero sample resumes at once.
+        if (!first && standby.before(SilenceStandby.allZero(input))) {
+            output.fill(0)
+            return
+        }
         val start = System.nanoTime()
         val decoded = if (first) firstDecoded else hopDecoded
         decodeStereo(input, decoded)
@@ -58,18 +68,22 @@ class StreamingCleaner(
             input = decoded,
             first = first,
             runModel = runAi,
-            // Authentic Voice Focus suppression without Audio's +6 dB voice gain;
-            // CleanWave's existing explicit voice-boost control handles user gain separately.
+            // Stem gains only; no built-in voice gain. Sukut's explicit voice-boost
+            // control handles user gain separately.
             voiceQ12 = current.voice,
             musicQ12 = current.music,
             otherQ12 = current.other,
             dryOutput = dry,
             wetOutput = wet,
+            allowIdle = screenOff,
         )
         val resetState = stats.add(System.nanoTime() - start, backlog, work)
         level.render(dry, wet, output, stats.paused, runAi)
         if (resetState) dsp.resetNeuralState()
+        if (!first) standby.after(SilenceStandby.allZero(output))
     }
+
+    override fun isStandby() = standby.active
 
     override fun setReduction(percent: Int) {
         level.reduction = percent.coerceIn(0, 100) / 100f
@@ -88,11 +102,17 @@ class StreamingCleaner(
     // Consume the selected timing reserve before interrupting the model for
     // recovery. Healthy packets repay this debt after short scheduler spikes.
     override fun setBuffering(profile: Int) { stats.overloadCreditMs = when (profile) { 1 -> 60.0; 2 -> 100.0; else -> 20.0 } }
+    override fun setScreenOff(off: Boolean) { screenOff = off }
 
     override fun isBypassed() = stats.paused
 
     override fun metrics() = stats.report(level.reduction) +
-        "; format=48000-stereo; audio_fft=1536; hop_frames=960; overlap_frames=576; declared_effect_latency_ms=32"
+        "; format=48000-stereo; audio_fft=1536; hop_frames=960; overlap_frames=576; declared_effect_latency_ms=32" +
+        "; idle_dsp_active=${dsp.idleDspActive}; idle_dsp_frames=${dsp.idleDspFrames}" +
+        "; standby=${standby.active}; standby_entries=${standby.entries}; standby_packets=${standby.skippedPackets}" +
+        "; kernels=${dsp.kernels.kernels}; kernel_reference_ms=${dsp.kernels.referenceMs}" +
+        "; kernel_selected_ms=${dsp.kernels.selectedMs}; kernel_error=${dsp.kernels.worstError}" +
+        "; high_band_gain=${dsp.highBandGain}"
 
     override fun close() = dsp.close()
 

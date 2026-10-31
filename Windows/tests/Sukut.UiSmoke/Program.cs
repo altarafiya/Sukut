@@ -68,6 +68,21 @@ internal static class Program
             void Invoke(string id)
             {
                 Console.WriteLine("Invoke " + id);
+                // Phone-style navigation: sub-pages have a Back button, Home has the header buttons.
+                if (id is "HomePage" or "HomeSettingsButton" or "SettingsAbout" or "HomePhoneButton")
+                {
+                    AutomationElement? back = null;
+                    try { back = window.FindFirstDescendant(x => x.ByAutomationId("PageBackButton")); } catch (System.Runtime.InteropServices.COMException) { }
+                    if (back != null && !back.IsOffscreen) { back.Patterns.Invoke.Pattern.Invoke(); Thread.Sleep(300); }
+                    if (id == "HomePage") return;
+                    // About is the last Settings card, like the phone.
+                    if (id == "SettingsAbout")
+                    {
+                        Find("HomeSettingsButton").Patterns.Invoke.Pattern.Invoke(); Thread.Sleep(400);
+                        Find("SettingsPanel").Patterns.Scroll.Pattern.SetScrollPercent(-1, 100); Thread.Sleep(400);
+                        return;
+                    }
+                }
                 var element = Find(id);
                 if (element.Patterns.Invoke.TryGetPattern(out var invoke)) invoke.Invoke();
                 else if (element.Patterns.SelectionItem.TryGetPattern(out var select)) select.Select();
@@ -125,7 +140,7 @@ internal static class Program
             }
             bool baseline = FindOptional("HomeButton") != null;
             AutomationElement? FindOptional(string id) => window.FindFirstDescendant(x => x.ByAutomationId(id));
-            string home = baseline ? "HomeButton" : "HomeNavItem", settings = baseline ? "SettingsButton" : "SettingsNavItem", about = baseline ? "AboutButton" : "AboutNavItem";
+            string home = baseline ? "HomeButton" : "HomePage", settings = baseline ? "SettingsButton" : "HomeSettingsButton", about = baseline ? "AboutButton" : "SettingsAbout";
             void WaitStatus(params string[] expected)
             {
                 var timer=Stopwatch.StartNew();
@@ -150,13 +165,13 @@ internal static class Program
                     SelectMode("OptimizedCard","Optimized");Thread.Sleep(300);
                     var modes=Find("OptimizedCard").BoundingRectangle;
                     var slider=Find("OptimizedBackgroundSlider").BoundingRectangle;
-                    var details=Find("ModeDetailTitle").BoundingRectangle;
+                    // Mode explanations live behind ModeHelpButton; the slider follows the tiles.
                     Assert(slider.Top>=modes.Bottom,"Slider follows mode cards");
-                    Assert(details.Top>=slider.Bottom+24,"Mode description has a separate card gap below slider");
+                    Assert(Find("ModeHelpButton").BoundingRectangle.Bottom<=modes.Top,"Mode help sits with the heading above the tiles");
                     Shot("separate-mode-controls");
                     Invoke(settings);Find("LanguageChoice").AsComboBox().Select(1);Invoke(home);Thread.Sleep(300);
-                    modes=Find("OptimizedCard").BoundingRectangle;slider=Find("OptimizedBackgroundSlider").BoundingRectangle;details=Find("ModeDetailTitle").BoundingRectangle;
-                    Assert(slider.Top>=modes.Bottom && details.Top>=slider.Bottom+24,"Arabic has the same separated layout");
+                    modes=Find("OptimizedCard").BoundingRectangle;slider=Find("OptimizedBackgroundSlider").BoundingRectangle;
+                    Assert(slider.Top>=modes.Bottom,"Arabic has the same separated layout");
                     Shot("separate-mode-controls-ar");
                 }
                 finally

@@ -18,9 +18,11 @@ class BootReceiver : BroadcastReceiver() {
             CleanerTileService.requestRefresh(context)
             return
         }
-        if (!CleanerPrefs.restoreOnBoot(context) || !CleanerPrefs.isEnabled(context)) return
-
-        val service = Intent(context, CleanerService::class.java).setAction(CleanerService.ACTION_ENABLE)
-        if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service) else context.startService(service)
+        // A reboot ends the shell worker. Only a fresh authorised ADB session can
+        // activate it; never start an erroring foreground service or audio at boot.
+        CleanerPrefs.setEnabled(context, false)
+        CleanerPrefs.clearStartPending(context)
+        CleanerPrefs.reconcileRuntimeState(context)
+        CleanerTileService.requestRefresh(context)
     }
 }

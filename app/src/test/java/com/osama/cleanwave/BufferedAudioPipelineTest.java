@@ -23,7 +23,7 @@ public class BufferedAudioPipelineTest {
         byte[] bytes=sink.toByteArray();for(int i=0;i<bytes.length;i++)assertEquals("PCM reordered at "+i,(byte)i,bytes[i]);
         assertTrue(cleaner.closed);
     }
-    private static final class FakeCleaner implements AudioCleaner {
+    private static class FakeCleaner implements AudioCleaner {
         volatile boolean closed; final AtomicInteger processed=new AtomicInteger(); boolean fail;
         public int getSampleRate(){return 48000;} public int getInputFrames(){return 8;}
         public int getFirstInputFrames(){return 8;} public int getOutputFrames(){return 8;}
@@ -36,7 +36,8 @@ public class BufferedAudioPipelineTest {
         public void setSourceMix(int voiceDb,int musicDb,int otherDb){}
         public void setAmplification(int db){} public void setSilentRecovery(boolean silent){}
         public void setBuffering(int profile){}
-        public boolean isBypassed(){return false;} public String metrics(){return "fake";}
+        public void setScreenOff(boolean off){}
+        public boolean isBypassed(){return false;} public boolean isStandby(){return false;} public String metrics(){return "fake";}
         public void close(){closed=true;}
     }
 
@@ -59,6 +60,34 @@ public class BufferedAudioPipelineTest {
             assertTrue(packets.get()>=4);assertNull(error.get());
         } finally {release.countDown();p.close();assertTrue(p.awaitStopped(2000));}
         assertTrue(cleaner.closed);
+    }
+
+    @Test public void standbyPausesOutputOnceAndResumesWithNextAudio() throws Exception {
+        AtomicBoolean resting=new AtomicBoolean();AtomicInteger standbys=new AtomicInteger(),writes=new AtomicInteger();
+        FakeCleaner cleaner=new FakeCleaner(){ @Override public boolean isStandby(){return resting.get();} };
+        AtomicReference<Throwable> error=new AtomicReference<>();
+        BufferedAudioPipeline p=new BufferedAudioPipeline(cleaner,(b,o,n)->{Thread.sleep(1);return n;},
+            new BufferedAudioPipeline.Output(){
+                public int write(byte[] b,int o,int n){writes.incrementAndGet();return n;}
+                public void standby(){standbys.incrementAndGet();}
+            },error::set,()->{});
+        p.start();
+        try {
+            long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(2);
+            while(writes.get()<3&&System.nanoTime()<deadline)Thread.sleep(2);
+            resting.set(true);
+            deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(2);
+            while(standbys.get()<1&&System.nanoTime()<deadline)Thread.sleep(2);
+            Thread.sleep(50);
+            int during=writes.get();
+            Thread.sleep(50);
+            assertEquals("standby packets must not reach output",during,writes.get());
+            assertEquals(1,standbys.get());
+            resting.set(false);
+            deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(2);
+            while(writes.get()<=during+2&&System.nanoTime()<deadline)Thread.sleep(2);
+            assertTrue(writes.get()>during+2);assertNull(error.get());
+        } finally {p.close();assertTrue(p.awaitStopped(2000));}
     }
 
     @Test public void modelFailureStopsAllWorkersAndClosesModel() throws Exception {

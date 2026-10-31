@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <memory>
+#include <string>
 
 namespace cleanwave {
 
@@ -35,6 +36,8 @@ class SeparationModel final {
   void Process(const SpectralBuffer& left, const SpectralBuffer& right,
                SourceHeads& outputs);
   [[nodiscard]] StateBuffer StateSnapshot() const;
+  // Which CPU kernels were selected at start-up and why (diagnostics only).
+  [[nodiscard]] std::string KernelReport() const;
 
  private:
   class Impl;

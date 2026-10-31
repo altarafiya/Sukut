@@ -1,4 +1,4 @@
-#include "realtime/RealtimeCleaner.h"
+﻿#include "realtime/RealtimeCleaner.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -50,6 +50,11 @@ void RealtimeCleaner::SetMode(ProcessingMode mode, bool silence_recovery) {
   ++config_.revision;
 }
 
+void RealtimeCleaner::EnableEfficiency(bool enabled) {
+  efficiency_.store(enabled);
+  dsp_.SetHighBandGuard(enabled);
+}
+
 CleanerControlSnapshot RealtimeCleaner::Controls() const {
   const auto config = ReadConfiguration();
   return {config.mode, config.mix, config.custom, config.revision};
@@ -92,9 +97,12 @@ bool RealtimeCleaner::Warmup(std::stop_token stop) {
   burst_covered_offset_ = 0;
   stream_started_ = false;
   recovery_was_silent_ = false;
+  silent_packets_ = 0;
+  standby_ = false;
   {
     std::lock_guard lock(stats_mutex_);
     stats_ = {};
+    stats_.kernels = dsp_.KernelReport();
     stats_.burst_allowance_ms = std::chrono::duration<double,std::milli>(recovery_.BurstAllowance()).count();
     stats_.burst_credit_ms = std::chrono::duration<double,std::milli>(recovery_.BurstCredit()).count();
   }
@@ -125,6 +133,24 @@ ProcessInfo RealtimeCleaner::Process(
     recovery_was_silent_ = false;
   }
   stream_started_ = true;
+  // Standby: nothing is playing. Never gated by loudness; any nonzero sample,
+  // even 1 LSB, leaves standby and is processed normally in this same hop.
+  // History is already all zero, so skipping the DSP loses no context. The
+  // recurrent state is held (not advanced) while resting, as on Android.
+  const bool silent = !first && efficiency_.load(std::memory_order_relaxed) && !off &&
+      std::all_of(input.begin(), input.end(), [](std::int16_t s) { return s == 0; });
+  if (!silent) { silent_packets_ = 0; standby_ = false; }
+  else if (silent_packets_ < kStandbyHoldPackets) ++silent_packets_;
+  if (standby_) {
+    output.fill(0);
+    const auto rest_time = Clock::now() - total_start;
+    {
+      std::lock_guard lock(stats_mutex_);
+      ++stats_.packets; ++stats_.standby_packets; stats_.standby = true;
+    }
+    return {CleanerWork::Bypass, recovery_.Paused(), false, {}, rest_time,
+            config.revision, config.voice_q12, config.music_q12, config.other_q12, config.mode, {}, false};
+  }
   const auto work = off ? CleanerWork::Bypass : recovery_.NextWork();
   const auto engine_start = Clock::now();
   const auto cpu_start = collect_diagnostics_ ? ReadThreadCpuTime() : ThreadCpuSample{};
@@ -151,10 +177,19 @@ ProcessInfo RealtimeCleaner::Process(
     recovery_was_silent_ = config.silence_recovery && recovery_.Paused();
   }
   if (reset) dsp_.ResetNeuralState();
+  // Rest only once the processed output itself has decayed to exact zero.
+  bool entered_standby = false;
+  if (silent && silent_packets_ >= kStandbyHoldPackets &&
+      std::all_of(output.begin(), output.end(), [](std::int16_t s) { return s == 0; })) {
+    standby_ = true; entered_standby = true;
+  }
   const auto total_time = Clock::now() - total_start;
   {
     std::lock_guard lock(stats_mutex_);
     ++stats_.packets;
+    if (entered_standby) ++stats_.standby_entries;
+    stats_.standby = standby_;
+    stats_.high_band_gain = dsp_.HighBandGain();
     if (work == CleanerWork::Bypass) ++stats_.bypasses;
     else ++stats_.ai_runs;
     if (work == CleanerWork::RecoveryProbe) ++stats_.probes;

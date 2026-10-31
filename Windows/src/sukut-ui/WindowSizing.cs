@@ -14,7 +14,9 @@ internal static class WindowSizing
     {
         IntPtr handle = WinRT.Interop.WindowNative.GetWindowHandle(window);
         double scale = GetDpiForWindow(handle) / 96.0;
-        int width = (int)Math.Round(840 * scale), height = (int)Math.Round(780 * scale);
+        // Desktop proportions: modes and the Playback box side by side. Tall
+        // enough for the whole Home in Arabic with Optimized's background slider.
+        int width = (int)Math.Round(1040 * scale), height = (int)Math.Round(720 * scale);
         UpdateMinimum(window);
         var work = DisplayArea.GetFromWindowId(window.AppWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
         width = Math.Min(width, work.Width); height = Math.Min(height, work.Height);
@@ -31,7 +33,7 @@ internal static class WindowSizing
         double scale = dpi / 96.0;
         if (window.AppWindow.Presenter is OverlappedPresenter presenter)
         {
-            int width = Math.Min((int)Math.Round(700 * scale), work.Width), height = Math.Min((int)Math.Round(560 * scale), work.Height);
+            int width = Math.Min((int)Math.Round(420 * scale), work.Width), height = Math.Min((int)Math.Round(480 * scale), work.Height);
             presenter.PreferredMinimumWidth = width;
             presenter.PreferredMinimumHeight = height;
         }

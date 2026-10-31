@@ -17,7 +17,7 @@ class AudioRouting final {
   ~AudioRouting();
   void Begin(const std::wstring& cable,const std::wstring& physical,unsigned pid,const std::wstring& owner);
   void Restore(const std::wstring& expected_owner={},bool defer_missing_source=true);
-  void RestorePending(unsigned active_pid=0,bool all_system_active=false); // idle/controller thread only
+  bool RestorePending(unsigned active_pid=0,bool all_system_active=false,const std::wstring& owner={}); // true when matching pending records are cleared
   void PollVolume(); // controller thread only; never an audio worker
   void CheckRoute(); // detects external rerouting without stealing it back
  private:

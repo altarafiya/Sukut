@@ -4,6 +4,40 @@ namespace Sukut;
 public sealed class PhoneToolsTests
 {
     [Fact]
+    public async Task TransientOfflineStateIsRefreshedWithoutResettingAdb()
+    {
+        int calls = 0;
+        var devices = await PhoneTools.DiscoverDevices(() => Task.FromResult(
+            ++calls == 1 ? "USB1 offline\n" : "USB1 device model:Phone\n"), _ => Task.CompletedTask);
+        Assert.Equal(2, calls);
+        Assert.Equal("device", Assert.Single(devices).State);
+    }
+    [Fact]
+    public async Task UnauthorizedPhoneIsNotRetriedOrTreatedAsOnline()
+    {
+        int calls = 0;
+        var devices = await PhoneTools.DiscoverDevices(() => { calls++; return Task.FromResult("USB1 unauthorized\n"); });
+        Assert.Equal(1, calls);
+        Assert.Equal("unauthorized", Assert.Single(devices).State);
+    }
+    [Fact]
+    public void AStaleOfflineWirelessEntryDoesNotHideTheSingleConnectedUsbPhone()
+    {
+        var devices = PhoneTools.ParseDevices("192.168.1.2:5555 offline\nUSB1 device model:Phone\n");
+        Assert.Equal("USB1", PhoneTools.SelectDevice(devices, "192.168.1.2:5555")?.Serial);
+        var changed = PhoneTools.ParseDevices("USB1 device model:Phone\nUSB2 device model:Tablet\n");
+        Assert.Equal("USB1", PhoneTools.SelectDevice(changed, "USB1")?.Serial);
+        Assert.Null(PhoneTools.SelectDevice(changed, null));
+    }
+    [Fact]
+    public void BetaVersionMetadataCanBeBundledWithoutChangingUpdateCodeSemantics()
+    {
+        var version = PhoneTools.ParseSukutBundleVersion("0.4.0-beta.1\n38\n");
+        Assert.Equal("0.4.0-beta.1", version.Version);
+        Assert.Equal(38, version.Code);
+        Assert.True(new SukutInstallation(37, version.Code, version.Version).CanUpdate);
+    }
+    [Fact]
     public void BundleVersionAndUpdateDecisionsKeepNewerInstalls()
     {
         var version = PhoneTools.ParseSukutBundleVersion("0.3.30\n36\n");

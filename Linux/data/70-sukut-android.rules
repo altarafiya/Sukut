@@ -1,0 +1,5 @@
+# Sukut: let the signed-in user reach any Android phone with USB debugging on,
+# including makers android-udev-rules does not list. It matches the ADB
+# interface (class ff, subclass 42, protocol 01) on the USB device itself.
+# "uaccess" must be set before 73-seat-late.rules applies it.
+ACTION=="add|bind", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ENV{ID_USB_INTERFACES}=="*:ff4201:*", MODE="0660", GROUP="plugdev", TAG+="uaccess"

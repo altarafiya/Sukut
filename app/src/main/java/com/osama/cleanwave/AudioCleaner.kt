@@ -13,7 +13,10 @@ interface AudioCleaner : AutoCloseable {
     fun setAmplification(db: Int) = Unit
     fun setSilentRecovery(silent: Boolean) = Unit
     fun setBuffering(profile: Int) = Unit
+    fun setScreenOff(off: Boolean) = Unit
     fun isBypassed(): Boolean
+    /** True while nothing is playing and the route may rest (no model work, track paused). */
+    fun isStandby(): Boolean = false
     fun metrics(): String
     override fun close()
 }

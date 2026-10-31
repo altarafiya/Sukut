@@ -48,7 +48,7 @@ class SukutUiPhoneTest {
                         report.appendText("$locale forward translation=$translation\n")
                     }
                     SystemClock.sleep(350)
-                    screenshot("setup-$locale-shizuku")
+                    screenshot("setup-$locale-worker")
                     click(setup, R.string.back)
                     SystemClock.sleep(80)
                     if (ValueAnimator.areAnimatorsEnabled()) ins.runOnMainSync {
@@ -113,8 +113,8 @@ class SukutUiPhoneTest {
                 try {
                     ins.runOnMainSync {
                         val all = views(settings.window.decorView).filterIsInstance<TextView>()
-                        val ready = all.first { it.text.toString() == settings.getString(R.string.shizuku_running_shell) }
-                        val title = all.first { it.text.toString() == settings.getString(R.string.shizuku) }
+                        val ready = all.first { it.text.toString() == settings.getString(R.string.worker_running_shell) }
+                        val title = all.first { it.text.toString() == settings.getString(R.string.worker) }
                         assertEquals("Readiness is on a different row", title.parent, ready.parent)
                         assertEquals(1, ready.lineCount)
                         (ready.parent as View).requestRectangleOnScreen(android.graphics.Rect(0, 0, (ready.parent as View).width, ready.height), true)

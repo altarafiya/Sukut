@@ -1,0 +1,4 @@
+<resources>
+ <item name="home_scroll" type="id"/>
+ <item name="settings_scroll" type="id"/>
+</resources>

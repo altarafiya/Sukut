@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
+import org.lsposed.hiddenapibypass.HiddenApiBypass;
 
 /** Control-plane capture routing. Never reads audio/video or changes the DSP/output buffers. */
 final class ScreenRecordingRouter implements AutoCloseable {
@@ -53,7 +54,7 @@ final class ScreenRecordingRouter implements AutoCloseable {
     private void registerNativeCallback() throws Exception {
         Class<?> system=Class.forName("android.media.AudioSystem");
         Class<?> type=Class.forName("android.media.AudioSystem$AudioRecordingCallback");
-        Field field=system.getDeclaredField("sRecordingCallback");field.setAccessible(true);
+        Field field=field(system,"sRecordingCallback",true);
         synchronized(system) {
             previousCallback=field.get(null);
             nativeCallback=Proxy.newProxyInstance(type.getClassLoader(),new Class<?>[]{type},(proxy,method,args)->{
@@ -71,15 +72,30 @@ final class ScreenRecordingRouter implements AutoCloseable {
         if(publicCallbackRegistered)try{manager.unregisterAudioRecordingCallback(callback);}catch(RuntimeException ignored){}
         if(nativeCallback!=null)try {
             Class<?> system=Class.forName("android.media.AudioSystem"), type=Class.forName("android.media.AudioSystem$AudioRecordingCallback");
-            Field field=system.getDeclaredField("sRecordingCallback");field.setAccessible(true);
+            Field field=field(system,"sRecordingCallback",true);
             synchronized(system) {
                 if(field.get(null)==nativeCallback)call(system,null,"setRecordingCallback",new Class<?>[]{type},previousCallback);
             }
         }catch(Exception unavailable){Log.w("SukutRecording","Recording listener could not be restored");}
     }
 
+    // The authorised worker enables hidden-API exemptions before creating us.
+    // Prefer ART's real Field object: on some Android 16 builds the bypass
+    // enumerator returns placeholder fields whose names are all "i" or "s",
+    // so searching that list silently disables both callback and mix updates.
+    private static Field field(Class<?> type,String name,boolean isStatic) throws NoSuchFieldException {
+        try {
+            Field candidate=type.getDeclaredField(name);
+            if(Modifier.isStatic(candidate.getModifiers())==isStatic){
+                candidate.setAccessible(true);return candidate;
+            }
+        } catch(NoSuchFieldException unavailable) { /* Older restricted runtimes use the fallback below. */ }
+        for(Field candidate:isStatic?HiddenApiBypass.getStaticFields(type):HiddenApiBypass.getInstanceFields(type))
+            if(candidate.getName().equals(name)){candidate.setAccessible(true);return candidate;}
+        throw new NoSuchFieldException(name);
+    }
     private static Object call(Class<?> type,Object receiver,String name,Class<?>[] signature,Object...args) throws Exception {
-        Method method=type.getDeclaredMethod(name,signature);method.setAccessible(true);return method.invoke(receiver,args);
+        Method method=HiddenApiBypass.getDeclaredMethod(type,name,signature);method.setAccessible(true);return method.invoke(receiver,args);
     }
     private static List<Object> mixes() throws Exception {
         List<Object> mixes=new ArrayList<>();
@@ -101,7 +117,7 @@ final class ScreenRecordingRouter implements AutoCloseable {
         Class<?> mixType=Class.forName("android.media.audiopolicy.AudioMix"), ruleType=Class.forName("android.media.audiopolicy.AudioMixingRule");
         // Native enumeration can omit UID criteria from the Java rule; reconstruct
         // the complete rule from the native policy snapshot before serializing it.
-        Field field=mixType.getDeclaredField("mRule");field.setAccessible(true);field.set(mix,original);
+        Field field=field(mixType,"mRule",false);field.set(mix,original);
         Object mixArray=Array.newInstance(mixType,1), ruleArray=Array.newInstance(ruleType,1);
         Array.set(mixArray,0,mix);Array.set(ruleArray,0,replacement);
         int result=(Integer)call(Class.forName("android.media.AudioSystem"),null,"updatePolicyMixes",new Class<?>[]{mixArray.getClass(),ruleArray.getClass()},mixArray,ruleArray);

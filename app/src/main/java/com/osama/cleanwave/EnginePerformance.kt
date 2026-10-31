@@ -4,24 +4,24 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.SharedPreferences
-import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.RippleDrawable
-import android.view.Gravity
 import android.view.View
-import android.view.Window
-import android.view.accessibility.AccessibilityNodeInfo
-import android.widget.*
+import android.widget.LinearLayout
 
 internal object EnginePerformance {
-    data class Mode(val label: Int, val detail: Int, val icon: Int)
+    /** delay and smooth are 1..3 for the plain-language meter; 0 means "your choice". */
+    data class Mode(val label: Int, val detail: Int, val icon: Int, val summary: Int, val delay: Int = 0, val smooth: Int = 0)
     val modes = listOf(
-        Mode(R.string.performance_lowest, R.string.performance_lowest_detail, R.drawable.ic_fast_output),
-        Mode(R.string.performance_balanced, R.string.performance_balanced_detail, R.drawable.ic_buffer),
-        Mode(R.string.output_higher_quality, R.string.performance_quality_detail, R.drawable.ic_quality),
-        Mode(R.string.performance_custom, R.string.performance_custom_detail, R.drawable.ic_sliders),
+        Mode(R.string.performance_lowest, R.string.performance_lowest_detail, R.drawable.ic_fast_output, R.string.performance_lowest_short, 1, 1),
+        Mode(R.string.performance_balanced, R.string.performance_balanced_detail, R.drawable.ic_buffer, R.string.performance_balanced_short, 2, 2),
+        Mode(R.string.performance_wireless, R.string.performance_quality_detail, R.drawable.ic_headphones, R.string.performance_quality_short, 3, 3),
+        Mode(R.string.performance_custom, R.string.performance_custom_detail, R.drawable.ic_sliders, R.string.performance_custom_short),
     )
+    fun meter(context: Context, mode: Mode): CharSequence? {
+        if (mode.delay == 0) return null
+        fun dots(level: Int) = "●".repeat(level) + "○".repeat(3 - level)
+        return context.getString(R.string.meter_delay) + "  " + dots(mode.delay) + "     " +
+            context.getString(R.string.meter_smooth) + "  " + dots(mode.smooth)
+    }
     fun selected(context: Context) = EnginePerformanceConfig.mode(CleanerPrefs.effectsCompatibility(context), CleanerPrefs.buffering(context), CleanerPrefs.customPerformance(context))
     fun select(context: Context, mode: Int) {
         require(mode in modes.indices)
@@ -37,85 +37,106 @@ internal object EnginePerformance {
             CleanerPrefs.customPerformance(context) || EnginePerformanceConfig.mode(effects, next) == EnginePerformanceConfig.CUSTOM)
         return true
     }
+
+    fun bufferLabel(context: Context) = context.getString(listOf(R.string.buffer_lowest, R.string.buffer_balanced, R.string.buffer_maximum)[CleanerPrefs.buffering(context)])
+    fun effectsSummary(context: Context) = context.getString(if (CleanerPrefs.effectsCompatibility(context)) R.string.effects_on else R.string.effects_off)
+
     fun choices(activity: Activity, onChanged: () -> Unit = {}): View {
         val ui = MobileUi(activity)
         val panel = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; tag = "engine_performance_choices" }
-        fun refresh() {
-            panel.removeAllViews()
-            if (CleanerPrefs.bluetoothOutput(activity)) {
-                panel.addView(ui.text(TextAccents.color(activity, activity.getString(R.string.bluetooth_output_notice)), 13f, color = ui.warning).apply {
-                    tag = "bluetooth_output_notice"; setPadding(0, 0, 0, ui.dp(12))
-                })
-            }
-            modes.forEachIndexed { index, mode ->
-                val checked = selected(activity) == index
-                val color = if (checked) ui.accent else ui.secondary
-                val shape = ui.rounded(if (checked) { if (ui.dark) 0xFF1A3051.toInt() else 0xFFE8F1FF.toInt() }
-                    else if (ui.dark) 0xFF27272C.toInt() else 0xFFF6F6F9.toInt(), 16).apply { setStroke(ui.dp(1), if (checked) ui.accent else Color.TRANSPARENT) }
-                val row = LinearLayout(activity).apply {
-                    gravity = Gravity.CENTER_VERTICAL; minimumHeight = ui.dp(64)
-                    setPadding(ui.dp(14), ui.dp(10), ui.dp(14), ui.dp(10))
-                    background = RippleDrawable(ColorStateList.valueOf(0x233482FF), shape, ui.rounded(Color.WHITE, 16))
-                    isClickable = true; isFocusable = true; isSelected = checked; tag = "performance_$index"
-                    contentDescription = "${activity.getString(mode.label)}, ${activity.getString(mode.detail)}"
-                    accessibilityDelegate = object : View.AccessibilityDelegate() {
-                        override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {
-                            super.onInitializeAccessibilityNodeInfo(host, info); info.className = "android.widget.RadioButton"
-                            info.isCheckable = true; info.isChecked = checked
-                        }
-                    }
-                    setOnClickListener { select(activity, index); refresh(); onChanged() }
-                }
-                row.addView(ImageView(activity).apply { setImageResource(mode.icon); imageTintList = ColorStateList.valueOf(color); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO },
-                    LinearLayout.LayoutParams(ui.dp(24), ui.dp(24)).apply { marginEnd = ui.dp(12) })
-                row.addView(LinearLayout(activity).apply {
-                    orientation = LinearLayout.VERTICAL; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-                    addView(ui.text(mode.label, 15f, true, if (checked) ui.accent else ui.primary))
-                    addView(ui.text(TextAccents.color(activity, activity.getString(mode.detail)), 12f, color = ui.secondary).apply { setPadding(0, ui.dp(3), 0, 0) })
-                }, LinearLayout.LayoutParams(0, -2, 1f))
-                row.addView(ImageView(activity).apply { setImageResource(if (checked) R.drawable.ic_check_circle else R.drawable.ic_circle_outline); imageTintList = ColorStateList.valueOf(color); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(ui.dp(20), ui.dp(20)))
-                panel.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (index > 0) topMargin = ui.dp(8) })
-            }
-            if (selected(activity) == EnginePerformanceConfig.CUSTOM) {
-                panel.addView(PerformanceSlider(activity, R.string.output_quality,
-                    listOf(R.string.output_raw_quality, R.string.output_higher_quality),
-                    listOf(R.drawable.ic_fast_output, R.drawable.ic_quality),
-                    if (CleanerPrefs.effectsCompatibility(activity)) 1 else 0, ui.accent, "custom_output_quality") { which ->
-                    CleanerPrefs.setEnginePerformance(activity, which == 1, CleanerPrefs.buffering(activity), custom = true); onChanged()
-                }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
-                panel.addView(PerformanceSlider(activity, R.string.buffering,
-                    listOf(R.string.buffer_lowest, R.string.buffer_balanced, R.string.buffer_maximum),
-                    List(3) { R.drawable.ic_buffer }, CleanerPrefs.buffering(activity), ui.warning, "custom_audio_buffering") { which ->
-                    CleanerPrefs.setEnginePerformance(activity, CleanerPrefs.effectsCompatibility(activity), which, custom = true); onChanged()
-                }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
-            }
-            SukutTypography.apply(panel)
+        val audio=activity.getSystemService(android.media.AudioManager::class.java)
+        val bluetoothNote=ui.notice(ui.palette.warningContainer).apply {
+            tag="phone_effects_bluetooth_note"
+            addView(ui.text(TextAccents.color(activity,activity.getString(R.string.phone_effects_delay)),13f,color=ui.warning))
         }
-        // Route changes refresh an open dialog/setup without rebuilding sliders on every drag.
-        val routeChanges = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == CleanerPrefs.BLUETOOTH_OUTPUT_KEY) panel.post { if (panel.isAttachedToWindow) refresh() }
+        var applying = false
+        val effects = SukutSwitch(activity).apply {
+            tag = "phone_effects_switch"
+            contentDescription = activity.getString(R.string.phone_effects)
+            isChecked = CleanerPrefs.effectsCompatibility(activity)
+        }
+        panel.addView(ui.card(16).apply {
+            addView(LinearLayout(activity).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                addView(ui.icon(R.drawable.ic_headphones, ui.accent, 23), LinearLayout.LayoutParams(ui.dp(23), ui.dp(23)).apply { marginEnd = ui.dp(12) })
+                addView(ui.text(R.string.phone_effects, 16f, true), LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = ui.dp(12) })
+                addView(effects, LinearLayout.LayoutParams(-2, -2))
+            })
+            addView(bluetoothNote,LinearLayout.LayoutParams(-1,-2).apply { topMargin=ui.dp(12) })
+        })
+        val buffering = SegmentedChoice(activity,
+            listOf(R.string.buffer_lowest, R.string.buffer_balanced, R.string.buffer_maximum).map(activity::getString),
+            CleanerPrefs.buffering(activity), (0..2).map { ModeStyle.buffer(it, ui.dark) }) { which ->
+            if (!applying) { CleanerPrefs.setEnginePerformance(activity, effects.isChecked, which, custom = true); onChanged() }
+        }.apply { tag = "audio_buffering" }
+        val bufferIcon = ui.icon(ModeStyle.bufferIcon(CleanerPrefs.buffering(activity)), ModeStyle.buffer(CleanerPrefs.buffering(activity), ui.dark), 23).apply { tag = "buffering_icon" }
+        panel.addView(ui.card(16).apply {
+            addView(LinearLayout(activity).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                addView(bufferIcon, LinearLayout.LayoutParams(ui.dp(23), ui.dp(23)).apply { marginEnd = ui.dp(12) })
+                addView(ui.text(R.string.buffering, 16f, true), LinearLayout.LayoutParams(0, -2, 1f))
+            })
+            addView(ui.text(R.string.buffering_short_note, 13f, color = ui.secondary).apply { setPadding(0, ui.dp(6), 0, ui.dp(14)) })
+            addView(buffering, LinearLayout.LayoutParams(-1, -2))
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
+        effects.setOnCheckedChangeListener { _, checked ->
+            if (!applying) { CleanerPrefs.setEnginePerformance(activity, checked, buffering.selected, custom = true); onChanged() }
+        }
+        fun refresh() {
+            applying = true
+            effects.isChecked = CleanerPrefs.effectsCompatibility(activity)
+            buffering.select(CleanerPrefs.buffering(activity))
+            bufferIcon.setImageResource(ModeStyle.bufferIcon(buffering.selected))
+            bufferIcon.imageTintList = android.content.res.ColorStateList.valueOf(ModeStyle.buffer(buffering.selected, ui.dark))
+            applying = false
+            bluetoothNote.visibility=if(BluetoothAudioDevices.connected(activity))View.VISIBLE else View.GONE
+        }
+        val deviceChanged=object:android.media.AudioDeviceCallback() {
+            override fun onAudioDevicesAdded(devices:Array<out android.media.AudioDeviceInfo>) { refresh() }
+            override fun onAudioDevicesRemoved(devices:Array<out android.media.AudioDeviceInfo>) { refresh() }
+        }
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "effects_compatibility" || key == "buffering") panel.post { if (panel.isAttachedToWindow) refresh() }
         }
         panel.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(view: View) { CleanerPrefs.registerListener(activity, routeChanges); refresh() }
-            override fun onViewDetachedFromWindow(view: View) { CleanerPrefs.unregisterListener(activity, routeChanges) }
+            override fun onViewAttachedToWindow(view: View) {
+                CleanerPrefs.registerListener(activity,listener)
+                audio.registerAudioDeviceCallback(deviceChanged,android.os.Handler(android.os.Looper.getMainLooper())); refresh()
+            }
+            override fun onViewDetachedFromWindow(view: View) {
+                CleanerPrefs.unregisterListener(activity,listener); audio.unregisterAudioDeviceCallback(deviceChanged)
+            }
         })
-        refresh()
         return panel
     }
     fun show(activity: Activity, onChanged: () -> Unit = {}): Dialog {
         val ui = MobileUi(activity)
-        val dialog = Dialog(activity).apply { requestWindowFeature(Window.FEATURE_NO_TITLE) }
-        val content = ui.card(20).apply {
-            addView(ui.text(R.string.engine_performance, 21f, true))
-            addView(ui.text(TextAccents.color(activity, activity.getString(R.string.performance_help)), 13f, color = ui.secondary).apply { setPadding(0, ui.dp(8), 0, ui.dp(16)) })
-            addView(choices(activity, onChanged))
-            addView(ui.space(12)); addView(ui.button(R.string.performance_done) { dialog.dismiss() })
+        var dialog: Dialog? = null
+        var help: Dialog? = null
+        val content = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(ui.dp(20), ui.dp(16), ui.dp(20), ui.dp(20))
+            addView(LinearLayout(activity).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                addView(ui.text(R.string.engine_performance, 23f, true).apply { isAccessibilityHeading = true }, LinearLayout.LayoutParams(0, -2, 1f))
+                addView(ui.text("?", 22f, true, ui.accent).apply {
+                    tag = "performance_help"; gravity = android.view.Gravity.CENTER
+                    contentDescription = activity.getString(R.string.performance_help_title)
+                    background = ui.pressable(ui.palette.cardAlt, 24); isFocusable = true
+                    setOnClickListener {
+                        help?.dismiss()
+                        help = showHelp(activity).also { opened -> opened.setOnDismissListener { if (help === opened) help = null } }
+                    }
+                }, LinearLayout.LayoutParams(ui.dp(48), ui.dp(48)))
+            })
+            addView(ui.space(16)); addView(choices(activity, onChanged))
         }
-        SukutTypography.apply(content)
-        dialog.setContentView(ScrollView(activity).apply { overScrollMode = View.OVER_SCROLL_NEVER; addView(content) })
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.show()
-        dialog.window?.setLayout(minOf(activity.resources.displayMetrics.widthPixels - ui.dp(32), ui.dp(600)), -2)
-        return dialog
+        content.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(view: View) {}
+            override fun onViewDetachedFromWindow(view: View) { help?.dismiss(); help = null }
+        })
+        val done = ui.button(R.string.performance_done, 0, MobileUi.Tone.FILLED) { dialog?.dismiss() }
+        return ui.sheet(content, done).also { dialog = it }
     }
+    private fun showHelp(activity: Activity): Dialog = AudioHelp.showPerformance(activity)
 }

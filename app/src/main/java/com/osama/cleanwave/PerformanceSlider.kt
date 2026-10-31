@@ -22,35 +22,38 @@ internal class PerformanceSlider(
     selected: Int,
     color: Int,
     sliderTag: String,
+    hints: List<Int> = emptyList(),
     onSelect: (Int) -> Unit,
 ) : LinearLayout(activity) {
     init {
         val ui = MobileUi(activity)
-        val ink = if (ui.dark) color else Color.rgb((Color.red(color) * .66f).toInt(),
-            (Color.green(color) * .66f).toInt(), (Color.blue(color) * .66f).toInt())
+        val ink = color
         orientation = VERTICAL
         setPadding(ui.dp(14), ui.dp(14), ui.dp(14), ui.dp(12))
-        background = ui.rounded(if (ui.dark) Color.rgb(39, 39, 44) else Color.rgb(246, 246, 249), 18)
+        background = ui.rounded(ui.cardColor, 18)
         val icon = ImageView(activity).apply {
             imageTintList = ColorStateList.valueOf(color)
-            background = ui.rounded((color and 0x00FFFFFF) or 0x22000000, 10)
-            setPadding(ui.dp(7), ui.dp(7), ui.dp(7), ui.dp(7))
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         addView(LinearLayout(activity).apply {
             gravity = Gravity.CENTER_VERTICAL
-            addView(icon, LayoutParams(ui.dp(36), ui.dp(36)).apply { marginEnd = ui.dp(10) })
-            addView(ui.text(title, 15f, true), LayoutParams(0, -2, 1f))
+            addView(icon, LayoutParams(ui.dp(24), ui.dp(24)).apply { marginEnd = ui.dp(10) })
+            addView(ui.text(title, 16f, true), LayoutParams(0, -2, 1f))
         }, LayoutParams(-1, -2))
         val value = ui.text(labels[selected], 16f, true, ink).apply {
             setPadding(0, ui.dp(10), 0, 0)
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         addView(value, LayoutParams(-1, -2))
+        val hint = if (hints.isNotEmpty()) ui.text(hints[selected], 14f, color = ui.secondary).also {
+            it.setPadding(0, ui.dp(4), 0, 0); addView(it, LayoutParams(-1, -2))
+        } else null
         val steps = labels.mapIndexed { index, label ->
-            ui.text(label, 11f).apply {
+            ui.text(label, 13f).apply {
                 gravity = when (index) { 0 -> Gravity.START; labels.lastIndex -> Gravity.END; else -> Gravity.CENTER }
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                // The current value and hint remain readable above the slider.
+                if (resources.configuration.fontScale > 1.5f) visibility = GONE
             }
         }
         var committed = selected
@@ -59,13 +62,13 @@ internal class PerformanceSlider(
         fun commit(position: Int) {
             if (position != committed) { committed = position; onSelect(position) }
         }
-        val slider = SeekBar(activity).apply {
+        val slider = TouchSeekBar(activity).apply {
             tag = sliderTag
             max = labels.lastIndex; progress = selected; setKeyProgressIncrement(1)
             minimumHeight = ui.dp(64); minHeight = ui.dp(22); maxHeight = ui.dp(22)
             setPadding(ui.dp(18), 0, ui.dp(18), 0)
             splitTrack = false; tickMark = null
-            val track = ui.rounded(if (ui.dark) Color.rgb(65, 65, 73) else Color.rgb(214, 216, 224), 11)
+            val track = ui.rounded(ui.palette.cardAlt, 11)
             val fill = ClipDrawable(ui.rounded(color, 11), Gravity.LEFT, ClipDrawable.HORIZONTAL)
             progressDrawable = LayerDrawable(arrayOf(track, fill)).apply {
                 setId(0, android.R.id.background); setId(1, android.R.id.progress)
@@ -84,6 +87,7 @@ internal class PerformanceSlider(
         }
         fun preview(position: Int) {
             value.setText(labels[position]); icon.setImageResource(icons[position])
+            if (hint != null) hint.setText(hints[position])
             steps.forEachIndexed { index, label -> label.setTextColor(if (index == position) ink else ui.secondary) }
             slider.contentDescription = activity.getString(title) + ", " + activity.getString(labels[position])
             if (Build.VERSION.SDK_INT >= 30) slider.stateDescription = activity.getString(labels[position])

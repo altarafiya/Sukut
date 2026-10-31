@@ -6,9 +6,9 @@
 <p align="center"><strong>Enjoy the internet. Without the music.</strong><br>استمتع بالإنترنت، بلا موسيقى.</p>
 
 <p align="center">
-  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Windows 0.2.33" src="https://img.shields.io/badge/Windows-0.2.33-8A6944?style=flat-square"></a>
-  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Android 0.3.31" src="https://img.shields.io/badge/Android-0.3.31-4E8878?style=flat-square"></a>
-  <img alt="Linux coming soon" src="https://img.shields.io/badge/Linux-Coming%20soon-8B8B8B?style=flat-square">
+  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Windows 0.4.2" src="https://img.shields.io/badge/Windows-0.4.2-8A6944?style=flat-square"></a>
+  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Android 0.4.2" src="https://img.shields.io/badge/Android-0.4.2-4E8878?style=flat-square"></a>
+  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Linux beta" src="https://img.shields.io/badge/Linux-Beta-6B7FA8?style=flat-square"></a>
 </p>
 
 ![Sukut — quieter music, clearer speech](docs/artwork/hero.png)
@@ -23,12 +23,11 @@ and hear the speech you came for. Audio processing happens on your device.
 
 | Platform | Download | Requirements |
 | --- | --- | --- |
-| Windows | **[Download Windows installer](https://github.com/altarafiya/Sukut/releases/download/v0.2.33/Sukut-0.2.33-Windows.exe)** | Windows 10/11, x64; setup guides you through VB-CABLE |
-| Android | **[Download signed Android APK](https://github.com/altarafiya/Sukut/releases/download/v0.2.33/Sukut-0.3.31-Android.apk)** | Android 10+, ARM64; Shizuku setup is required |
-| Linux | Coming soon | Planned for GNOME, distributed as Flatpak |
+| Windows | **[Sukut 0.4.2 for Windows (ZIP)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.2-Windows-x64.zip)** | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
+| Android | **[Sukut 0.4.2 for Android (APK)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.2-Android-arm64.apk)** | Android 10+, ARM64 |
+| Linux (beta) | **[Sukut 0.4.0 beta 6 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.0-beta.6-Linux-amd64.deb)** | x64, PipeWire. Built on PikaOS 4; a Debian 13 build will follow |
 
-The Windows installer includes the Android app. Use the **Phone** page to install
-it, update it, or follow the full USB setup. [All releases and checksums →](https://github.com/altarafiya/Sukut/releases)
+[All releases and checksums →](https://github.com/altarafiya/Sukut/releases)
 
 ## Four audio modes
 
@@ -46,39 +45,47 @@ sound effects. More buffering can help with short interruptions, but adds delay.
 
 **Windows**
 
-1. Run the installer. It offers VB-CABLE if the driver is not already installed.
-2. Follow the welcome guide and select your speakers or headphones.
-3. Choose an audio mode. Use Off to return to original audio through that output.
+1. Install [VB-CABLE](https://vb-audio.com/Cable/) if you don't have it, then restart.
+2. Extract the whole ZIP folder and open `Sukut.exe`. Exit an older Sukut in the tray first.
+3. Follow the welcome guide, choose your speakers or headphones, and pick a mode.
 
-Sukut keeps working in the tray when you close its window. Use the tray menu to exit.
-The current Windows installer is not publisher-signed.
+Bluetooth headphones work too. When a new audio device connects, Sukut switches to it
+and shows a notification; turning Sukut off returns Windows sound to that device.
+Sukut keeps working in the tray when you close its window. The ZIP is not publisher-signed.
 
 **Android**
 
 1. Install the APK and open Sukut.
-2. Follow the Shizuku guide: use Sukut on a PC over USB, or wireless debugging.
-3. Grant Sukut Shizuku access, then choose a mode.
+2. Follow the setup guide to activate Sukut's audio worker: on Android 11+ through
+   Wireless debugging on the phone itself, or over USB from Sukut on Windows or Linux.
+3. Choose a mode in the app, its notification or Quick Settings.
 
-Start Shizuku again after rebooting your phone; reinstalling the apps is normally
-unnecessary. For Bluetooth, Sukut selects compatible output settings and lets you
-adjust them. Device sound effects depend on your phone and output.
+The GitHub APK and the Google Play app are signed differently. To switch from one to
+the other, uninstall the one you have first.
+
+**Linux (beta)**
+
+1. Open the `.deb` with your software installer, or run
+   `sudo apt install ./Sukut-0.4.0-beta.6-Linux-amd64.deb`.
+2. Open Sukut from your apps and follow the welcome guide.
+3. The Phone page installs and activates the Android app over USB, all from the window.
 
 ## Made for everyday listening
 
 - English and Arabic, with light, dark and system themes.
-- Windows source-app selection, physical volume control and phone setup.
+- Source-app selection, Bluetooth output switching and phone setup on Windows and Linux.
 - Android tablet layouts, notification controls and a Quick Settings tile.
 - Adjustable background sound, amplification and buffering.
 - Local processing, with no cloud audio upload.
 
-![Windows, Android, and Linux coming soon](docs/artwork/platforms.svg)
-
 ## Updates and support
 
-See [what’s new](CHANGELOG.md). Found a problem? [Open an issue](https://github.com/altarafiya/Sukut/issues/new/choose)
+See [what's new](CHANGELOG.md). Found a problem? [Open an issue](https://github.com/altarafiya/Sukut/issues/new/choose)
 with your app version, device/output, and the steps that caused it.
+Privacy policy: <https://altarafiya.github.io/Sukut/privacy.html>.
 
 Development layout and build guidance are in [AGENTS.md](AGENTS.md).
+Model files, sealed engine assets and signing material are not in this repository.
 Third-party components retain their [notices and licenses](THIRD_PARTY_NOTICES.md).
 
 <p align="center"><strong>Developed by الطرفية</strong></p>

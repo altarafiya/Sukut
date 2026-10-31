@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Sukut
+Name[ar]=سُكوت
+GenericName=Music Filter
+GenericName[ar]=مرشّح الموسيقى
+Comment=Internet without music
+Comment[ar]=إنترنت بلا موسيقى
+Exec=sukut
+Icon=io.github.altarafiya.Sukut
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=music;filter;speech;audio;mute;
+Keywords[ar]=موسيقى;مرشح;كلام;صوت;
+StartupNotify=true
+SingleMainWindow=true

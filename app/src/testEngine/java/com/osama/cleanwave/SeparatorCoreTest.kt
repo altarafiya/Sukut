@@ -54,7 +54,7 @@ class SeparatorCoreTest {
             destination = output,
         )
 
-        // Float->Q15 uses Audio's +0.5/truncate conversion, so tolerate one LSB.
+        // Float->Q15 uses +0.5/truncate conversion, so tolerate one LSB.
         assertTrue(output[0] in 4999..5001)
     }
 }

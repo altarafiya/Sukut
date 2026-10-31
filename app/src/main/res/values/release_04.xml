@@ -1,0 +1,6 @@
+<resources>
+ <string name="local_allow_notifications">Allow pairing notifications</string>
+ <string name="privacy_policy">Privacy policy</string>
+ <string name="support_email">Contact support</string>
+ <string name="email_copied">Support email copied</string>
+</resources>

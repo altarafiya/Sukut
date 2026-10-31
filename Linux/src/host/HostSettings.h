@@ -1,0 +1,34 @@
+#pragma once
+
+// Sukut's settings on Linux: $XDG_CONFIG_HOME/sukut/settings.json, with the
+// Windows key names (Linux/PLAN.md section 7). Output is a PipeWire node.name.
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
+namespace sukut::host {
+
+struct HostSettings {
+  std::string language = "en";  // "en" or "ar"
+  std::string theme = "system";
+  std::string output;           // real output node.name; empty = the current default
+  std::uint32_t source_pid = 0; // one app; 0 = all system audio
+  int preferred_mode = 1;       // the mode Power turns on
+  int buffering = 1;
+  int amplification_db = 0;
+  int optimized_background_db = 0;
+  bool setup_completed = false;
+  bool close_to_tray = true;
+  bool start_with_system = false;
+  std::uint64_t host_settings_version = 0;
+
+  static std::filesystem::path Path();
+  static HostSettings Load();
+  bool Save(std::string& error) const;
+  [[nodiscard]] bool Arabic() const { return language == "ar"; }
+};
+
+// Small JSON helpers shared by the host (flat objects only).
+std::string JsonEscape(const std::string& text);
+
+}  // namespace sukut::host

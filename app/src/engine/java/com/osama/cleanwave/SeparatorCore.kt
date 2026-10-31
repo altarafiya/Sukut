@@ -1,12 +1,12 @@
 package com.osama.cleanwave
 
 /**
- * Research-only frequency-domain wrapper around [SeparationModel].
+ * Frequency-domain wrapper around [SeparationModel].
  *
- * The surrounding native Audio engine uses 769-bin complex spectra (1536-point real FFT)
- * and feeds bins 0..511 to the neural graph as interleaved real/imaginary Q15-normalized
- * floats. The graph's first stereo head is voice and the second stereo head is music.
- * Audio derives the third "other" source as the original spectrum minus those two heads.
+ * The engine uses 769-bin complex spectra (1536-point real FFT) and feeds bins 0..511 to
+ * the neural graph as interleaved real/imaginary Q15-normalized floats. The graph's first
+ * stereo head is voice and the second stereo head is music. The third "other" source is
+ * the original spectrum minus those two heads.
  *
  * Windowing, FFT scaling, overlap/add and external-rate resampling live outside this class.
  */
@@ -19,13 +19,13 @@ internal class SeparatorCore(private val model: SeparationModel) {
         const val MODEL_COMPLEX_VALUES = MODEL_BINS * 2
         const val Q12_ONE = 4096
 
-        /** Matches DNN_Exe's int -> float conversion for bins 0..511. */
+        /** Q15 int -> model float conversion for bins 0..511. */
         fun packModelInput(spectrum: IntArray): FloatArray {
             require(spectrum.size == COMPLEX_VALUES)
             return FloatArray(MODEL_COMPLEX_VALUES) { i -> spectrum[i] / 32767.0f }
         }
 
-        /** Matches DNN_Exe's float -> int conversion: (x * 32767 + 0.5) then C int cast. */
+        /** Model float -> Q15 int conversion: (x * 32767 + 0.5) then integer truncation. */
         fun modelFloatToQ15(value: Float): Int = (value * 32767.0f + 0.5f).toInt()
 
         /**

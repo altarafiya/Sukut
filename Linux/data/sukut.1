@@ -1,0 +1,50 @@
+.TH SUKUT 1 "October 2026" "Sukut 0.4.0" "User Commands"
+.SH NAME
+sukut \- remove music from your computer's audio
+.SH SYNOPSIS
+.B sukut
+.br
+.B sukut \-\-tray
+.br
+.B sukut \-\-restore\-audio
+.br
+.B sukut \-\-phone
+.IR command " [" \-\-serial " " SERIAL ]
+.SH DESCRIPTION
+.B sukut
+opens Sukut's window. Sukut removes music from what the computer plays while
+keeping speech and other sounds, using its own PipeWire output. Its background
+part,
+.BR sukut\-host ,
+starts with the window, owns the audio engine and the tray icon, and keeps
+running in the tray when the window is closed (if Close to tray is on).
+.SH OPTIONS
+.TP
+.B \-\-tray
+Start Sukut in the tray without opening the window. The optional
+"Start with system" setting uses this.
+.TP
+.B \-\-restore\-audio
+Undo audio routing left behind if Sukut was stopped abnormally: the default
+output (only if it still names Sukut's output) and redirected app streams.
+Sukut must not be running.
+.TP
+.BI \-\-phone " command"
+Run a phone tool from the terminal, as on the Phone page: \fBdevices\fR,
+\fBinspect\fR, \fBstatus\fR, \fBinstall\fR, \fBupdate\fR, \fBsetup\fR,
+\fBopen\fR, \fBactivate\fR, \fBdeactivate\fR or \fBallow\-usb\fR. Uses \fBadb\fR(1);
+\fBallow\-usb\fR asks for administrator permission through \fBpkexec\fR(1).
+.TP
+.BI \-\-serial " SERIAL"
+With \fB\-\-phone\fR, the phone to use when more than one is connected.
+.SH FILES
+.TP
+.I ~/.config/sukut/settings.json
+Settings.
+.TP
+.I ~/.local/state/sukut/routing.json
+The routing journal used to restore audio.
+.SH SEE ALSO
+.BR adb (1),
+.BR pipewire (1),
+.BR wpctl (1)

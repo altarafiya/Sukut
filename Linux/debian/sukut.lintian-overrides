@@ -1,0 +1,14 @@
+# The activation script runs on the Android phone (pushed by adb), not on Debian:
+# its interpreter is Android's, and it is data here, so it is not executable.
+sukut: wrong-path-for-interpreter /system/bin/sh != /bin/sh [usr/share/sukut/android/activate-worker.sh]
+sukut: script-not-executable [usr/share/sukut/android/activate-worker.sh]
+# Sukut is distributed by its owner, not uploaded to Debian: there is no ITP bug.
+sukut: initial-upload-closes-no-bugs [usr/share/doc/sukut/changelog.Debian.gz:1]
+# The fonts are loaded only for Sukut (FcConfigAppFontAddFile). Debian 13 has no
+# package for IBM Plex Sans Arabic, Readex Pro or Handjet.
+sukut: font-in-non-font-package [usr/share/sukut/fonts/*]
+sukut: font-outside-font-dir [usr/share/sukut/fonts/*]
+# The full licence texts of the statically linked libraries, kept on purpose.
+sukut: extra-license-file [usr/share/doc/sukut/licenses/*]
+# The sealed model, fonts and Android APK are architecture-independent data.
+sukut: arch-dep-package-has-big-usr-share *

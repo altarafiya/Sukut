@@ -129,6 +129,46 @@ void Handoff(const std::filesystem::path& root){
     std::cout<<"PASS source -> All system includes prior source; exact app/default restoration; v5 watchdog restoration; OFF follows selected default. Silent fixture only.\n";
   }catch(...){try{if(route)route->Restore();WriteApp(policy.Get(),before);client->Stop();}catch(...){}throw;}
 }
+void GuardExit(const std::filesystem::path& binaries,const std::filesystem::path& root){
+  Check(!std::filesystem::exists(root),"Use a fresh guard evidence directory");
+  const auto runtime=root/L"runtime";std::filesystem::create_directories(runtime);
+  const auto journal=runtime/L"sukut-routing.ini",pending=runtime/L"pending-app-routes";
+  Journal(journal,0xffffffff,1,L"C:\\Sukut-test-absent\\source.exe");
+  const auto pid=GetCurrentProcessId();const std::wstring owner=L"test-owner";
+  const auto suffix=std::to_wstring(pid)+L"-"+owner;
+  HANDLE ready=CreateEventW(nullptr,TRUE,FALSE,(L"Local\\SukutVolumeReady-"+suffix).c_str());
+  HANDLE stop=CreateEventW(nullptr,TRUE,FALSE,(L"Local\\SukutVolumeStop-"+suffix).c_str());
+  Check(ready && stop,"cannot create guard fixture events");
+  const auto executable=binaries/L"SukutVolumeGuard.exe";
+  std::wstring command=L"\""+executable.wstring()+L"\" "+std::to_wstring(pid)+L" \""+(binaries/L"SukutEngine.dll").wstring()+L"\" \""+root.wstring()+L"\" \""+owner+L"\"";
+  STARTUPINFOW startup{};startup.cb=sizeof(startup);PROCESS_INFORMATION child{};
+  const bool launched=CreateProcessW(executable.c_str(),command.data(),nullptr,nullptr,FALSE,CREATE_NO_WINDOW,nullptr,binaries.c_str(),&startup,&child)!=0;
+  if(!launched){CloseHandle(ready);CloseHandle(stop);throw std::runtime_error("cannot launch guard fixture");}
+  CloseHandle(child.hThread);
+  try{
+    Check(WaitForSingleObject(ready,5000)==WAIT_OBJECT_0,"guard did not become ready");
+    Check(SetEvent(stop)!=0,"cannot signal graceful guard stop");
+    for(int n=0;n<80 && !std::filesystem::exists(pending);++n)Sleep(50);
+    Check(std::filesystem::is_directory(pending),"graceful Exit did not defer the absent source");
+    Check(!std::filesystem::exists(journal),"guard left the primary route owned after Exit");
+    Check(WaitForSingleObject(child.hProcess,100)==WAIT_TIMEOUT,"guard exited before pending app restoration");
+    const auto record=std::filesystem::directory_iterator(pending)->path();
+    auto next=Read(record);const auto owner_pos=next.find("owner=test-owner");
+    Check(owner_pos!=std::string::npos,"guard fixture owner missing");next.replace(owner_pos,16,"owner=new-owner");
+    // An old guard must never touch a new global lease or its owned pin.
+    const auto version_pos=next.find("version=5");Check(version_pos!=std::string::npos,"expected current journal format");
+    const auto all_pos=next.find("all_system=0");Check(all_pos!=std::string::npos,"source journal lost its mode");
+    next.replace(all_pos,12,"all_system=1");std::ofstream(journal,std::ios::binary)<<next;
+    Sleep(1200);Check(Read(journal)==next,"old guard modified a newer route lease");
+    Check(std::filesystem::exists(record),"old guard undid a route during a newer global lease");
+    std::filesystem::remove(record);
+    Check(WaitForSingleObject(child.hProcess,3000)==WAIT_OBJECT_0,"guard did not exit after its pending work cleared");
+    DWORD exit=1;Check(GetExitCodeProcess(child.hProcess,&exit)!=0 && exit==0,"guard reported restoration failure");
+    Check(Read(journal)==next,"guard completion changed the newer route");
+    std::cout<<"PASS graceful Exit retains closed-app recovery; newer lease protected; helper exits after recovery. Fake endpoints only.\n";
+  }catch(...){if(WaitForSingleObject(child.hProcess,0)==WAIT_TIMEOUT)TerminateProcess(child.hProcess,3);CloseHandle(child.hProcess);CloseHandle(ready);CloseHandle(stop);throw;}
+  CloseHandle(child.hProcess);CloseHandle(ready);CloseHandle(stop);
+}
 void Unresolved(unsigned pid,const std::filesystem::path& root){
   using namespace cleanwave::audio_detail;
   Check(!std::filesystem::exists(root),"Use a fresh evidence directory");std::filesystem::create_directories(root);
@@ -159,6 +199,7 @@ void Unresolved(unsigned pid,const std::filesystem::path& root){
 }
 int wmain(int argc,wchar_t** argv){
   try{
+    if(argc==4 && std::wstring(argv[1])==L"--guard-exit"){GuardExit(std::filesystem::absolute(argv[2]),std::filesystem::absolute(argv[3]));return 0;}
     if(argc==4 && std::wstring(argv[1])==L"--unresolved"){Unresolved(std::stoul(argv[2]),std::filesystem::absolute(argv[3]));return 0;}
     if(argc==3 && std::wstring(argv[1])==L"--handoff"){Handoff(std::filesystem::absolute(argv[2]));return 0;}
     if(argc==2 && std::wstring(argv[1])==L"--idle-child"){Sleep(2500);return 0;}
@@ -178,6 +219,8 @@ int wmain(int argc,wchar_t** argv){
     auto text=Read(first);
     Check(text.find("console=prior-console")!=std::string::npos && text.find("multimedia=prior-multimedia")!=std::string::npos,"prior app routes lost");
     Check(text.find("defaults_owned=0")!=std::string::npos && text.find("volume_owned=0")!=std::string::npos,"pending record still owns global audio settings");
+    Check(!route.RestorePending(0,false,L"test-owner"),"missing app was incorrectly reported restored");
+    Check(route.RestorePending(0,false,L"other-owner"),"an unrelated pending record kept another guard alive");
     route.RestorePending();Check(Read(first)==text,"absent app record was dropped or rewritten");
     Journal(main,0,0,L"");
     AudioRouting next(main);next.Restore();

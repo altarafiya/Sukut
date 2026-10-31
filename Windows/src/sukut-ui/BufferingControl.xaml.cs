@@ -7,10 +7,32 @@ namespace Sukut;
 public sealed partial class BufferingControl : UserControl
 {
     private static int _instances;
-    private bool _rendering, _vertical;
+    private bool _rendering, _vertical, _inline;
     private int _level;
     public int Level => _level;
     public event EventHandler? ValueCommitted;
+    /// <summary>Three equal tiles inside a host card (Home's Playback box): no frame or heading.</summary>
+    public bool Inline
+    {
+        get => _inline;
+        set { _inline = value; if (value) InlineRow(); }
+    }
+    private void InlineRow()
+    {
+        Options.ColumnDefinitions.Clear();
+        for (int column = 0; column < 3; column++) Options.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        Options.ColumnSpacing = 6; Options.HorizontalAlignment = HorizontalAlignment.Stretch;
+        Frame.Padding = new Thickness(0); Frame.BorderThickness = new Thickness(0); Frame.Background = null;
+        ContentStack.Spacing = 6;
+        Heading.Visibility = Visibility.Collapsed;
+        foreach (var card in new[] { LowestChoice, BalancedChoice, MaximumChoice })
+        {
+            card.Width = double.NaN; card.MinHeight = 36; card.CornerRadius=new CornerRadius(4); card.Padding = new Thickness(6, 4, 6, 4);
+            card.HorizontalAlignment = HorizontalAlignment.Stretch;
+            if (card.Content is StackPanel { Children: [FontIcon icon, TextBlock label] } panel) { panel.Orientation=Orientation.Horizontal; panel.Spacing = 4; icon.FontSize = 14; label.FontSize = 12; icon.VerticalAlignment=VerticalAlignment.Center; label.VerticalAlignment=VerticalAlignment.Center; label.Padding=new Thickness(0,2,0,3); }
+        }
+        Tip.HorizontalAlignment = HorizontalAlignment.Stretch; Tip.ClearValue(TextBlock.TextAlignmentProperty);
+    }
     /// <summary>Stack the three choices as full-width rows instead of the Home card layout.</summary>
     public bool Vertical
     {
@@ -36,7 +58,7 @@ public sealed partial class BufferingControl : UserControl
     {
         Grid.SetColumn(card, 0); Grid.SetRow(card, row);
         card.Width = double.NaN;
-        card.MinHeight = 40; card.Padding = new Thickness(10, 8, 10, 8);
+        card.MinHeight = 48; card.Padding = new Thickness(10, 6, 10, 6);
         card.HorizontalAlignment = HorizontalAlignment.Stretch;
         card.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         if (card.Content is StackPanel panel)
@@ -74,6 +96,7 @@ public sealed partial class BufferingControl : UserControl
         FlowDirection = arabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         Language = arabic ? "ar" : "en";
         FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources[arabic ? "SukutArabicFontFamily" : "ContentControlThemeFontFamily"];
+        if (_inline) Tip.ClearValue(TextBlock.TextAlignmentProperty);
         if (_vertical) {
             // FlowDirection already chooses the leading text edge. A local
             // Right alignment mirrors it a second time in an RTL popup.
@@ -81,14 +104,12 @@ public sealed partial class BufferingControl : UserControl
             foreach (var label in new[] { Lowest, Balanced, Maximum }) label.ClearValue(TextBlock.TextAlignmentProperty);
         }
         Heading.Text = arabic ? "التخزين المؤقت للصوت" : "Audio buffering";
-        // Reserve a trailing advance for the final glyph in popup text layout.
-        // Padding alone did not prevent Readex's final m from being clipped.
-        Lowest.Text = (arabic ? "الأقل" : "Lowest") + "\u00a0";
-        Balanced.Text = (arabic ? "متوازن" : "Balanced") + "\u00a0";
-        Maximum.Text = (arabic ? "الأكبر" : "Maximum") + "\u00a0";
+        Lowest.Text = arabic ? "الأقل" : "Lowest";
+        Balanced.Text = arabic ? "متوازن" : "Balanced";
+        Maximum.Text = arabic ? "الأكبر" : "Maximum";
         Tip.Text = arabic
-            ? "صوت جاهز احتياطيًا. زيادته تقلّل التقطّع، لكنها تؤخّر الصوت."
-            : "More audio kept ready. Fewer short pauses, with a little more delay.";
+            ? "زيادة التخزين المؤقت تقلّل التقطّع وتزيد تأخير الصوت."
+            : "Higher buffering reduces interruptions and adds audio delay.";
         AutomationProperties.SetName(LowestChoice, Lowest.Text.TrimEnd());
         AutomationProperties.SetName(BalancedChoice, Balanced.Text.TrimEnd());
         AutomationProperties.SetName(MaximumChoice, Maximum.Text.TrimEnd());

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <array>
 #include <cstddef>
@@ -60,6 +60,16 @@ class StreamingDsp final {
 
   void ResetNeuralState();
   void ResetAll();
+
+  // With music muted, scale the >16 kHz band (never predicted by the model)
+  // by the voice share of 12-16 kHz. Off by default so parity tools keep the
+  // exact reference remix; Sukut's live session enables it.
+  void SetHighBandGuard(bool enabled);
+  [[nodiscard]] float HighBandGain() const;
+  [[nodiscard]] std::string KernelReport() const;
+  static float NextHighBandGain(float current, const Spectrum& original_left,
+                                const Spectrum& original_right,
+                                const SeparationModel::SourceHeads& heads);
 
   [[nodiscard]] SeparationModel::StateBuffer ModelStateSnapshot() const;
   [[nodiscard]] double WindowComplementRelativeError() const;

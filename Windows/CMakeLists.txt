@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(CleanWaveWindows VERSION 0.2.27 LANGUAGES C CXX)
+project(CleanWaveWindows VERSION 0.4.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,7 +37,8 @@ set(FXDIV_SOURCE_DIR "${CLEANWAVE_FXDIV_SOURCE}" CACHE PATH "" FORCE)
 # Conservative CPU baseline: no acceleration delegates. Step 3 enables RUY
 # because TensorFlow Lite 2.16.1 forces that CPU kernel backend on Android,
 # making this the closest practical Windows build to the current arm64 app.
-set(TFLITE_ENABLE_XNNPACK OFF CACHE BOOL "" FORCE)
+option(CLEANWAVE_XNNPACK "Build TFLite with XNNPACK; used at runtime only after a parity and speed check" OFF)
+set(TFLITE_ENABLE_XNNPACK ${CLEANWAVE_XNNPACK} CACHE BOOL "" FORCE)
 set(TFLITE_ENABLE_EXTERNAL_DELEGATE OFF CACHE BOOL "" FORCE)
 set(TFLITE_ENABLE_GPU OFF CACHE BOOL "" FORCE)
 set(TFLITE_ENABLE_RUY ON CACHE BOOL "" FORCE)
@@ -170,11 +171,22 @@ endif()
 set_target_properties(cleanwave_realtime_verify PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+add_executable(sukut_efficiency_verify src/efficiency_verify/main.cpp)
+target_link_libraries(sukut_efficiency_verify PRIVATE cleanwave_realtime)
+if(MSVC)
+    target_compile_options(sukut_efficiency_verify PRIVATE /W4 /permissive-)
+endif()
+set_target_properties(sukut_efficiency_verify PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
 add_library(cleanwave_audio STATIC src/audio/AudioEndpoints.cpp src/audio/WasapiAdapters.cpp)
 target_include_directories(cleanwave_audio PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(cleanwave_audio PUBLIC ole32 uuid propsys avrt)
 add_executable(cleanwave_audio_probe src/audio_probe/main.cpp)
 target_link_libraries(cleanwave_audio_probe PRIVATE cleanwave_audio)
+add_executable(sukut_endpoint_tests tests/EndpointRouteTests.cpp)
+target_link_libraries(sukut_endpoint_tests PRIVATE cleanwave_audio)
+set_target_properties(sukut_endpoint_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 if(MSVC)
     target_compile_options(cleanwave_audio PRIVATE /W4 /permissive-)
     target_compile_options(cleanwave_audio_probe PRIVATE /W4 /permissive-)
@@ -248,6 +260,41 @@ target_link_libraries(SukutVolumeGuard PRIVATE shell32)
 set_target_properties(SukutVolumeGuard PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin" MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 if(MSVC)
   target_compile_options(SukutVolumeGuard PRIVATE /W4 /permissive- /utf-8)
+endif()
+
+# Always-running native host (Sukut.exe): engine, tray, Fluent flyout and the
+# pipe the WinUI window (SukutWindow.exe) uses. Static CRT, no GUI runtime.
+add_executable(SukutHost WIN32
+    src/sukut-host/main.cpp src/sukut-host/Common.cpp src/sukut-host/Engine.cpp
+    src/sukut-host/Json.cpp src/sukut-host/TrayPopup.cpp src/sukut-host/TrayCatalog.cpp
+    src/sukut-host/SukutHost.manifest src/sukut-launcher/resources.rc)
+target_include_directories(SukutHost PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(SukutHost PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE)
+target_link_libraries(SukutHost PRIVATE shell32 comctl32 dwmapi d2d1 dwrite ole32 advapi32 user32)
+add_executable(sukut_host_routing_tests tests/HostRoutingTests.cpp)
+target_include_directories(sukut_host_routing_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(sukut_host_routing_tests PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+set_target_properties(sukut_host_routing_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+add_executable(sukut_tray_tests tests/TrayPopupTests.cpp src/sukut-host/TrayPopup.cpp src/sukut-host/TrayCatalog.cpp)
+target_include_directories(sukut_tray_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(sukut_tray_tests PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE)
+target_link_libraries(sukut_tray_tests PRIVATE comctl32 dwmapi d2d1 dwrite ole32 user32 psapi)
+target_compile_options(sukut_tray_tests PRIVATE /utf-8)
+set_target_properties(sukut_tray_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+add_executable(sukut_tray_catalog_tests tests/TrayCatalogTests.cpp src/sukut-host/TrayCatalog.cpp)
+target_include_directories(sukut_tray_catalog_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(sukut_tray_catalog_tests PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE)
+target_link_libraries(sukut_tray_catalog_tests PRIVATE user32 dwmapi)
+target_compile_options(sukut_tray_catalog_tests PRIVATE /utf-8 /W4)
+set_target_properties(sukut_tray_catalog_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(SukutHost PROPERTIES OUTPUT_NAME "Sukut" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(MSVC)
+  target_compile_options(SukutHost PRIVATE /W4 /permissive- /utf-8)
+  target_link_options(SukutHost PRIVATE /MANIFEST:NO)
+  # Direct2D/DirectWrite load only when the tray flyout first opens.
+  target_link_options(SukutHost PRIVATE /DELAYLOAD:d2d1.dll /DELAYLOAD:dwrite.dll)
+  target_link_libraries(SukutHost PRIVATE delayimp)
 endif()
 
 set(SUKUT_UI_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/sukut-0.2.27" CACHE PATH "Sukut WinUI application directory")

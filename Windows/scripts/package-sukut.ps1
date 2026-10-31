@@ -1,15 +1,17 @@
-param([string]$AppDirectory='build/sukut-0.2.33', [switch]$NoArchive)
+param([string]$AppDirectory='', [switch]$NoArchive)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 $paths=Get-Content -LiteralPath (Join-Path $projectRoot 'local.build.json') -Raw | ConvertFrom-Json
 $taskProject=[xml](Get-Content -LiteralPath (Join-Path $projectRoot 'src/sukut-ui/Sukut.csproj') -Raw)
 $taskVersion=$taskProject.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()
-$taskGradle=Get-Content -LiteralPath (Join-Path (Split-Path -Parent $projectRoot) 'app/build.gradle.kts') -Raw
-$taskAndroidVersion=[regex]::Match($taskGradle,'versionName\s*=\s*"([0-9.]+)"').Groups[1].Value
+if([string]::IsNullOrWhiteSpace($AppDirectory)){$AppDirectory='build/sukut-'+$taskVersion}
+# Name the companion actually bundled, not the Android source tree's version.
+$taskAndroidVersion=(Get-Content -LiteralPath (Join-Path $projectRoot ($AppDirectory+'/Assets/Phone/Sukut.apk.version')) -TotalCount 1).Trim()
+$nativeBuild=if($paths.build_directory){$paths.build_directory}else{Join-Path $projectRoot 'build/bootstrap'}
 $packageName='Sukut-'+$taskVersion+'-win-x64'
 $packageRoot=Join-Path (Join-Path $projectRoot 'dist') $packageName
 $appSource=Join-Path $projectRoot $AppDirectory
-foreach($required in @('Sukut.exe','Sukut.pri','SukutEngine.dll','Assets\Sukut.ico','Assets\Tray-on-dark.ico','Assets\Tray-off-dark.ico','Assets\Tray-on-light.ico','Assets\Tray-off-light.ico','SukutVolumeGuard.exe','Assets\Phone\Sukut.apk','Assets\Phone\Sukut.apk.sha256','Assets\Phone\Sukut.apk.version')){
+foreach($required in @('SukutWindow.exe','SukutWindow.pri','SukutEngine.dll','Assets\Sukut.ico','Assets\Tray-on-dark.ico','Assets\Tray-off-dark.ico','Assets\Tray-on-light.ico','Assets\Tray-off-light.ico','SukutVolumeGuard.exe','Assets\Phone\Sukut.apk','Assets\Phone\Sukut.apk.sha256','Assets\Phone\Sukut.apk.version')){
     if(-not (Test-Path -LiteralPath (Join-Path $appSource $required))){throw ('Incomplete app output: '+$required)}
 }
 $packageApp=Join-Path $packageRoot 'app'
@@ -27,7 +29,8 @@ Get-ChildItem -LiteralPath $appSource -Recurse -File | ForEach-Object {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
     Copy-Item -Force -LiteralPath $_.FullName -Destination $destination
 }
-Copy-Item -Force -LiteralPath (Join-Path $projectRoot 'build\bootstrap\bin\Release\SukutPortable.exe') -Destination (Join-Path $packageRoot 'Sukut.exe')
+# The entry point is the native tray host; it starts app\SukutWindow.exe on demand.
+Copy-Item -Force -LiteralPath (Join-Path $nativeBuild 'bin\Release\Sukut.exe') -Destination (Join-Path $packageRoot 'Sukut.exe')
 foreach($asset in @('separator.tflite','window_576_q15.bin','window_960_q15.bin')){
     Copy-Item -Force -LiteralPath (Join-Path (Join-Path $projectRoot 'assets\engine') $asset) -Destination (Join-Path (Join-Path $packageRoot 'assets\engine') $asset)
 }
@@ -56,9 +59,15 @@ $licenseDirectories=[ordered]@{
     'CommunityToolkit-Triggers'=(Join-Path $paths.dependencies 'nuget-sukut\communitytoolkit.winui.triggers\8.2.251219')
 }
 foreach($entry in $licenseDirectories.GetEnumerator()){
+    $source=$entry.Value
+    if(-not(Test-Path -LiteralPath $source)){
+        $name=Split-Path -Leaf $source
+        if(Test-Path -LiteralPath (Join-Path $nativeBuild $name)){$source=Join-Path $nativeBuild $name}
+    }
+    if(-not(Test-Path -LiteralPath $source)){throw ('Missing license source: '+$entry.Key)}
     $destination=Join-Path $licenseRoot $entry.Key
     New-Item -ItemType Directory -Force -Path $destination | Out-Null
-    Get-ChildItem -LiteralPath $entry.Value -File | Where-Object {$_.Name -match '(?i)license|copying|notice'} | ForEach-Object {Copy-Item -Force -LiteralPath $_.FullName -Destination $destination}
+    Get-ChildItem -LiteralPath $source -File | Where-Object {$_.Name -match '(?i)license|copying|notice'} | ForEach-Object {Copy-Item -Force -LiteralPath $_.FullName -Destination $destination}
 }
 Copy-Item -Force -LiteralPath (Join-Path $paths.dependencies 'src\tensorflow-2.16.1\tensorflow\tools\pip_package\THIRD_PARTY_NOTICES.txt') -Destination (Join-Path $licenseRoot 'TensorFlow-Lite\THIRD_PARTY_NOTICES.txt')
 $notices=@'
@@ -67,9 +76,6 @@ Sukut — developed by الطرفية
 This package includes the self-contained WinUI/.NET application, a native
 CPU audio engine, model/window assets, original Microsoft runtime files,
 and the matching Android companion. Audio processing is performed locally.
-Model assets are third-party material, not claimed as original Sukut models.
-Redistribution of those assets is subject to separate authorization; the
-original provenance/permission records are maintained separately.
 
 TensorFlow Lite 2.16.1 — Apache 2.0.
 https://github.com/tensorflow/tensorflow
@@ -81,16 +87,17 @@ CommunityToolkit WinUI — MIT.
 IBM Plex Sans Arabic, Readex Pro and Handjet — SIL Open Font License 1.1.
 Font license files are retained with the application's assets.
 
-Android companion: Sukut $taskAndroidVersion, package com.osama.sukut. Its TensorFlow Lite
-runtime contains one local CPU display-label adjustment; executable code
-sections, model weights and numerical operations remain unchanged.
-The original Apache 2.0 license is retained in the source project's app/vendor.
-Shizuku and Google Platform Tools are downloaded separately from official
-sources, checked against pinned hashes; original download notices are kept.
+Android companion: Sukut $taskAndroidVersion, package com.altarafiyah.sukut. It uses
+official Google LiteRT 1.0.1 ARM64 native libraries, with upstream bytes and
+16 KB ELF alignment preserved. Original licenses and runtime provenance are
+retained in the source project's app/vendor. The sealed model and DSP are unchanged.
+The Android interface uses framework Views only (no Material Components).
+Google Platform Tools are downloaded from the official source and checked
+against a pinned hash. Sukut's own worker runs from the installed Android APK.
 
-The setup EXE includes the unchanged original VB-CABLE driver package from
-VB-Audio. Installation occurs only when the driver is absent, with an
-administrator prompt and reboot guidance. VB-CABLE is donationware:
+This portable ZIP does not install a driver. The separate desktop setup EXE
+includes the original VB-CABLE driver package from VB-Audio. That installer
+requests administrator approval when the driver is absent. VB-CABLE is donationware:
 https://vb-audio.com/Cable/
 https://shop.vb-audio.com/en/win-apps/11-vb-cable.html
 Its original terms and signature are preserved. Removing Sukut leaves the
@@ -101,7 +108,7 @@ developer symbols or old application data are included in this package.
 '@
 $notices=$notices.Replace('$taskAndroidVersion',$taskAndroidVersion)
 Set-Content -LiteralPath (Join-Path $packageRoot 'THIRD_PARTY_NOTICES.txt') -Value $notices -Encoding UTF8
-$metadata=[ordered]@{name='Sukut';version=$taskVersion;revision='route-identity-and-recorder-off';channel='release-candidate';platform='win-x64';packaged_at=(Get-Date -Format o);entrypoint='Sukut.exe';application='app/Sukut.exe';first_run_setup=$true;external_driver='https://vb-audio.com/Cable/';validation=('See docs/release-'+$taskVersion+'-'+$taskAndroidVersion+' in the source workspace')}
+$metadata=[ordered]@{name='Sukut';version=$taskVersion;revision=$taskVersion;channel=if($taskVersion.Contains('-beta.')){'beta'}else{'release'};platform='win-x64';packaged_at=(Get-Date -Format o);entrypoint='Sukut.exe';application='app/SukutWindow.exe';first_run_setup=$true;external_driver='https://vb-audio.com/Cable/';validation='See VERIFICATION.json and docs/release-0.4/WINDOWS.md in the source workspace'}
 $metadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $packageRoot 'sukut-package.json') -Encoding UTF8
 # Only the generated package directory is archived. Existing runtime settings,
 # docs/route.json, project sources, build evidence and caches are never inputs.
@@ -111,10 +118,12 @@ if(-not $NoArchive){
     $zipPath=Join-Path (Join-Path $projectRoot 'dist') ($packageName+'.zip')
     $stagedZip=$zipPath+'.new'
     [System.IO.Compression.ZipFile]::CreateFromDirectory($packageRoot,$stagedZip,[System.IO.Compression.CompressionLevel]::Optimal,$true)
-    [System.IO.File]::Move($stagedZip,$zipPath,$true)
+    # Works in Windows PowerShell 5.1 and PowerShell 7 (no 3-argument Move there).
+    if(Test-Path -LiteralPath $zipPath){Remove-Item -LiteralPath $zipPath -Force}
+    [System.IO.File]::Move($stagedZip,$zipPath)
 }
 $record=[ordered]@{package_directory=$packageRoot;zip=$zipPath;created_at=(Get-Date -Format o);executed_or_checked=$false}
-$taskRecord=Join-Path $projectRoot ('docs\redesign\release-'+$taskVersion)
+$taskRecord=if($taskVersion.Contains('-beta.')){Join-Path (Split-Path -Parent $projectRoot) 'docs/beta-0.4'}else{Join-Path $projectRoot ('docs\redesign\release-'+$taskVersion)}
 New-Item -ItemType Directory -Force -Path $taskRecord | Out-Null
 $record | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskRecord 'package-created.json') -Encoding UTF8
 Write-Output ('Package: '+$zipPath)

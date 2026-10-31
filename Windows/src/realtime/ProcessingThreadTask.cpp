@@ -1,7 +1,9 @@
+#include "realtime/ProcessingThreadTask.h"
+
+#if defined(_WIN32)
 #define NOMINMAX
 #include <windows.h>
 #include <avrt.h>
-#include "realtime/ProcessingThreadTask.h"
 
 namespace cleanwave {
 ProcessingThreadTask::ProcessingThreadTask(bool enabled) {
@@ -39,3 +41,50 @@ ThreadCpuSample ReadThreadCpuTime() noexcept {
   return {(ticks(kernel) + ticks(user)) * 100, true};
 }
 } // namespace cleanwave
+
+#else
+// Linux: raise only this thread's nice value for processing. Unprivileged
+// users are usually refused; the host's RealtimeKit request is tried then
+// (Linux/PLAN.md, section 5.4), else the worker keeps normal priority.
+#include <atomic>
+#include <cerrno>
+#include <ctime>
+#include <sys/resource.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+
+namespace cleanwave {
+namespace {
+constexpr int kProcessingNice = -11;
+std::atomic<PriorityRequest> g_priority_request{nullptr};
+id_t CurrentThreadId() { return static_cast<id_t>(::syscall(SYS_gettid)); }
+}  // namespace
+
+void SetPriorityRequest(PriorityRequest request) noexcept { g_priority_request = request; }
+
+ProcessingThreadTask::ProcessingThreadTask(bool enabled) {
+  snapshot_.requested = enabled;
+  if (!enabled) return;
+  errno = 0;
+  const int previous = ::getpriority(PRIO_PROCESS, CurrentThreadId());
+  if (errno != 0) { snapshot_.priority_error = static_cast<std::uint32_t>(errno); return; }
+  previous_state_ = static_cast<std::uint32_t>(previous);
+  snapshot_.priority_set = ::setpriority(PRIO_PROCESS, CurrentThreadId(), kProcessingNice) == 0;
+  if (!snapshot_.priority_set) {
+    snapshot_.priority_error = static_cast<std::uint32_t>(errno);
+    const auto request = g_priority_request.load();
+    snapshot_.priority_set = request != nullptr && request(static_cast<long>(CurrentThreadId()), kProcessingNice);
+    if (snapshot_.priority_set) snapshot_.priority_error = 0;
+  }
+  if (snapshot_.priority_set) { snapshot_.relative_priority = kProcessingNice; restore_qos_ = true; }
+}
+ProcessingThreadTask::~ProcessingThreadTask() {
+  if (restore_qos_) ::setpriority(PRIO_PROCESS, CurrentThreadId(), static_cast<int>(previous_state_));
+}
+ThreadCpuSample ReadThreadCpuTime() noexcept {
+  timespec now{};
+  if (::clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now) != 0) return {};
+  return {static_cast<std::uint64_t>(now.tv_sec) * 1000000000ULL + static_cast<std::uint64_t>(now.tv_nsec), true};
+}
+} // namespace cleanwave
+#endif

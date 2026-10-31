@@ -1,0 +1,32 @@
+<resources>
+ <string name="local_notifications_needed">Allow Sukut notifications in Android settings to enter the pairing code while its dialog is open.</string>
+ <string name="local_title">Activate Sukut</string>
+ <string name="local_steps">1. Connect to Wi-Fi and enable Developer options → Wireless debugging.\n\n2. Tap Pair Sukut below, then choose Pair device with pairing code in Android settings. Keep that dialog open.\n\n3. Pull down notifications. On Sukut’s notification, tap Enter pairing code and send the six digits. Return to Sukut after pairing.\n\nNext time, enable Wireless debugging and tap Activate. No computer or Shizuku app is needed.</string>
+ <string name="local_android10">Phone-only pairing requires Android 11 or newer. On Android 10, use Sukut on Windows → Phone → Activate Sukut.</string>
+ <string name="local_pair_button">Pair this phone</string>
+ <string name="local_activate_button">Activate</string>
+ <string name="local_enter_code">Enter pairing code</string>
+ <string name="local_code">Six-digit pairing code</string>
+ <string name="local_privacy">Activation connects only to this phone. Pairing is saved in Android Keystore. After activation, discovery and the debugging connection close; audio stays on your phone. You can turn Wireless debugging off. Activate again after restarting your phone or updating Sukut.</string>
+ <string name="local_pc_fallback">Windows → Phone → Activate Sukut remains available if your phone blocks local Wireless debugging. Pairing is an Android permission step; Sukut cannot silently enable it.</string>
+ <string name="local_manual">More options</string>
+ <string name="local_pair_port">Pairing port (optional)</string>
+ <string name="local_connect_port">Wireless debugging connection port (optional)</string>
+ <string name="local_submit">Pair with this code</string>
+ <string name="local_initial">Audio worker needs activation</string>
+ <string name="local_searching">Looking for this phone’s Wireless debugging. Keep it enabled.</string>
+ <string name="local_pair_wait">Open Pair device with pairing code in Android settings. Enter the code through this notification while the dialog stays open.</string>
+ <string name="local_pairing">Pairing with this phone…</string>
+ <string name="local_paired">Paired. Waiting for this phone’s debugging connection…</string>
+ <string name="local_activating">Activating Sukut’s audio worker…</string>
+ <string name="local_ready">Audio worker ready</string>
+ <string name="local_bad_code">Enter exactly six digits from Android’s pairing dialog.</string>
+ <string name="local_pair_failed">Pairing failed. Open a new pairing-code dialog and send its new code through Sukut’s notification. Keep the dialog open.</string>
+ <string name="local_activate_failed">Could not activate. Keep Wireless debugging enabled, then try again or pair this phone again.</string>
+ <string name="local_timeout">Activation timed out. Enable Wireless debugging and try again.</string>
+ <string name="local_cancelled">Activation stopped</string>
+ <string name="help_delay_title">Delay and picture sync</string>
+ <string name="help_delay_1">Audio delay is the time between something happening and hearing it — for example, a game tap and its sound.</string>
+ <string name="help_delay_2">Desync means sound and picture do not line up: lips may move before you hear the voice. More buffering, Bluetooth and phone effects can add delay.</string>
+ <string name="help_delay_3">For videos and games, try Lowest if sound stays smooth. Increase buffering if you hear crackles or short pauses. Sukut cannot automatically correct every app’s video timing.</string>
+</resources>

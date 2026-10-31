@@ -25,15 +25,11 @@ class SukutEfficiencyTest {
         require(tag.matches(Regex("[a-z0-9-]+")))
         val results = JSONArray()
         for ((preset, background) in listOf(2 to 0, 0 to -7, 3 to -100)) {
-            val model = context.assets.openFd("separator.tflite").use { fd ->
-                FileInputStream(fd.fileDescriptor).channel.use { channel ->
-                    channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.length).order(ByteOrder.nativeOrder())
-                }
-            }
+            val model = AssetSeal.model(context)
             val cleaner = Class.forName("com.osama.cleanwave.StreamingCleaner")
                 .getConstructor(ByteBuffer::class.java, ByteArray::class.java, ByteArray::class.java, Boolean::class.javaPrimitiveType)
-                .newInstance(model, context.assets.open("window_576_q15.bin").use { it.readBytes() },
-                    context.assets.open("window_960_q15.bin").use { it.readBytes() }, false) as AudioCleaner
+                .newInstance(model, AssetSeal.bytes(context, "window_576_q15.bin"),
+                    AssetSeal.bytes(context, "window_960_q15.bin"), false) as AudioCleaner
             cleaner.use {
                 it.setReduction(100); it.setAmplification(0); it.setSourceMix(0, -100, background)
                 val hash = MessageDigest.getInstance("SHA-256")

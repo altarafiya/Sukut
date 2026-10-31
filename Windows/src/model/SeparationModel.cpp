@@ -15,7 +15,20 @@
 #include <windows.h>
 #endif
 
+#include "model/AssetSeal.h"
 #include "tensorflow/lite/c/c_api.h"
+#if defined(TFLITE_BUILD_WITH_XNNPACK_DELEGATE)
+#include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include "tensorflow/lite/delegates/xnnpack/xnnpack_delegate.h"
+#include "tensorflow/lite/interpreter.h"
+#include "tensorflow/lite/interpreter_builder.h"
+#include "tensorflow/lite/kernels/register.h"
+#include "tensorflow/lite/model_builder.h"
+#define CLEANWAVE_SELECTABLE_KERNELS 1
+#endif
 
 namespace cleanwave {
 namespace {
@@ -59,56 +72,181 @@ void RequireOk(TfLiteStatus status, const char* operation) {
 }
 
 // TFLite borrows these immutable bytes until after interpreter/model teardown.
-// A read-only file mapping keeps weights file-backed instead of retaining a
-// second private heap copy. No tensor/model data or arithmetic changes.
+// The sealed file is read straight into one private buffer and opened in
+// place, so there is a single copy. No tensor/model data or arithmetic changes.
 class ModelBytes final {
  public:
-  explicit ModelBytes(const std::filesystem::path& path) {
-#if defined(_WIN32)
-    try {
-      file_=CreateFileW(path.c_str(),GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_DELETE,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
-      if(file_==INVALID_HANDLE_VALUE)throw std::runtime_error("unable to open Audio model file");
-      LARGE_INTEGER length{};
-      if(!GetFileSizeEx(file_,&length) || length.QuadPart<=0)throw std::runtime_error("Audio model file is empty or unreadable");
-      size_=static_cast<std::size_t>(length.QuadPart);
-      mapping_=CreateFileMappingW(file_,nullptr,PAGE_READONLY,0,0,nullptr);
-      if(!mapping_)throw std::runtime_error("unable to map Audio model file");
-      data_=static_cast<const std::uint8_t*>(MapViewOfFile(mapping_,FILE_MAP_READ,0,0,0));
-      if(!data_)throw std::runtime_error("unable to read Audio model mapping");
-    } catch (...) { Close(); throw; }
-#else
-    std::ifstream stream(path,std::ios::binary|std::ios::ate);
-    if(!stream || stream.tellg()<=0)throw std::runtime_error("unable to open Audio model file");
-    bytes_.resize(static_cast<std::size_t>(stream.tellg()));stream.seekg(0,std::ios::beg);
-    stream.read(reinterpret_cast<char*>(bytes_.data()),bytes_.size());
-    if(!stream)throw std::runtime_error("unable to read Audio model file");
-    data_=bytes_.data();size_=bytes_.size();
-#endif
+  explicit ModelBytes(const std::filesystem::path& path)
+      : bytes_(seal::ReadFile(path, "Sukut model file")) {
+    if(bytes_.size()<8 || std::string(reinterpret_cast<const char*>(bytes_.data())+4,4)!="TFL3")
+      throw std::runtime_error("Sukut model file is not a Sukut model");
   }
-  ~ModelBytes(){Close();}
   ModelBytes(const ModelBytes&)=delete;
   ModelBytes& operator=(const ModelBytes&)=delete;
-  const std::uint8_t* data()const{return data_;}
-  std::size_t size()const{return size_;}
+  const std::uint8_t* data()const{return bytes_.data();}
+  std::size_t size()const{return bytes_.size();}
  private:
-  void Close()noexcept{
-#if defined(_WIN32)
-    if(data_)UnmapViewOfFile(data_);
-    if(mapping_)CloseHandle(mapping_);
-    if(file_!=INVALID_HANDLE_VALUE)CloseHandle(file_);
-    mapping_=nullptr;file_=INVALID_HANDLE_VALUE;
-#endif
-    data_=nullptr;size_=0;
-  }
-  const std::uint8_t* data_=nullptr;std::size_t size_=0;
-#if defined(_WIN32)
-  HANDLE file_=INVALID_HANDLE_VALUE,mapping_=nullptr;
-#else
   std::vector<std::uint8_t> bytes_;
-#endif
 };
 }  // namespace
 
+#if defined(CLEANWAVE_SELECTABLE_KERNELS)
+// XNNPACK-capable build. The reference interpreter uses the built-in kernels
+// with no default delegates (exactly the baseline path). XNNPACK is kept only
+// if, on this CPU at start-up, it reproduces the reference heads and
+// recurrent state within 1e-3 relative (-60 dB) over a recurrent run AND is
+// at least 15% faster. Otherwise, or on any error, the reference stays.
+// SUKUT_KERNELS=reference forces the reference path.
+class SeparationModel::Impl {
+  struct Runner {
+    std::unique_ptr<tflite::Interpreter> interpreter;
+    TfLiteDelegate* delegate = nullptr;
+    std::array<StateBuffer, 2> states{};
+    std::size_t index = 0;
+    ~Runner() { interpreter.reset(); if (delegate) TfLiteXNNPackDelegateDelete(delegate); }
+    void Reset() { states[0].fill(0.0F); states[1].fill(0.0F); index = 0; }
+    void Run(const SpectralBuffer& left, const SpectralBuffer& right, SourceHeads& out) {
+      std::memcpy(interpreter->typed_input_tensor<float>(0), left.data(), sizeof(left));
+      std::memcpy(interpreter->typed_input_tensor<float>(1), right.data(), sizeof(right));
+      std::memcpy(interpreter->typed_input_tensor<float>(2), states[index].data(), sizeof(StateBuffer));
+      RequireOk(interpreter->Invoke(), "TFLite Invoke");
+      std::memcpy(out.voice_left.data(), interpreter->typed_output_tensor<float>(0), sizeof(out.voice_left));
+      std::memcpy(out.voice_right.data(), interpreter->typed_output_tensor<float>(1), sizeof(out.voice_right));
+      std::memcpy(states[index ^ 1].data(), interpreter->typed_output_tensor<float>(2), sizeof(StateBuffer));
+      std::memcpy(out.music_left.data(), interpreter->typed_output_tensor<float>(3), sizeof(out.music_left));
+      std::memcpy(out.music_right.data(), interpreter->typed_output_tensor<float>(4), sizeof(out.music_right));
+      index ^= 1;
+    }
+  };
+
+ public:
+  explicit Impl(const std::filesystem::path& model_path) : model_bytes_(model_path) {
+    model_ = tflite::FlatBufferModel::BuildFromBuffer(
+        reinterpret_cast<const char*>(model_bytes_.data()), model_bytes_.size());
+    if (!model_) throw std::runtime_error("TFLite model buffer is invalid");
+    auto reference = Build(false);
+    std::unique_ptr<Runner> fast;
+    const char* forced = std::getenv("SUKUT_KERNELS");
+    if (!(forced && std::string(forced) == "reference")) {
+      try { fast = Build(true); } catch (const std::exception&) { report_ = "builtin; xnnpack=unavailable"; }
+    } else report_ = "builtin; forced";
+    if (fast) {
+      try { Compare(*reference, *fast); }
+      catch (const std::exception&) { fast.reset(); report_ = "builtin; xnnpack=failed"; }
+    }
+    if (fast && worst_ <= 1e-3F && fast_ms_ < reference_ms_ * 0.85) {
+      runner_ = std::move(fast); report_ = "xnnpack";
+    } else {
+      if (fast) report_ = "builtin; xnnpack=rejected";
+      runner_ = std::move(reference);
+    }
+    runner_->Reset();
+  }
+
+  void Reset() { runner_->Reset(); }
+  void Process(const SpectralBuffer& left, const SpectralBuffer& right, SourceHeads& outputs) {
+    runner_->Run(left, right, outputs);
+  }
+  [[nodiscard]] StateBuffer StateSnapshot() const { return runner_->states[runner_->index]; }
+  [[nodiscard]] std::string KernelReport() const {
+    return report_ + "; reference_ms=" + std::to_string(reference_ms_) + "; selected_ms=" +
+           std::to_string(report_ == "xnnpack" ? fast_ms_ : reference_ms_) + "; max_relative_error=" + std::to_string(worst_) +
+           "; heads_error=" + std::to_string(heads_error_) + "; state_error=" + std::to_string(state_error_) +
+           "; xnnpack_ms=" + std::to_string(fast_ms_);
+  }
+
+ private:
+  std::unique_ptr<Runner> Build(bool xnnpack) {
+    auto runner = std::make_unique<Runner>();
+    tflite::ops::builtin::BuiltinOpResolverWithoutDefaultDelegates resolver;
+    tflite::InterpreterBuilder builder(*model_, resolver);
+    builder.SetNumThreads(1);
+    if (builder(&runner->interpreter) != kTfLiteOk || !runner->interpreter)
+      throw std::runtime_error("TFLite InterpreterBuilder failed");
+    if (xnnpack) {
+      TfLiteXNNPackDelegateOptions options = TfLiteXNNPackDelegateOptionsDefault();
+      options.num_threads = 1;
+      runner->delegate = TfLiteXNNPackDelegateCreate(&options);
+      if (!runner->delegate) throw std::runtime_error("XNNPACK delegate unavailable");
+      RequireOk(runner->interpreter->ModifyGraphWithDelegate(runner->delegate), "XNNPACK ModifyGraphWithDelegate");
+    }
+    RequireOk(runner->interpreter->AllocateTensors(), "AllocateTensors");
+    Validate(*runner->interpreter);
+    return runner;
+  }
+
+  static void Validate(tflite::Interpreter& interpreter) {
+    if (interpreter.inputs().size() != 3 || interpreter.outputs().size() != kOutputCount)
+      throw std::runtime_error("Sukut model has an unexpected tensor contract");
+    constexpr std::size_t spectral_bytes = kSpectralFloats * sizeof(float);
+    constexpr std::size_t state_bytes = kStateFloats * sizeof(float);
+    const std::vector<int> spectral_shape{1, 1, 1024}, state_shape{1, 6, 52, 48};
+    RequireTensor(interpreter.input_tensor(0), spectral_shape, spectral_bytes, "input 0");
+    RequireTensor(interpreter.input_tensor(1), spectral_shape, spectral_bytes, "input 1");
+    RequireTensor(interpreter.input_tensor(2), state_shape, state_bytes, "input 2");
+    for (std::size_t o = 0; o < kOutputCount; ++o)
+      RequireTensor(interpreter.output_tensor(o), o == 2 ? state_shape : spectral_shape,
+                    o == 2 ? state_bytes : spectral_bytes, "output " + std::to_string(o));
+  }
+
+  static float RelativeError(const float* expected, const float* actual, std::size_t count) {
+    float peak = 0.0F, difference = 0.0F;
+    for (std::size_t i = 0; i < count; ++i) {
+      peak = std::max(peak, std::abs(expected[i]));
+      const float d = std::abs(expected[i] - actual[i]);
+      if (!std::isfinite(d)) return INFINITY;
+      difference = std::max(difference, d);
+    }
+    return peak < 1e-6F ? difference : difference / peak;
+  }
+
+  void Compare(Runner& reference, Runner& fast) {
+    constexpr int kWarmup = 8, kMeasured = 40;
+    SpectralBuffer left{}, right{};
+    SourceHeads a{}, b{};
+    std::uint64_t seed = 0x53554b55ULL;
+    const auto next = [&] {
+      seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
+      return static_cast<float>(static_cast<std::int32_t>(seed >> 40)) / 8388608.0F - 1.0F;
+    };
+    double reference_ns = 0, fast_ns = 0;
+    reference.Reset(); fast.Reset();
+    for (int frame = 0; frame < kWarmup + kMeasured; ++frame) {
+      const float scale = std::array<float, 4>{.01F, 1.0F, 30.0F, 200.0F}[(frame / 6) % 4];
+      for (std::size_t i = 0; i < kSpectralFloats; ++i) {
+        left[i] = frame % 11 == 0 ? 0.0F : next() * scale;
+        right[i] = frame % 13 == 0 ? 0.0F : next() * scale;
+      }
+      auto start = std::chrono::steady_clock::now();
+      reference.Run(left, right, a);
+      const auto r = std::chrono::steady_clock::now() - start;
+      start = std::chrono::steady_clock::now();
+      fast.Run(left, right, b);
+      const auto f = std::chrono::steady_clock::now() - start;
+      if (frame >= kWarmup) {
+        reference_ns += std::chrono::duration<double, std::nano>(r).count();
+        fast_ns += std::chrono::duration<double, std::nano>(f).count();
+      }
+      worst_ = std::max({worst_, RelativeError(a.voice_left.data(), b.voice_left.data(), kSpectralFloats),
+                         RelativeError(a.voice_right.data(), b.voice_right.data(), kSpectralFloats),
+                         RelativeError(a.music_left.data(), b.music_left.data(), kSpectralFloats),
+                         RelativeError(a.music_right.data(), b.music_right.data(), kSpectralFloats)});
+    }
+    heads_error_ = worst_;
+    state_error_ = RelativeError(reference.states[reference.index].data(), fast.states[fast.index].data(), kStateFloats);
+    worst_ = std::max(worst_, state_error_);
+    reference_ms_ = reference_ns / 1e6 / kMeasured;
+    fast_ms_ = fast_ns / 1e6 / kMeasured;
+  }
+
+  ModelBytes model_bytes_;
+  std::unique_ptr<tflite::FlatBufferModel> model_;
+  std::unique_ptr<Runner> runner_;
+  std::string report_ = "builtin";
+  float worst_ = 0.0F, heads_error_ = 0.0F, state_error_ = 0.0F;
+  double reference_ms_ = 0, fast_ms_ = 0;
+};
+#else
 class SeparationModel::Impl {
  public:
   explicit Impl(const std::filesystem::path& model_path) : model_bytes_(model_path) {
@@ -122,7 +260,7 @@ class SeparationModel::Impl {
 #endif
       model_ = TfLiteModelCreate(model_bytes_.data(), model_bytes_.size());
       if (model_ == nullptr) {
-        throw std::runtime_error("TfLiteModelCreate failed for Audio model buffer");
+        throw std::runtime_error("TfLiteModelCreate failed for Sukut model buffer");
       }
 
       TfLiteInterpreterOptions* options = TfLiteInterpreterOptionsCreate();
@@ -187,6 +325,7 @@ class SeparationModel::Impl {
   }
 
   [[nodiscard]] StateBuffer StateSnapshot() const { return states_[state_index_]; }
+  [[nodiscard]] std::string KernelReport() const { return "builtin"; }
 
  private:
   void CopyOutput(int output_index, void* destination, std::size_t bytes) {
@@ -198,11 +337,11 @@ class SeparationModel::Impl {
 
   void ValidateContract() {
     if (TfLiteInterpreterGetInputTensorCount(interpreter_) != 3) {
-      throw std::runtime_error("Audio model must expose exactly 3 inputs");
+      throw std::runtime_error("Sukut model must expose exactly 3 inputs");
     }
     if (TfLiteInterpreterGetOutputTensorCount(interpreter_) !=
         static_cast<int>(kOutputCount)) {
-      throw std::runtime_error("Audio model must expose exactly 7 outputs");
+      throw std::runtime_error("Sukut model must expose exactly 7 outputs");
     }
 
     constexpr std::size_t spectral_bytes = kSpectralFloats * sizeof(float);
@@ -234,6 +373,7 @@ class SeparationModel::Impl {
   std::array<StateBuffer, 2> states_{};
   std::size_t state_index_ = 0;
 };
+#endif
 
 SeparationModel::SeparationModel(const std::filesystem::path& model_path)
     : impl_(std::make_unique<Impl>(model_path)) {}
@@ -253,6 +393,8 @@ void SeparationModel::Process(const SpectralBuffer& left,
 SeparationModel::StateBuffer SeparationModel::StateSnapshot() const {
   return impl_->StateSnapshot();
 }
+
+std::string SeparationModel::KernelReport() const { return impl_->KernelReport(); }
 
 }  // namespace cleanwave
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sukut_background">@color/sukut_background_dark</color>
+    <color name="sukut_accent">#87B9A7</color>
+    <bool name="sukut_light_bars">false</bool>
+</resources>

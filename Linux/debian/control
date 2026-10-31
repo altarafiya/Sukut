@@ -1,0 +1,38 @@
+Source: sukut
+Section: sound
+Priority: optional
+Maintainer: الطرفية <altarafiyah@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               ninja-build,
+               g++ (>= 4:14),
+               pkgconf,
+               libpipewire-0.3-dev (>= 1.0),
+               libgtk-4-dev (>= 4.18),
+               libadwaita-1-dev (>= 1.7),
+               libglib2.0-dev,
+               python3
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://altarafiya.github.io/Sukut
+
+Package: sukut
+Architecture: amd64
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         pipewire (>= 1.0),
+         wireplumber (>= 0.5),
+         librsvg2-common,
+         adwaita-icon-theme,
+         adb,
+         pkexec
+Recommends: gnome-shell-extension-appindicator,
+            rtkit
+Description: removes music from your computer's audio
+ Sukut filters what your computer plays and removes the music, while
+ keeping speech and other sounds. Everything is processed locally.
+ .
+ It offers three modes (Music Filter, Optimized and Strict), works on all
+ system audio or one app through its own PipeWire output, rests while
+ nothing is playing, and stays in the tray. It can also install and
+ activate Sukut on an Android phone over USB.

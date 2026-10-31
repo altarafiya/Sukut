@@ -111,36 +111,13 @@ class SukutSimpleSetupTest {
                     shot("$language-${if (landscape) "landscape" else "portrait"}-welcome"); ins.runOnMainSync { welcome.finish() }; ins.waitForIdleSync()
                     val guide = setup(1, landscape)
                     ins.runOnMainSync {
-                        for (index in 0..1) {
-                            val button = views(guide.window.decorView).first { it.tag == "shizuku_method_$index" }
-                            assertTrue(button.isClickable); assertTrue(button.isFocusable)
-                            assertTrue(button.height >= MobileUi(guide).dp(60))
-                            assertEquals("android.widget.Button", button.createAccessibilityNodeInfo().className.toString())
-                            val panel = views(guide.window.decorView).first { it.tag == "shizuku_method_content_$index" }
-                            assertEquals(View.GONE, panel.visibility)
-                        }
+                        val labels = views(guide.window.decorView).filterIsInstance<TextView>().map { it.text.toString() }
+                        assertTrue(labels.contains(guide.getString(R.string.guide_pc_title)))
+                        assertTrue(labels.none { it.contains("Shizuku") })
+                        assertTrue(labels.any { it.contains("USB") })
                     }
-                    reveal(guide, "shizuku_method_0")
-                    shot("$language-${if (landscape) "landscape" else "portrait"}-method-buttons")
-                    clickLabel(guide, R.string.guide_pc_title); reveal(guide, "shizuku_method_content_0"); shot("$language-${if (landscape) "landscape" else "portrait"}-usb-guide")
-                    clickLabel(guide, R.string.guide_wireless_title)
-                    // AutoTransition temporarily keeps the outgoing panel visible.
-                    // Assert the settled state, not a frame during the animation.
-                    SystemClock.sleep(350); ins.waitForIdleSync()
-                    ins.runOnMainSync {
-                        assertEquals(View.GONE, views(guide.window.decorView).first { it.tag == "shizuku_method_content_0" }.visibility)
-                        assertEquals(View.VISIBLE, views(guide.window.decorView).first { it.tag == "shizuku_method_content_1" }.visibility)
-                        val all = views(guide.window.decorView)
-                        val step0 = all.first { it.tag == "shizuku_step_1_0" }
-                        val step2 = all.first { it.tag == "shizuku_step_1_2" }
-                        val step3 = all.first { it.tag == "shizuku_step_1_3" }
-                        assertTrue(views(step0).filterIsInstance<TextView>().any { it.text.toString() == guide.getString(R.string.guide_google_play) })
-                        for (label in listOf(R.string.guide_developer_options, R.string.guide_wireless_picture))
-                            assertTrue("Debugging action/picture belong to the debugging step", views(step2).filterIsInstance<TextView>().any { it.text.toString() == guide.getString(label) })
-                        assertTrue("Pairing picture belongs to pairing step", views(step3).filterIsInstance<TextView>().any { it.text.toString() == guide.getString(R.string.guide_shizuku_picture) })
-                    }; reveal(guide, "shizuku_method_content_1"); shot("$language-${if (landscape) "landscape" else "portrait"}-wireless-guide")
-                    reveal(guide, "shizuku_step_1_2"); shot("$language-${if (landscape) "landscape" else "portrait"}-debugging-actions")
-                    reveal(guide, "shizuku_step_1_3"); shot("$language-${if (landscape) "landscape" else "portrait"}-pairing-actions")
+                    reveal(guide, "worker_method_0")
+                    shot("$language-${if (landscape) "landscape" else "portrait"}-usb-activation")
                     ins.runOnMainSync { guide.finish() }; ins.waitForIdleSync()
                     val sound = setup(2, landscape)
                     ins.runOnMainSync { assertTrue(views(sound.window.decorView).any { it.tag == "engine_performance_choices" }) }

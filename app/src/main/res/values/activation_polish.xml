@@ -1,0 +1,12 @@
+<resources>
+ <string name="local_returning_title">Already paired?</string>
+ <string name="local_returning_note">Turn on Wireless debugging, then tap Activate. No new code is usually needed.</string>
+ <string name="local_first_time">First time · pair this phone</string>
+ <string name="local_step_enable">Open Wireless debugging</string>
+ <string name="local_step_enable_detail">Tap Pair, then turn on Wireless debugging in Developer options.</string>
+ <string name="local_step_code">Show the six-digit code</string>
+ <string name="local_step_code_detail">Choose Pair device with pairing code. Leave that window open.</string>
+ <string name="local_step_notification">Reply in Sukut’s notification</string>
+ <string name="local_step_notification_detail">Pull down notifications, tap Enter pairing code and send the six digits. Sukut then activates automatically.</string>
+ <string name="local_short_privacy">Everything stays on this phone. Once activated, you can turn Wireless debugging off and press Start on Home.</string>
+</resources>

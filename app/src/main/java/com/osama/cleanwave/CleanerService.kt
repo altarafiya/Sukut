@@ -26,7 +26,7 @@ class CleanerService : Service() {
             private set
     }
 
-    private var backend: ShizukuBackend? = null
+    private var backend: WorkerBackend? = null
     private var failed = false
     private var activeMode = MusicRemovalProcessor.DIALOGUE
     private var activeBuffering = 0
@@ -43,6 +43,7 @@ class CleanerService : Service() {
     private var switchingMode = false
     private var routeStarted = false
     private var notifiedBypass = false
+    private var notifiedStandby = false
     private var stopRequested = false
 
     @SuppressLint("ForegroundServiceType") // Merged manifest declares specialUse; AGP 8.7 lint predates compileSdk 36.
@@ -99,9 +100,9 @@ class CleanerService : Service() {
         val current = backend
         backend = null
         if (current == null) {
-            ShizukuBackend.stopExisting(this) { finishStop() }
+            WorkerBackend.stopExisting(this) { finishStop() }
         } else {
-            current.stop(removeService = true, afterStopped = { finishStop() })
+            current.stop(afterStopped = { finishStop() })
         }
     }
 
@@ -123,7 +124,7 @@ class CleanerService : Service() {
         playbackAdvice.reset()
         CleanerPrefs.resetRecovery(this)
         CleanerPrefs.setStatus(this, "Starting privileged audio route")
-        val next = ShizukuBackend(this, object : ShizukuBackend.Listener {
+        val next = WorkerBackend(this, object : WorkerBackend.Listener {
             override fun onOutputRoute(deviceId: Int, deviceType: Int) {
                 if (!destroyed && !stopRequested) CleanerPrefs.observeOutputRoute(this@CleanerService, deviceId, deviceType)
             }
@@ -133,7 +134,7 @@ class CleanerService : Service() {
                 switchingMode = false
                 routeGeneration++
                 routeStarted = true
-                notifiedBypass = false
+                notifiedBypass = false; notifiedStandby = false
                 CleanerPrefs.setEnabled(this@CleanerService, true)
                 CleanerPrefs.setStatus(this@CleanerService, "Active", detail)
                 updateNotification(uiString(R.string.notification_active))
@@ -163,12 +164,18 @@ class CleanerService : Service() {
                 CleanerPrefs.setStatus(this@CleanerService, "Active", detail)
                 if (metrics.isNotBlank()) recordRecovery(metrics)
                 val bypassed = detail.startsWith("AI temporarily bypassed")
+                val standby = detail == PrivilegedAudioService.STANDBY_STATUS
                 if (bypassed && !notifiedBypass) {
                     notifiedBypass = true
                     updateNotification(uiString(R.string.notification_busy))
                 } else if (!bypassed && notifiedBypass) {
                     notifiedBypass = false
                     updateNotification(uiString(R.string.notification_active))
+                }
+                // Only notify on change: the notification is not a clock.
+                if (!bypassed && standby != notifiedStandby) {
+                    notifiedStandby = standby
+                    updateNotification(uiString(if (standby) R.string.notification_standby else R.string.notification_active))
                 }
             }
         })
@@ -178,7 +185,7 @@ class CleanerService : Service() {
 
     override fun onDestroy() {
         destroyed = true
-        backend?.stop(removeService = true)
+        backend?.stop()
         backend = null
         isAlive = false
         CleanerPrefs.setEnabled(this, false)

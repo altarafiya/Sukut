@@ -86,14 +86,14 @@ class SukutArabicTypographyTest {
                 lateinit var currentGuide: Activity
                 ins.runOnMainSync {
                     currentGuide = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED).first { it is SetupActivity }
-                    views(currentGuide.window.decorView).first { it.tag == "shizuku_method_1" }.performClick()
+                    assertTrue(views(currentGuide.window.decorView).any { it.tag == "worker_method_0" })
                 }
                 ins.waitForIdleSync(); SystemClock.sleep(600)
                 ins.runOnMainSync {
                     checkText(currentGuide.window.decorView)
                     assertTrue(views(currentGuide.window.decorView).filterIsInstance<TextView>().any { it.text.toString() == currentGuide.getString(R.string.guide_restart_note) })
                 }
-                shot("setup-shizuku-$suffix")
+                shot("setup-worker-$suffix")
                 ins.runOnMainSync { currentGuide.finish() }
                 val welcome = ins.startActivitySync(Intent(context, SetupActivity::class.java).putExtra("page", 0).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 ins.runOnMainSync { welcome.requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }

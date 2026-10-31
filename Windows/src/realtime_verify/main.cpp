@@ -616,7 +616,12 @@ int Run(const std::filesystem::path& model, const std::filesystem::path& rise,
 }
 }  // namespace
 
+// Windows passes UTF-16 paths; Linux passes UTF-8. Both become std::filesystem::path.
+#if defined(_WIN32)
 int wmain(int argc, wchar_t** argv) {
+#else
+int main(int argc, char** argv) {
+#endif
   if (argc != 5) {
     std::cerr << "Usage: cleanwave_realtime_verify <model.tflite> <rise.bin> <hop.bin> <evidence-dir>\n";
     return 2;

@@ -1,0 +1,58 @@
+sukut (0.4.0~beta.6-1) trixie; urgency=medium
+
+  * Tray: the Off icon follows the panel's text colour (white on a dark
+    panel, dark on a light one) through KDE's colour-scheme stylesheet, and
+    GNOME recolours it as a symbolic icon. Renamed to tray-idle-symbolic so
+    no icon cache can show the old dark picture. The Standby menu icon
+    adapts the same way.
+  * Lower memory: the phone setup pictures are decoded only while open and
+    at the size shown (0.8 MB instead of 13 MB each); opening the Phone
+    pages peaks at 78 MB instead of 106 MB. The unused wireless-debugging
+    picture is no longer installed.
+
+ -- الطرفية <altarafiyah@gmail.com>  Sat, 31 Oct 2026 20:25:22 +0800
+
+sukut (0.4.0~beta.5-1) trixie; urgency=medium
+
+  * Tray: the Off icon is white, so it shows on dark panels; On stays gold.
+
+ -- الطرفية <altarafiyah@gmail.com>  Sat, 31 Oct 2026 20:03:35 +0800
+
+sukut (0.4.0~beta.4-1) trixie; urgency=medium
+
+  * Audio page: the Start and Audio mode column and Playback have equal
+    widths side by side.
+
+ -- الطرفية <altarafiyah@gmail.com>  Sat, 31 Oct 2026 19:34:28 +0800
+
+sukut (0.4.0~beta.3-1) trixie; urgency=medium
+
+  * Sidebar: its show/hide button is in the sidebar's own header, and in the
+    page header only while the sidebar is hidden (GNOME's sidebar icon).
+  * Audio page: the Start and Audio mode column is the wider one; Playback
+    keeps a fixed width beside it and full width when stacked.
+
+ -- الطرفية <altarafiyah@gmail.com>  Sat, 31 Oct 2026 19:16:03 +0800
+
+sukut (0.4.0~beta.2-1) trixie; urgency=medium
+
+  * Fix: Start no longer closes Sukut. PipeWire's real-time data thread is
+    off for Sukut's connection; the processing thread keeps its priority.
+  * Phone: "no permissions" phones get an Allow access button (one polkit
+    prompt), a udev rule for any ADB phone, and no terminal instructions.
+    adb and pkexec are now dependencies. Android 0.4.2's activation script.
+  * Window, following Windows 0.4: Audio mode in its own panel, help at the
+    top right, one refresh beside Audio output, a divider before Source app,
+    more space above the buffering choices, display icons for monitors.
+  * Sidebar button in the header bar; the Standby text no longer moves the
+    layout; English uses the desktop font, Arabic a larger IBM Plex Sans Arabic.
+
+ -- الطرفية <altarafiyah@gmail.com>  Sat, 31 Oct 2026 18:59:37 +0800
+
+sukut (0.4.0~beta.1-1) trixie; urgency=medium
+
+  * First Linux build for Debian 13: the GNOME window, the tray host,
+    PipeWire audio with routing ownership, the shared sealed engine and the
+    phone tools.
+
+ -- الطرفية <altarafiyah@gmail.com>  Thu, 29 Oct 2026 18:00:00 +0800

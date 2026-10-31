@@ -23,4 +23,10 @@ class ProcessingThreadTask final {
 };
 struct ThreadCpuSample { std::uint64_t nanoseconds = 0; bool valid = false; };
 ThreadCpuSample ReadThreadCpuTime() noexcept;
+#if !defined(_WIN32)
+// Linux: asked when the kernel refuses the nice value (unprivileged users). The
+// host installs RealtimeKit here; the engine itself stays free of D-Bus.
+using PriorityRequest = bool (*)(long thread_id, int nice);
+void SetPriorityRequest(PriorityRequest request) noexcept;
+#endif
 } // namespace cleanwave

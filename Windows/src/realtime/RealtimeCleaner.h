@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <mutex>
@@ -21,6 +22,11 @@ struct RecoverySnapshot {
   std::uint64_t burst_covered_overruns = 0;
   double burst_allowance_ms = 0, burst_credit_ms = 0;
   bool paused = false;
+  // Standby: >=5 s of exact digital silence; no FFT/model work until sound returns.
+  bool standby = false;
+  std::uint64_t standby_packets = 0, standby_entries = 0;
+  float high_band_gain = 1.0F;
+  std::string kernels;  // CPU kernel selection report, set once per start
   ProcessingMode applied_mode = ProcessingMode::Default;
   std::uint64_t applied_revision = 0;
 };
@@ -43,6 +49,9 @@ class RealtimeCleaner final : public PacketProcessor {
   void Configure(RealtimeMix mix, bool silence_recovery = false);
   void SetMode(ProcessingMode mode, bool silence_recovery = false);
   CleanerControlSnapshot Controls() const;
+  // Sukut only: Standby after 5 s of exact digital silence and the >16 kHz
+  // guard. Call before the pipeline starts. Off keeps reference behaviour.
+  void EnableEfficiency(bool enabled);
   bool Warmup(std::stop_token stop) override;
   ProcessInfo Process(std::span<const std::int16_t> input, bool first,
                       AudioLevel::PcmHop& output) override;
@@ -75,6 +84,11 @@ class RealtimeCleaner final : public PacketProcessor {
   bool stream_started_ = false;
   bool recovery_was_silent_ = false;
   bool collect_diagnostics_ = true;
+  // 250 hops of 20 ms = 5 s. Worker-owned except the enable flag.
+  static constexpr std::uint32_t kStandbyHoldPackets = 250;
+  std::atomic<bool> efficiency_{false};
+  std::uint32_t silent_packets_ = 0;
+  bool standby_ = false;
   std::uint64_t fallback_offset_ = 0, recovery_offset_ = 0, probe_failure_offset_ = 0;
   std::uint64_t burst_covered_offset_ = 0;
 };

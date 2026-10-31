@@ -8,31 +8,27 @@ namespace Sukut;
 
 internal sealed record PhoneDevice(string Serial, string State, string Model)
 {
-    public string Label => $"{Model} · {Serial} · {State}";
+    public string Label => Model+" · "+(Serial.Length>4?Serial[^4..]:Serial);
 }
+internal sealed record PhoneConnectionInfo(string Name, string Android, string? SukutVersion, long? SukutCode, bool WorkerReady);
 internal sealed record PhoneTransfer(string Item, long Received, long? Total);
 internal sealed record SukutInstallation(long? InstalledCode, long BundledCode, string BundledVersion)
 {
     public bool CanUpdate => InstalledCode is long installed && installed < BundledCode;
     public bool IsCurrent => InstalledCode is long installed && installed >= BundledCode;
 }
-internal sealed class PhoneTools
+internal sealed partial class PhoneTools
 {
-    internal const string Package = "moe.shizuku.privileged.api";
-    internal const string SukutPackage = "com.osama.sukut";
-    internal const string ApkHash = "A05832CE3716AFB1FCCCF46F348006D2A296CA777E1FF3D223797DC74D06B31F";
+    internal const string SukutPackage = "com.altarafiyah.sukut";
     internal const string ToolsHash = "45F4D63113E895EBDE0C90F194099A4676B6AC653BD28D54314A9E022BBC1A99";
     private readonly string _dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Sukut", "PhoneTools");
     private string Adb => Path.Combine(_dir, "platform-tools", "adb.exe");
-    private string Apk => Path.Combine(_dir, "shizuku-13.5.4.apk");
     public bool AdbReady => File.Exists(Adb)
         && File.Exists(Path.Combine(_dir, "platform-tools", "AdbWinApi.dll"))
         && File.Exists(Path.Combine(_dir, "platform-tools", "AdbWinUsbApi.dll"));
-    public bool Ready => AdbReady && File.Exists(Apk);
-    public async Task Prepare(IProgress<PhoneTransfer>? progress = null, bool includeShizuku = true)
+    public async Task Prepare(IProgress<PhoneTransfer>? progress = null)
     {
         Directory.CreateDirectory(_dir);
-        if (includeShizuku) await Download("https://github.com/RikkaApps/Shizuku/releases/download/v13.5.4/shizuku-v13.5.4.r1049.0e53409-release.apk", Apk, ApkHash, "Shizuku", progress);
         if (AdbReady) return;
         string archive = Path.Combine(_dir, "platform-tools.zip");
         await Download("https://dl.google.com/android/repository/platform-tools_r37.0.1-win.zip", archive, ToolsHash, "USB tools", progress);
@@ -96,7 +92,49 @@ internal sealed class PhoneTools
         }
         return devices;
     }
-    public async Task<List<PhoneDevice>> Devices() => ParseDevices(await Run(["devices", "-l"]));
+    // ADB can report an offline transport briefly after reconnect/server startup.
+    // Re-read it without killing the shared server or changing authorization.
+    internal static async Task<List<PhoneDevice>> DiscoverDevices(Func<Task<string>> read, Func<int, Task>? delay = null)
+    {
+        delay ??= milliseconds => Task.Delay(milliseconds);
+        List<PhoneDevice> devices = [];
+        for (int attempt = 0; attempt < 3; ++attempt)
+        {
+            devices = ParseDevices(await read());
+            if (devices.Any(x => x.State is "device" or "unauthorized")) break;
+            if (attempt < 2) await delay(400 * (attempt + 1));
+        }
+        return devices;
+    }
+    internal static PhoneDevice? SelectDevice(List<PhoneDevice> devices, string? previousSerial)
+    {
+        var previous = devices.Find(x => x.Serial == previousSerial);
+        if (previous?.State == "device") return previous;
+        var online = devices.Where(x => x.State == "device").ToList();
+        if (online.Count == 1) return online[0];
+        return previous ?? (devices.Count == 1 ? devices[0] : null);
+    }
+    public Task<List<PhoneDevice>> Devices() => DiscoverDevices(() => Run(["devices", "-l"]));
+    internal static string AndroidProperty(string properties,string key)
+        =>Regex.Match(properties,@"(?m)^\["+Regex.Escape(key)+@"\]: \[([^\r\n]*)\]\s*$").Groups[1].Value;
+    internal static PhoneConnectionInfo ParsePhoneInfo(PhoneDevice device,string properties,string sukut, bool ready = false)
+    {
+        string name=AndroidProperty(properties,"ro.product.marketname");
+        if(name.Length==0)name=AndroidProperty(properties,"ro.product.vendor.marketname");
+        if(name.Length==0){name=AndroidProperty(properties,"ro.product.model");if(name.Length==0)name=device.Model;}
+        string android=AndroidProperty(properties,"ro.build.version.release");
+        string version=Regex.Match(sukut,@"\bversionName=(\d+\.\d+(?:\.\d+)?(?:-beta\.\d+)?)").Groups[1].Value;
+        return new(name,android,version.Length==0?null:version,ParseVersionCode(sukut),ready);
+    }
+    public async Task<PhoneConnectionInfo> InspectPhone(PhoneDevice device)
+    {
+        await EnsureAuthorized(device);
+        string properties=await Run(["-s",device.Serial,"shell","getprop"]);
+        string sukut=await Run(["-s",device.Serial,"shell","dumpsys","package",SukutPackage]);
+        int user = await CurrentUser(device);
+        string state = await WorkerState(device, user);
+        return ParsePhoneInfo(device,properties,sukut,WorkerIsReady(state,ParseVersionCode(sukut) ?? 0));
+    }
     internal static long? ParseVersionCode(string output)
     {
         var match = Regex.Match(output, @"\bversionCode=(\d+)");
@@ -105,7 +143,7 @@ internal sealed class PhoneTools
     internal static (string Version, long Code) ParseSukutBundleVersion(string text)
     {
         string[] lines = text.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (lines.Length != 2 || !Regex.IsMatch(lines[0], @"^\d+\.\d+\.\d+$") || !long.TryParse(lines[1], out long code) || code <= 0)
+        if (lines.Length != 2 || !Regex.IsMatch(lines[0], @"^\d+\.\d+(?:\.\d+)?(?:-beta\.\d+)?$") || !long.TryParse(lines[1], out long code) || code <= 0)
             throw new IOException("Sukut APK version information is missing or invalid. Use the complete Sukut folder.");
         return (lines[0], code);
     }
@@ -139,42 +177,28 @@ internal sealed class PhoneTools
         await EnsureAuthorized(device);
         string result = await Run(["-s", device.Serial, "shell", "am", "start", "-W", "-n", SukutPackage + "/com.osama.cleanwave.MainActivity"]);
         if (result.Contains("Error:", StringComparison.OrdinalIgnoreCase)) throw new IOException(result.Trim());
-        return "Sukut opened. Allow its Shizuku request on the phone.";
+        return "Sukut opened. Activate its audio worker, then press Start on the phone.";
     }
     private async Task EnsureAuthorized(PhoneDevice device)
     {
         if (!(await Devices()).Exists(x => x.Serial == device.Serial && x.State == "device"))
             throw new IOException("Unlock the phone, allow USB debugging, then refresh devices.");
     }
-    public async Task<string> Install(PhoneDevice device, IProgress<PhoneTransfer>? progress = null)
+    public Task<string> SetupSukut(PhoneDevice device) => SetupSukutCore(()=>SukutStatus(device),
+        update=>InstallSukut(device,update),()=>OpenSukut(device));
+
+    internal static async Task<string> SetupSukutCore(Func<Task<SukutInstallation>> readStatus,
+        Func<bool,Task<string>> install,Func<Task<string>> open)
     {
-        await EnsureAuthorized(device);
-        string installed = await Run(["-s", device.Serial, "shell", "dumpsys", "package", Package]);
-        if (ParseVersionCode(installed) is >= 1049) return "Shizuku 13.5.4 or newer is already installed.";
-        await Prepare(progress);
-        if (await Hash(Apk) != ApkHash) throw new IOException("Shizuku download verification failed. Download tools again.");
-        string result = await Run(["-s", device.Serial, "install", "-r", Apk], 120);
-        if (!result.Contains("Success", StringComparison.Ordinal)) throw new IOException(result.Trim());
-        return "Shizuku installed. Open it once, then choose Start Shizuku.";
-    }
-    public async Task<string> Open(PhoneDevice device)
-    {
-        await EnsureAuthorized(device);
-        string result = await Run(["-s", device.Serial, "shell", "am", "start", "-W", "-n", Package + "/moe.shizuku.manager.MainActivity"]);
-        if (result.Contains("Error:", StringComparison.OrdinalIgnoreCase)) throw new IOException(result.Trim());
-        return "Shizuku opened on the phone.";
-    }
-    public async Task<string> Start(PhoneDevice device)
-    {
-        await EnsureAuthorized(device);
-        string running = await Run(["-s", device.Serial, "shell", "pidof", "shizuku_server"], allowFailure: true);
-        if (!Regex.IsMatch(running.Trim(), @"^\d+(\s+\d+)*$"))
+        var status=await readStatus();
+        if(!status.IsCurrent)
         {
-            await Run(["-s", device.Serial, "shell", "sh", "/sdcard/Android/data/" + Package + "/start.sh"], 45);
-            running = await Run(["-s", device.Serial, "shell", "pidof", "shizuku_server"], allowFailure: true);
-            if (!Regex.IsMatch(running.Trim(), @"^\d+(\s+\d+)*$")) throw new IOException("Shizuku did not start. Open Shizuku on the phone, then retry.");
+            await install(status.InstalledCode!=null);
+            var actual=await readStatus();
+            if(actual.InstalledCode!=status.BundledCode) throw new IOException("Sukut installation did not report the expected version. Check the phone and retry.");
         }
-        return "Shizuku is running. Open Sukut on the phone and allow its Shizuku request. Start Shizuku again after a phone restart.";
+        await open();
+        return "Sukut is installed and ready for activation.";
     }
     private async Task<string> Run(string[] args, int seconds = 20, bool allowFailure = false)
     {

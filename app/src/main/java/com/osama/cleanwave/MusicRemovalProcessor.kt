@@ -2,10 +2,7 @@ package com.osama.cleanwave
 
 import android.content.Context
 import java.io.File
-import java.io.FileInputStream
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.channels.FileChannel
 
 /** Two music-removal engines, selected for spoken dialogue or singing. */
 class MusicRemovalProcessor private constructor(private val cleaner: AudioCleaner) : AudioCleaner by cleaner {
@@ -30,24 +27,15 @@ class MusicRemovalProcessor private constructor(private val cleaner: AudioCleane
                     Boolean::class.javaPrimitiveType,
                 )
                 return constructor.newInstance(
-                    mapAsset(context, "separator.tflite"),
-                    context.assets.open("window_576_q15.bin").use { it.readBytes() },
-                    context.assets.open("window_960_q15.bin").use { it.readBytes() },
+                    AssetSeal.model(context),
+                    AssetSeal.bytes(context, "window_576_q15.bin"),
+                    AssetSeal.bytes(context, "window_960_q15.bin"),
                     true,
                 ) as AudioCleaner
             } catch (problem: ReflectiveOperationException) {
-                throw IllegalStateException("Audio research engine unavailable", problem)
+                throw IllegalStateException("Sukut audio engine unavailable", problem)
             }
         }
-
-        private fun mapAsset(context: Context, name: String): ByteBuffer =
-            context.assets.openFd(name).use { descriptor ->
-                check(descriptor.length > 0) { "$name is not directly mappable" }
-                FileInputStream(descriptor.fileDescriptor).channel.use { channel ->
-                    channel.map(FileChannel.MapMode.READ_ONLY, descriptor.startOffset, descriptor.length)
-                        .order(ByteOrder.nativeOrder())
-                }
-            }
 
         private fun create(mode: Int, enforceBudget: Boolean, read: (String) -> ByteArray): AudioCleaner {
             return when (mode) {

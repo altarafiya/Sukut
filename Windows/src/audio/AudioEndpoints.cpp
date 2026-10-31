@@ -105,6 +105,12 @@ std::wstring Lower(std::wstring value) {
   std::transform(value.begin(), value.end(), value.begin(), [](wchar_t c) { return std::towlower(c); });
   return value;
 }
+bool PhysicalBus(const std::wstring& instance) {
+  const auto id=Lower(instance);
+  for(const auto* bus:{L"usb\\",L"hdaudio\\",L"bthenum\\",L"bthhfenum\\",L"bthledevice\\"})
+    if(id.rfind(bus,0)==0)return true;
+  return false;
+}
 }
 
 std::vector<EndpointInfo> EnumerateAudioEndpoints() {
@@ -130,16 +136,17 @@ EndpointInfo InspectAudioEndpoint(const std::wstring& id) {
 }
 
 void ValidateAudioRoute(const AudioRoute& route, const std::vector<EndpointInfo>& endpoints) {
-  const auto find = [&](const std::wstring& id, EndpointFlow flow) -> const EndpointInfo& {
+  const auto find = [&](const std::wstring& id, EndpointFlow flow, const char* label) -> const EndpointInfo& {
     const auto it = std::find_if(endpoints.begin(), endpoints.end(), [&](const auto& e) { return e.id == id; });
-    if (it == endpoints.end() || it->flow != flow || it->state != DEVICE_STATE_ACTIVE || !it->error.empty()) {
-      throw std::runtime_error("route endpoint is missing, inactive, unreadable or has wrong direction");
-    }
+    if (it == endpoints.end() || it->state != DEVICE_STATE_ACTIVE)
+      throw std::runtime_error(std::string(label) + " is disconnected or unavailable. Connect it and choose it again.");
+    if (it->flow != flow) throw std::runtime_error(std::string(label) + " has the wrong audio direction.");
+    if (!it->error.empty()) throw std::runtime_error(std::string(label) + " could not be opened: " + Utf8(it->error));
     return *it;
   };
-  const auto& source = find(route.source_render_id, EndpointFlow::Render);
-  const auto& capture = find(route.capture_id, EndpointFlow::Capture);
-  const auto& output = find(route.physical_render_id, EndpointFlow::Render);
+  const auto& source = find(route.source_render_id, EndpointFlow::Render, "VB-CABLE input");
+  const auto& capture = find(route.capture_id, EndpointFlow::Capture, "VB-CABLE output");
+  const auto& output = find(route.physical_render_id, EndpointFlow::Render, "Selected audio output");
   if (source.id == output.id || capture.id == output.id) throw std::runtime_error("feedback route rejected");
   const auto source_name = Lower(source.name), capture_name = Lower(capture.name), output_name = Lower(output.name);
   if (source_name.find(L"cable input") == std::wstring::npos ||
@@ -156,10 +163,30 @@ void ValidateAudioRoute(const AudioRoute& route, const std::vector<EndpointInfo>
       output_name.find(L"vb-audio") != std::wstring::npos) {
     throw std::runtime_error("output must be outside the virtual capture adapter");
   }
-  const auto output_instance = Lower(output.adapter_instance_id);
-  if (output_instance.rfind(L"usb\\", 0) != 0 && output_instance.rfind(L"hdaudio\\", 0) != 0) {
-    throw std::runtime_error("unverified physical output bus; baseline supports USB/HDAUDIO adapters");
+  // Bluetooth render endpoints are physical outputs too. Keep the adapter and
+  // virtual-pair checks above: allowing arbitrary ROOT/SWD software outputs
+  // would weaken the feedback protection.
+  if (!PhysicalBus(output.adapter_instance_id)) {
+    throw std::runtime_error("Unverified playback adapter. Choose speakers, USB audio or a Bluetooth audio device.");
   }
+}
+
+std::wstring ChooseRestoreOutput(const std::wstring& preferred,const std::wstring& cable,const std::vector<EndpointInfo>& endpoints) {
+  const auto cable_endpoint=std::find_if(endpoints.begin(),endpoints.end(),[&](const auto& e){return Lower(e.id)==Lower(cable);});
+  const auto usable=[&](const auto& e) {
+    return e.flow==EndpointFlow::Render && e.state==DEVICE_STATE_ACTIVE && e.error.empty() && PhysicalBus(e.adapter_instance_id)
+      && Lower(e.id)!=Lower(cable) && Lower(e.name).find(L"vb-audio")==std::wstring::npos
+      && (cable_endpoint==endpoints.end() || Lower(e.adapter_instance_id)!=Lower(cable_endpoint->adapter_instance_id));
+  };
+  // Preserve an explicit pre-existing Windows choice, including another app's
+  // virtual output. Only fallback discovery is restricted to physical buses.
+  for(const auto& e:endpoints)if(Lower(e.id)==Lower(preferred) && e.flow==EndpointFlow::Render && e.state==DEVICE_STATE_ACTIVE
+      && e.error.empty() && Lower(e.id)!=Lower(cable) && Lower(e.name).find(L"vb-audio")==std::wstring::npos
+      && (cable_endpoint==endpoints.end() || e.adapter_instance_id.empty() || Lower(e.adapter_instance_id)!=Lower(cable_endpoint->adapter_instance_id)))return e.id;
+  for(const auto& e:endpoints)if(usable(e) && e.default_multimedia)return e.id;
+  for(const auto& e:endpoints)if(usable(e) && e.default_console)return e.id;
+  for(const auto& e:endpoints)if(usable(e))return e.id;
+  throw std::runtime_error("Audio restoration is waiting for a connected playback device.");
 }
 
 std::string Utf8(const std::wstring& text) {

@@ -273,6 +273,7 @@ void AudioRouting::Load(){
   }
 }
 void AudioRouting::Begin(const std::wstring& cable,const std::wstring& physical,unsigned pid,const std::wstring& owner){
+  RestoreLock restore_lock;
   Restore();RestorePending();RuntimeApartment apartment;cable_=cable;physical_=physical;pid_=pid;process_path_.clear();process_started_=0;defaults_owned_=false;
   all_system_=pid==0;
   // The last source can have a saved explicit physical route (including pins
@@ -358,26 +359,43 @@ void AudioRouting::CheckRoute(){
       if(!Same(current.Text(),AppId(cable_)))throw std::runtime_error("The source app audio route changed. Restart audio to apply the selected route.");}
   }
 }
-void AudioRouting::RestorePending(unsigned active_pid,bool all_system_active){
+bool AudioRouting::RestorePending(unsigned active_pid,bool all_system_active,const std::wstring& owner){
+  RestoreLock restore_lock;
   // A returning app's existing cable route already belongs in the active
   // global mix. Restoring its physical pin here would bypass that mix.
-  if(all_system_active)return;
+  AudioRouting current(journal_);current.Load();
+  const bool global=all_system_active || (current.owned_ && current.all_system_);
+  const auto protected_path=current.owned_?current.process_path_:std::wstring{};
   const auto directory=journal_.parent_path()/L"pending-app-routes";
   std::error_code error;
-  if(!std::filesystem::is_directory(directory,error))return;
+  if(!std::filesystem::exists(directory,error))return !error;
+  if(!std::filesystem::is_directory(directory,error))return false;
   const auto active=active_pid?Process(active_pid):SourceApp{};
+  bool complete=true;
   // A closed app's persisted route requires a live PID. Keep its exact prior
   // choices on disk, and retry outside the audio workers as soon as it reopens,
   // including before it has created an audio session on the stale cable route.
   for(const auto& entry:std::filesystem::directory_iterator(directory,error)){
     if(entry.path().extension()!=L".ini")continue;
     try{
+      if(!owner.empty()){
+        std::ifstream record(entry.path(),std::ios::binary);std::string line;bool matches=false;
+        while(std::getline(record,line))if(line=="owner="+Utf8(owner)){matches=true;break;}
+        if(!matches)continue;
+      }
       AudioRouting pending(entry.path());pending.Load();
+      if(!owner.empty() && pending.owner_!=owner)continue;
       // Never undo the route of the app currently being filtered.
-      if(!active.path.empty() && Same(active.path,pending.process_path_))continue;
+      if(global || (!protected_path.empty() && Same(protected_path,pending.process_path_)) ||
+          (!active.path.empty() && Same(active.path,pending.process_path_))){complete=false;continue;}
       pending.Restore({},false);
-    }catch(const std::exception&){/* Retain the record and retry on a later poll. */}
+      if(std::filesystem::exists(entry.path()))complete=false;
+    }catch(const std::exception&){
+      if(!owner.empty())throw; // The guard bounds genuine policy/record failures.
+      complete=false;/* Retain the record and retry on a later poll. */
+    }
   }
+  return complete && !error;
 }
 void AudioRouting::Restore(const std::wstring& expected_owner,bool defer_missing_source){
   RestoreLock restore_lock;Load();if(!owned_ || (!expected_owner.empty() && expected_owner!=owner_))return;RuntimeApartment apartment;
@@ -409,6 +427,22 @@ void AudioRouting::Restore(const std::wstring& expected_owner,bool defer_missing
       VolumeBridge::Write(volume_->physical.Get(),target);physical_volume_owned_=false;Save();
     }
   }
+  // Restore system output and virtual volume before resolving per-app audio
+  // identities. A disappearing browser PID must never strand all playback on
+  // an unconsumed cable when the user exits Sukut.
+  std::optional<std::vector<EndpointInfo>> available;
+  const auto restore_default=[&](const std::wstring& target,int role) {
+    if(!available)available=EnumerateAudioEndpoints();
+    // An unplugged saved endpoint must not block the next connected output's
+    // explicit Off/Start handoff. Preserve a newer Windows choice; otherwise
+    // restore a verified connected physical output instead of stranding CABLE.
+    SetDefault(ChooseRestoreOutput(target,cable_,*available),static_cast<ERole>(role));
+  };
+  if(!pid_)for(int r=0;r<2;++r)if(Same(Default(static_cast<ERole>(r)),cable_))restore_default(previous_[r],r);
+  if(defaults_owned_)for(int r=0;r<2;++r)if(Same(Default(static_cast<ERole>(r)),all_system_?cable_:physical_))restore_default(defaults_[r],r);
+  defaults_owned_=false;
+  if(volume_owned_){VolumeBridge::Write(volume_->cable.Get(),cable_before_);volume_owned_=false;}
+  Save(); // A later app-policy failure leaves only its own route pending.
   if(pid_ && !missing_source){
     auto p=AppFactory();
     const auto sessions=SourceApps();
@@ -435,10 +469,7 @@ void AudioRouting::Restore(const std::wstring& expected_owner,bool defer_missing
       if(!defer_missing_source)return;
       missing_source=true;
     }
-  }else if(!pid_)for(int r=0;r<2;++r)if(Same(Default(static_cast<ERole>(r)),cable_))SetDefault(previous_[r],static_cast<ERole>(r));
-  if(defaults_owned_)for(int r=0;r<2;++r)if(Same(Default(static_cast<ERole>(r)),all_system_?cable_:physical_))SetDefault(defaults_[r],static_cast<ERole>(r));
-  defaults_owned_=false;
-  if(volume_owned_){VolumeBridge::Write(volume_->cable.Get(),cable_before_);volume_owned_=false;Save();}
+  }
   if(missing_source){
     // Global defaults and volume have already been restored. Only the absent
     // app's persisted choices remain; they must not lock the whole bridge.

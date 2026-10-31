@@ -16,6 +16,15 @@ public final class CaptureRoutingFixture {
         Class<?> runtime=Class.forName("dalvik.system.VMRuntime");
         Object vm=invoke(null,runtime,"getRuntime",new Class<?>[]{});
         invoke(vm,runtime,"setHiddenApiExemptions",new Class<?>[]{String[].class},(Object)new String[]{""});
+        Method field=ScreenRecordingRouter.class.getDeclaredMethod("field",Class.class,String.class,boolean.class);
+        field.setAccessible(true);
+        for(String[] query:new String[][]{{"android.media.AudioSystem","sRecordingCallback","true"},
+                {"android.media.audiopolicy.AudioMix","mRule","false"}}) {
+            Class<?> owner=Class.forName(query[0]);
+            Field found=(Field)field.invoke(null,owner,query[1],Boolean.parseBoolean(query[2]));
+            if(found.getDeclaringClass()!=owner || !found.getName().equals(query[1]))throw new AssertionError("Placeholder field returned");
+        }
+        System.out.println("PASS production callback and mix field lookup");
         if(Looper.myLooper()==null)Looper.prepareMainLooper();
         Class<?> activity=Class.forName("android.app.ActivityThread");
         Object at=invoke(null,activity,"systemMain",new Class<?>[]{});
@@ -49,7 +58,12 @@ public final class CaptureRoutingFixture {
             Method dump=ScreenRecordingRouter.class.getDeclaredMethod("policyDump");dump.setAccessible(true);
             Method mixes=ScreenRecordingRouter.class.getDeclaredMethod("mixes");mixes.setAccessible(true);
             Object descriptor=null;
-            for(Object candidate:(List<?>)mixes.invoke(null))if(address.equals(invoke(candidate,candidate.getClass(),"getRegistration",new Class<?>[]{})))descriptor=candidate;
+            for(Object candidate:(List<?>)mixes.invoke(null)) {
+                String candidateAddress=(String)invoke(candidate,candidate.getClass(),"getRegistration",new Class<?>[]{});
+                if(address.equals(candidateAddress))descriptor=candidate;
+                else if(((Integer)invoke(candidate,candidate.getClass(),"getRouteFlags",new Class<?>[]{}))==3)
+                    throw new IllegalStateException("Stop screen recording before running this fixture; only fixture-owned captures may be tested");
+            }
             if(descriptor==null)throw new IllegalStateException("own descriptor missing");
             Method rule=ScreenRecordingRouter.class.getDeclaredMethod("rule",RecordingCapturePolicy.Snapshot.class,boolean.class);rule.setAccessible(true);
             Method update=ScreenRecordingRouter.class.getDeclaredMethod("update",Object.class,Object.class,Object.class);update.setAccessible(true);

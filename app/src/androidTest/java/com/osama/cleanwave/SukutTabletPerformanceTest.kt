@@ -30,7 +30,7 @@ class SukutTabletPerformanceTest {
     private fun views(v: View): List<View> = buildList {
         add(v); if (v is ViewGroup) for (i in 0 until v.childCount) addAll(views(v.getChildAt(i)))
     }
-    private fun <T : Activity> launch(type: Class<T>): T {
+    private fun <T : Activity> launch(type: Class<T>, page: Int = 0): T {
         // Xiaomi blocks an instrumented app's first background Activity launch.
         // Start its ordinary exported launcher as shell, then use in-app launches.
         val command = "am start -W -n ${context.packageName}/com.osama.cleanwave.MainActivity"
@@ -39,7 +39,7 @@ class SukutTabletPerformanceTest {
         var activity: Activity? = null
         if (type == MainActivity::class.java) ins.runOnMainSync {
             activity = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED).first { it is MainActivity }
-        } else activity = ins.startActivitySync(Intent(context, type).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } else activity = ins.startActivitySync(Intent(context, type).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("page", page))
         ins.waitForIdleSync(); SystemClock.sleep(450)
         @Suppress("UNCHECKED_CAST") return activity as T
     }
@@ -78,92 +78,42 @@ class SukutTabletPerformanceTest {
     }
 
     private fun setOption(root: View, tag: String, position: Int) = ins.runOnMainSync {
-        val slider = views(root).filterIsInstance<SeekBar>().first { it.tag == tag }
-        if (slider.progress == position) return@runOnMainSync
-        assertTrue(slider.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id,
-            android.os.Bundle().apply { putFloat(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE, position.toFloat()) }))
+        when (val control = views(root).first { it.tag == tag }) {
+            is android.widget.Switch -> if (control.isChecked != (position == 1)) control.performClick()
+            is SegmentedChoice -> control.getChildAt(position).performClick()
+            else -> error("Unknown playback control")
+        }
     }
 
-    @Test fun customSlidersSetupAndSettings() {
+    @Test fun playbackControlsInSettingsAndSetup() {
         val prefs = context.getSharedPreferences("cleanwave_state", 0)
         val uiPrefs = context.getSharedPreferences("cleanwave_ui", 0)
-        CleanerPrefs.reconcileRuntimeState(context)
         val saved = prefs.all.toMap(); val savedUi = uiPrefs.all.toMap()
-        assertFalse("Do not interrupt an existing user session", CleanerPrefs.isEnabled(context))
-        val orientation = context.resources.configuration.orientation
-        report.appendText("version=${BuildConfig.VERSION_NAME}; custom sliders; orientation=$orientation\n")
+        assertFalse("Do not interrupt an existing session", CleanerPrefs.isEnabled(context))
         try {
             UiPrefs.finishSetup(context)
             for ((language, theme) in listOf("en" to UiPrefs.THEME_LIGHT, "ar" to UiPrefs.THEME_DARK)) {
                 UiPrefs.setLanguage(context, language); UiPrefs.setTheme(context, theme)
-                CleanerPrefs.setEnginePerformance(context, false, 1, custom = true)
-                val settings = launch(MainActivity::class.java)
+                val home = launch(MainActivity::class.java)
                 try {
-                    click(settings, R.string.engine_performance); SystemClock.sleep(250)
-                    val dialog = MainActivity::class.java.getDeclaredField("performanceDialog").apply { isAccessible = true }.get(settings) as Dialog
-                    ins.runOnMainSync { views(dialog.window!!.decorView).filterIsInstance<ScrollView>().first().fullScroll(View.FOCUS_DOWN) }
-                    ins.waitForIdleSync(); SystemClock.sleep(250)
-                    val quality = views(dialog.window!!.decorView).filterIsInstance<SeekBar>().first { it.tag == "custom_output_quality" }
-                    val buffer = views(dialog.window!!.decorView).filterIsInstance<SeekBar>().first { it.tag == "custom_audio_buffering" }
-                    ins.runOnMainSync {
-                        assertEquals(1, quality.max); assertEquals(2, buffer.max)
-                        assertTrue(quality.width >= MobileUi(settings).dp(200)); assertTrue(buffer.width >= MobileUi(settings).dp(200))
-                        assertEquals(MobileUi(settings).dp(64), quality.height)
-                        assertEquals(MobileUi(settings).dp(36), quality.thumb.intrinsicWidth)
-                        assertEquals(MobileUi(settings).dp(22), quality.maxHeight)
-                        assertEquals(if (language == "ar") View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR, quality.layoutDirection)
-                    }
-                    screenshot("custom-settings-$orientation-$language-initial")
-                    fun drag(target: Int, cancel: Boolean = false) {
-                        val bounds = Rect(); ins.runOnMainSync {
-                            assertTrue(quality.getGlobalVisibleRect(bounds)); assertEquals(quality.height, bounds.height())
-                            // Dialog root coordinates are not display coordinates.
-                            val screen = IntArray(2); quality.getLocationOnScreen(screen)
-                            bounds.set(screen[0], screen[1], screen[0] + quality.width, screen[1] + quality.height)
-                        }
-                        val rtl = quality.layoutDirection == View.LAYOUT_DIRECTION_RTL
-                        fun x(position: Int): Float = bounds.left + quality.paddingLeft +
-                            (quality.width - quality.paddingLeft - quality.paddingRight) * (if (rtl) 1f - position.toFloat() else position.toFloat())
-                        val down = SystemClock.uptimeMillis(); val y = bounds.centerY().toFloat()
-                        val old = CleanerPrefs.effectsCompatibility(context)
-                        fun touch(action: Int, point: Float) { ins.sendPointerSync(MotionEvent.obtain(down, SystemClock.uptimeMillis(), action, point, y, 0)); ins.waitForIdleSync() }
-                        touch(MotionEvent.ACTION_DOWN, x(quality.progress)); touch(MotionEvent.ACTION_MOVE, x(target))
-                        assertEquals("Changed quality during drag", old, CleanerPrefs.effectsCompatibility(context))
-                        assertEquals("Preview did not follow drag", target, quality.progress)
-                        touch(if (cancel) MotionEvent.ACTION_CANCEL else MotionEvent.ACTION_UP, x(target))
-                        assertEquals("Release/cancel persistence", if (cancel) old else target == 1, CleanerPrefs.effectsCompatibility(context))
-                    }
-                    drag(1); drag(0, cancel = true)
-                    setOption(dialog.window!!.decorView, "custom_output_quality", 0)
-                    assertFalse(CleanerPrefs.effectsCompatibility(context))
-                    for (index in listOf(0, 1, 2)) {
-                        setOption(dialog.window!!.decorView, "custom_audio_buffering", index)
-                        assertEquals(index, CleanerPrefs.buffering(context))
-                    }
-                    assertEquals(EnginePerformanceConfig.CUSTOM, EnginePerformance.selected(context))
-                    screenshot("custom-settings-$orientation-$language")
+                    click(home, R.string.engine_performance); SystemClock.sleep(250)
+                    val dialog = MainActivity::class.java.getDeclaredField("performanceDialog").apply { isAccessible = true }.get(home) as Dialog
+                    setOption(dialog.window!!.decorView, "phone_effects_switch", 1)
+                    for (index in 0..2) { setOption(dialog.window!!.decorView, "audio_buffering", index); assertEquals(index, CleanerPrefs.buffering(context)); assertTrue(CleanerPrefs.effectsCompatibility(context)) }
+                    setOption(dialog.window!!.decorView, "phone_effects_switch", 0)
+                    assertEquals(2, CleanerPrefs.buffering(context)); assertFalse(CleanerPrefs.effectsCompatibility(context))
+                    assertFalse(CleanerPrefs.isEnabled(context)); assertFalse(CleanerPrefs.startPending(context))
+                    screenshot("playback-$language")
                     ins.runOnMainSync { dialog.dismiss() }
-                } finally { ins.runOnMainSync { settings.finish() } }
-                val setup = launch(SetupActivity::class.java)
+                } finally { ins.runOnMainSync { home.finish() } }
+                val setup = launch(SetupActivity::class.java, 2)
                 try {
-                    click(setup, R.string.next); SystemClock.sleep(350)
-                    click(setup, R.string.next); SystemClock.sleep(350)
-                    val quality = tagged(setup, "custom_output_quality") as SeekBar
-                    val buffer = tagged(setup, "custom_audio_buffering") as SeekBar
-                    assertEquals(0, quality.progress); assertEquals(2, buffer.progress)
-                    ins.runOnMainSync { views(setup.window.decorView).filterIsInstance<ScrollView>().first().fullScroll(View.FOCUS_DOWN) }
-                    footer(setup, R.string.next); screenshot("custom-setup-$orientation-$language")
+                    assertTrue(tagged(setup, "phone_effects_switch") is android.widget.Switch)
+                    assertEquals(3, (tagged(setup, "audio_buffering") as SegmentedChoice).childCount)
+                    screenshot("setup-playback-$language")
                 } finally { ins.runOnMainSync { setup.finish() } }
-                report.appendText("PASS $language theme=$theme orientation=$orientation: wide colored discrete sliders, RTL, drag preview/release/cancel, accessibility 2/3 options, shared setup persistence/footer\n")
             }
-            assertFalse("UI checks started audio", CleanerService.isAlive)
-        } finally {
-            ins.runOnMainSync {
-                Stage.entries.flatMap { ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(it) }.distinct()
-                    .filter { it is MainActivity || it is SetupActivity || it is SettingsActivity }.forEach { it.finish() }
-            }
-            restore(prefs, saved); restore(uiPrefs, savedUi)
-        }
+        } finally { restore(prefs, saved); restore(uiPrefs, savedUi) }
     }
 
     @Test fun landscapeSetupSettingsAndLivePerformance() {
@@ -186,7 +136,7 @@ class SukutTabletPerformanceTest {
                     footer(setup, R.string.next); screenshot("setup-$language-1")
                     click(setup, R.string.next); SystemClock.sleep(400); footer(setup, R.string.next); screenshot("setup-$language-2")
                     click(setup, R.string.next); SystemClock.sleep(400); footer(setup, R.string.next); screenshot("setup-$language-3")
-                    ins.runOnMainSync { tagged(setup, "performance_3").performClick() }
+                    setOption(setup.window.decorView, "phone_effects_switch", 1)
                     SystemClock.sleep(300); assertEquals(EnginePerformanceConfig.CUSTOM, EnginePerformance.selected(context))
                     ins.runOnMainSync { views(setup.window.decorView).filterIsInstance<ScrollView>().first().fullScroll(View.FOCUS_DOWN) }
                     SystemClock.sleep(250)
@@ -204,9 +154,9 @@ class SukutTabletPerformanceTest {
                     screenshot("settings-$language")
                     click(settings, R.string.engine_performance); SystemClock.sleep(300)
                     val dialog = MainActivity::class.java.getDeclaredField("performanceDialog").apply { isAccessible = true }.get(settings) as Dialog
-                    setOption(dialog.window!!.decorView, "custom_output_quality", 1)
+                    setOption(dialog.window!!.decorView, "phone_effects_switch", 1)
                     waitFor("custom higher quality saved") { CleanerPrefs.effectsCompatibility(context) }
-                    setOption(dialog.window!!.decorView, "custom_audio_buffering", 2)
+                    setOption(dialog.window!!.decorView, "audio_buffering", 2)
                     waitFor("custom maximum saved") { CleanerPrefs.buffering(context) == 2 }
                     ins.runOnMainSync { views(dialog.window!!.decorView).filterIsInstance<ScrollView>().first().fullScroll(View.FOCUS_DOWN) }
                     screenshot("performance-$language-custom")
@@ -218,7 +168,7 @@ class SukutTabletPerformanceTest {
             ins.runOnMainSync { EnginePerformance.select(context, EnginePerformanceConfig.BALANCED); CleanerPrefs.setSourcePreset(context, CleanerPrefs.SOURCE_OPTIMIZED) }
             val home = launch(MainActivity::class.java)
             try {
-                ins.runOnMainSync { tagged(home, "mode_0").performClick() }
+                ins.runOnMainSync { tagged(home, "mode_0").performClick(); assertFalse(CleanerPrefs.isEnabled(context)); tagged(home, "power_button").performClick() }
                 waitFor("active Optimized") { CleanerPrefs.status(context) == "Active" && CleanerService.routeGeneration > 0 }
                 assertEquals(-100, CleanerPrefs.sourceMusicDb(context)); assertEquals(0, CleanerPrefs.sourceVoiceDb(context))
                 val generation = CleanerService.routeGeneration

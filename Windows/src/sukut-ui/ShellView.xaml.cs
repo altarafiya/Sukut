@@ -17,7 +17,7 @@ public sealed partial class ShellView : UserControl
     private readonly DispatcherTimer _poll = new();
     private readonly string _root, _settingsFile;
     private readonly SettingsStore _settings;
-    private TrayIcon _tray = null!;
+    private HostLink _host = null!;
     private UiPreferences _preferences = new();
     private List<Endpoint> _endpoints = [], _outputs = [], _sources = [], _captures = [];
     private List<SourceApp> _apps = [];
@@ -26,9 +26,11 @@ public sealed partial class ShellView : UserControl
     private bool _applying = true, _command, _initialized, _polling, _visible = true, _allowExit, _loaded, _quitting;
     private bool? _controlsEnabled, _modesEnabled;
     private int _mode, _page;
+    private readonly Stack<int> _pageHistory = new();
     private string _status = "Preparing", _statusText = "", _rawError = "";
     private bool _errorOpen;
     private bool _appearanceQueued;
+    private readonly HostSettingsRevision _hostSettings = new();
     private bool Arabic => _preferences.Language == "ar";
     private string L(string en, string ar) => Arabic ? ar : en;
     private bool Minimized => AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized };
@@ -43,13 +45,14 @@ public sealed partial class ShellView : UserControl
     {
         App.DiagnosticStage = "shell constructor";
         _window = owner;
-        _root = FindRoot();
+        _root = AppLocations.DataRoot;
         _settingsFile = Path.Combine(_root, "runtime", "sukut-ui.json");
         try { if (File.Exists(_settingsFile)) _preferences = JsonSerializer.Deserialize(File.ReadAllBytes(_settingsFile), SukutJsonContext.Default.UiPreferences) ?? new(); }
         catch { }
         MigrateLegacyRoute();
         int previousBackground = _preferences.OptimizedBackgroundDb;
         _preferences = _preferences.Copy();
+        _selectedMode = _preferences.PreferredMode;
         _settings = new SettingsStore(_settingsFile);
         _settings.Failed += error => DispatcherQueue.TryEnqueue(() => Error(error.Message));
         InitializeComponent();
@@ -62,20 +65,27 @@ public sealed partial class ShellView : UserControl
         App.DiagnosticStage = "window sizing and tray";
         _window.ExtendsContentIntoTitleBar = true;
         _window.SetTitleBar(AppTitleBar);
+        // The root is transparent so the Fluent Mica backdrop shows; high contrast has no backdrop.
+        if (new Windows.UI.ViewManagement.AccessibilitySettings().HighContrast)
+            Root.Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["ApplicationPageBackgroundThemeBrush"];
         WindowSizing.Initialize(_window);
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Sukut.ico"));
-        _tray = new TrayIcon(_window, Path.Combine(AppContext.BaseDirectory, "Assets"), ShowWindow, () => _ = ChangeMode(0), () => _ = Quit(), UpdateLifecycle);
-        // Cancel before destruction, not from Window.Closed (which is too late
-        // to reliably keep the host alive for close-to-tray).
+        _windowModeIcons=new WindowModeIcons(WinRT.Interop.WindowNative.GetWindowHandle(_window));
+        // The tray icon and flyout live in the native host (Sukut.exe).
+        _host = new HostLink(_window, ShowWindow, () => _ = CloseWindow(), UpdateLifecycle);
+        // Closing ends this window process entirely, so no GUI stays in memory.
+        // With "Keep running in system tray" the host keeps filtering; without
+        // it, Sukut exits and restores the original audio routes.
         AppWindow.Closing += (sender, args) =>
         {
             if (_allowExit) return;
             args.Cancel = true;
             if (_quitting) return;
-            DispatcherQueue.TryEnqueue(() => { if (_preferences.CloseToTray) HideToTray(); else _ = Quit(); });
+            DispatcherQueue.TryEnqueue(() => { if (_preferences.CloseToTray) _ = CloseWindow(); else _ = Quit(); });
         };
         AppWindow.Changed += (_, _) => UpdateLifecycle();
-        Root.ActualThemeChanged += (_, _) => UpdateLifecycle();
+        _window.Activated += (_, args) => { if (args.WindowActivationState != WindowActivationState.Deactivated && HomePanel != null) _ = RefreshRoutingChoices(includeApps: true); };
+        Root.ActualThemeChanged += (_, _) => {UpdateLifecycle();RefreshHomeAppearance(refreshIcons:true);};
         _poll.Tick += async (_, _) => await Poll();
         ApplyLanguageAndTheme();
         App.DiagnosticStage = "shell constructed";
@@ -90,11 +100,16 @@ public sealed partial class ShellView : UserControl
             App.DiagnosticStage = "engine initializing";
             try
             {
-                await _engine.Initialize(_root);
+                await _engine.Initialize(_root, AppLocations.ResourceRoot, _host.Handle);
                 await _engine.SetAmplification(Math.Clamp(_preferences.AmplificationDb, 0, 12));
+                // The host may already be filtering (started from the tray).
+                var first = await _engine.Read();
+                if (first.Mode is >= 0 and <= 3) { _mode = first.Mode; SyncModeSelection(); }
                 _setupEngineReady = true;
                 UpdatePoll();
                 await Poll();
+                // Home's Source app list is visible: fill it once the engine answers.
+                if (HomePanel != null) _ = RefreshRoutingChoices(includeApps: true);
                 App.DiagnosticStage = "ready";
             }
             catch (Exception error) { Error(error.Message); }
@@ -116,14 +131,6 @@ public sealed partial class ShellView : UserControl
         }
     }
 
-    private static string FindRoot()
-    {
-        DirectoryInfo? parent = new(AppContext.BaseDirectory);
-        for (int depth = 0; depth < 9 && parent != null; depth++, parent = parent.Parent)
-            if (File.Exists(Path.Combine(parent.FullName, "sukut-package.json")) || File.Exists(Path.Combine(parent.FullName, "docs", "route.json"))) return parent.FullName;
-        throw new InvalidOperationException("Sukut audio files are missing. Extract the whole package and keep its app and assets folders together.");
-    }
-
     private void Save() => _settings.Schedule(_preferences);
     private async Task<bool> SaveNow()
     {
@@ -138,93 +145,71 @@ public sealed partial class ShellView : UserControl
         FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources[Arabic ? "SukutArabicFontFamily" : "ContentControlThemeFontFamily"];
         RequestedTheme = _preferences.Theme == "dark" ? ElementTheme.Dark : _preferences.Theme == "light" ? ElementTheme.Light : ElementTheme.Default;
         AppWindow.TitleBar.PreferredTheme = RequestedTheme == ElementTheme.Dark ? TitleBarTheme.Dark : RequestedTheme == ElementTheme.Light ? TitleBarTheme.Light : TitleBarTheme.UseDefaultAppMode;
-        PhoneNavItem.Content = L("Phone", "الهاتف"); HomeNavItem.Content = L("Home", "الرئيسية"); AboutNavItem.Content = L("About", "حول");
-        foreach (var item in new[] { HomeNavItem, AboutNavItem, PhoneNavItem }) { ToolTipService.SetToolTip(item, item.Content); AutomationProperties.SetName(item, (string)item.Content); }
-        if (Navigation.SettingsItem is NavigationViewItem settings)
-        {
-            settings.Content = L("Settings", "الإعدادات");
-            AutomationProperties.SetAutomationId(settings, "SettingsNavItem");
-            AutomationProperties.SetName(settings, (string)settings.Content);
-            ToolTipService.SetToolTip(settings, settings.Content);
-        }
-        _tray?.SetLabels(L("Open Sukut", "فتح سُكوت"), L("OFF", "إيقاف"), L("Exit", "خروج"));
+        LocalizeNavigation();
         if (HomePanel != null) { ApplyHomeTypography(); RenderHome(); }
         if (SettingsPanel != null) RenderSettings();
         if (AboutPanel != null) RenderAbout();
         if (SetupPanel != null) ApplySetupLanguage();
         RenderStatus(); RenderError();
-        // Theme application can recreate the built-in Settings item after layout.
-        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, LocalizeSettingsItem);
         QueueTypography();
     }
 
-    private void LocalizeSettingsItem()
+    private void HomePanel_Loaded(object sender, RoutedEventArgs args)
     {
-        if (Navigation.SettingsItem is not NavigationViewItem item) return;
-        item.Content = L("Settings", "الإعدادات");
-        AutomationProperties.SetAutomationId(item, "SettingsNavItem");
-        AutomationProperties.SetName(item, (string)item.Content);
-        ToolTipService.SetToolTip(item, item.Content);
+        FitPageViewport(); ApplyHomeTypography();
+        if (_apps.Count == 0) _apps.Add(new SourceApp { Name = L("All system audio", "صوت النظام بالكامل") });
+        RenderHome(); RenderStatus(); RenderError(); QueueTypography();
+        _ = RefreshRoutingChoices(includeApps: true);
     }
-
-    private void HomePanel_Loaded(object sender, RoutedEventArgs args) { OutputButton.Flyout = null; FitPageViewport(); LocalizeSettingsItem(); ApplyHomeTypography(); RenderHome(); RenderStatus(); RenderError(); QueueTypography(); }
     private async void SettingsPanel_Loaded(object sender, RoutedEventArgs args)
     {
-        FitPageViewport(); LocalizeSettingsItem(); RenderSettings();
+        FitPageViewport(); RenderSettings();
         try { await LoadApps(); } catch (Exception error) { Error(error.Message); }
         FocusRequestedSourceApp();
         QueueTypography();
     }
-    private void AboutPanel_Loaded(object sender, RoutedEventArgs args) { FitPageViewport(); AboutPanel.ChangeView(0, 0, null, true); RenderAbout(); StartBrand(); QueueTypography(); }
+    private void AboutPanel_Loaded(object sender, RoutedEventArgs args) { RenderAbout(); StartBrand(); QueueTypography(); }
+    private void SettingsPanel_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs args) => UpdateBrandInView();
     private void AboutPanel_Unloaded(object sender, RoutedEventArgs args) => StopBrand();
 
     private void RenderHome()
     {
         if (HomePanel == null) return;
-        RenderCableVolumeTip();
+        
         RenderOverloadTip();
-        HeaderSubtitle.Text = L("Clean audio from your apps", "صوت أنقى من تطبيقاتك");
+        HomeTitle.Text = L("Audio","الصوت");
+        HeaderSubtitle.Text = L("Output, source and filtering", "مخرج الصوت والمصدر والترشيح");
+        AutomationProperties.SetName(HomeSettingsButton,L("Settings","الإعدادات"));
         OutputLabel.Text = L("Audio output", "مخرج الصوت");
         BufferingLabel.Text = L("Audio buffering", "التخزين المؤقت للصوت");
-        OutputFlyoutTitle.Text = L("Playback device", "جهاز التشغيل");
         OutputSourceAppTitle.Text = L("Source app", "التطبيق المصدر");
-        AutomationProperties.SetName(OutputSourceAppChoice, OutputSourceAppTitle.Text);
-        OutputFlyout.Placement = Arabic ? Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.BottomEdgeAlignedRight : Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.BottomEdgeAlignedLeft;
-        BufferingFlyout.Placement = Arabic ? Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.BottomEdgeAlignedRight : Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.BottomEdgeAlignedLeft;
+        AutomationProperties.SetName(SourceAppList, OutputSourceAppTitle.Text); AutomationProperties.SetName(OutputList, OutputLabel.Text);
+        string refreshApps = L("Refresh audio outputs and source apps", "تحديث مخارج الصوت والتطبيقات المصدر"), modeHelp = L("Audio modes and buffering help", "شرح أوضاع الصوت والتخزين المؤقت");
+        AutomationProperties.SetName(RefreshAppsButton, refreshApps); ToolTipService.SetToolTip(RefreshAppsButton, refreshApps);
+        AutomationProperties.SetName(ModeHelpButton, modeHelp); ToolTipService.SetToolTip(ModeHelpButton, modeHelp);
         ModeHeading.Text = L("Audio mode", "وضع الصوت");
-        OffLabel.Text = L("OFF", "إيقاف");
         HalalLabel.Text = L("Music Filter", "مرشّح الموسيقى");
-        OptimizedLabel.Text = L("Optimized Mode", "الوضع المحسّن");
-        StrictLabel.Text = L("Strict Mode", "الوضع الصارم");
-        AutomationProperties.SetName(OffCard, OffLabel.Text); AutomationProperties.SetName(HalalCard, HalalLabel.Text); AutomationProperties.SetName(OptimizedCard, OptimizedLabel.Text);
+        OptimizedLabel.Text = L("Optimized", "محسّن");
+        StrictLabel.Text = L("Strict", "صارم");
+        HalalDescription.Text=L("Keep speech and other sounds","الإبقاء على الكلام والأصوات الأخرى");
+        OptimizedDescription.Text=L("Adjust the background level","ضبط مستوى أصوات الخلفية");
+        StrictDescription.Text=L("Focus on speech","التركيز على الكلام");
+        AutomationProperties.SetName(HalalCard, HalalLabel.Text); AutomationProperties.SetName(OptimizedCard, OptimizedLabel.Text);
         AutomationProperties.SetName(StrictCard, StrictLabel.Text);
         bool previous = _applying; _applying = true;
-        OutputList.ItemsSource = _outputs; OutputList.SelectedItem = SelectedOutput;
         RenderSourceAppChoices();
-        ModeChoices.SelectedIndex = _mode;
+        ModeChoices.SelectedIndex = _selectedMode-1;
         RenderBufferingSettings();
-        RenderModeDetails(_mode);
+        RenderModeDetails(_selectedMode);
         RenderEngineRow();
         _applying = previous;
-        AutomationProperties.SetName(OutputButton, OutputLabel.Text + ", " + OutputValue.Text);
-        AutomationProperties.SetName(BufferingButton, BufferingLabel.Text + ", " + BufferingValue.Text);
         SetEnabled(true);
     }
 
     private void RenderModeDetails(int mode)
     {
-        if (ModeDetailTitle == null) return;
+        if (OptimizedBackgroundPanel == null) return;
         var preset = AudioModePreset.ForMode(mode, _preferences.OptimizedBackgroundDb);
-        ModeDetailTitle.Text = mode switch { 1 => L("Music Filter", "مرشّح الموسيقى"), 2 => L("Optimized Mode", "الوضع المحسّن"), 3 => L("Strict Mode", "الوضع الصارم"), _ => L("Original audio", "الصوت الأصلي") };
-        ModeDetailTitle.Style = (Style)Application.Current.Resources[mode switch { 1 => "ModeHalalText", 2 => "ModeOptimizedText", 3 => "ModeStrictText", _ => "ModeOffText" }];
-        ModeDetailDescription.Inlines.Clear();
-        string lead = mode switch { 1 or 2 => L("Music muted. ", "الموسيقى مكتومة. "), 3 => L("Music and background muted. ", "الموسيقى والخلفية مكتومتان. "), _ => "" };
-        ModeDetailDescription.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = lead, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = ModeDetailTitle.Foreground });
-        ModeDetailDescription.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = mode switch {
-            1 => L("Keep speech and surrounding sounds.", "أبقِ الكلام والأصوات المحيطة."),
-            2 => L("Adjust background sounds below the modes.", "اضبط أصوات الخلفية أسفل الأوضاع."),
-            3 => L("Focus on speech. Some sound effects may disappear.", "ركّز على الكلام. قد تختفي بعض المؤثرات."),
-            _ => L("Original audio through your selected device.", "الصوت الأصلي عبر الجهاز الذي اخترته.") } });
         string Gain(float db, bool muted) => muted ? L("Muted", "مكتوم") : (db > 0 ? "+" : "") + db.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " dB";
         OptimizedBackgroundPanel.Visibility = mode == 2 ? Visibility.Visible : Visibility.Collapsed;
         OptimizedBackgroundHeading.Text = L("Background level", "مستوى الخلفية");
@@ -240,11 +225,12 @@ public sealed partial class ShellView : UserControl
         if (SettingsPanel == null) return;
         bool previous = _applying; _applying = true;
         SettingsHeading.Text = L("Settings", "الإعدادات");
-        GeneralSettingsHeading.Text = L("General", "عام"); AudioSettingsHeading.Text = L("Audio", "الصوت"); HelpSettingsHeading.Text = L("Help", "المساعدة");
+        GeneralSettingsHeading.Text = L("General", "عام"); AudioSettingsHeading.Text = L("Audio", "الصوت"); HelpSettingsHeading.Text = L("Shortcuts", "اختصارات");
         RenderAmplification();
         RenderVolumeTools();
         LanguageCard.Header = L("Language", "اللغة"); ThemeCard.Header = L("App theme", "المظهر");
-        TrayCard.Header = L("Keep running in system tray", "البقاء في منطقة الإشعارات");
+        TrayCard.Header = L("Close to tray", "الإغلاق إلى منطقة الإشعارات");
+        TrayCard.Description = L("Closing the window keeps Sukut in the tray, using under 20 MB.", "إغلاق النافذة يُبقي سُكوت في منطقة الإشعارات بأقل من 20 ميغابايت.");
         SetupCard.Header = L("Setup guide", "دليل الإعداد"); RunSetupLabel.Text = L("Open guide", "فتح الدليل");
         AutomationProperties.SetName(RunSetupButton, RunSetupLabel.Text);
         LanguageChoice.SelectedIndex = Arabic ? 1 : 0;
@@ -272,37 +258,77 @@ public sealed partial class ShellView : UserControl
     private void RenderAbout()
     {
         if (AboutPanel == null) return;
+        AboutHeading.Text = PageName(2);
         AboutVersion.Text = ReleaseVersion;
         DevelopedLabel.Text = L("Developed by", "تطوير"); FontCredit.Text = L("IBM Plex Sans Arabic · Readex Pro · Handjet · SIL OFL", "IBM Plex Sans Arabic · Readex Pro · Handjet · رخصة SIL OFL");
         RenderChangelog();
     }
 
-    private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    // Native desktop navigation; setup temporarily owns the full window.
+    private string PageName(int page) => page switch { 1 => L("Settings", "الإعدادات"), 2 => L("About", "حول"), 3 => L("Phone", "الهاتف"), _ => L("Home", "الرئيسية") };
+
+    private void LocalizeNavigation()
     {
-        if (_applying || _setupVisible) return;
-        int page = args.IsSettingsSelected ? 1 : args.SelectedItemContainer?.Tag as string == "about" ? 2 : args.SelectedItemContainer?.Tag as string == "phone" ? 3 : 0;
-        // Let the invoking automation/input callback release its element first.
-        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => { if (!_setupVisible && !_quitting) Navigate(page); });
+        void Name(FrameworkElement button, string text) { AutomationProperties.SetName(button, text); ToolTipService.SetToolTip(button, text); }
+        Name(PageBackButton, L("Back", "رجوع"));
+        DesktopHomeItem.Content=L("Audio","الصوت"); HomePhoneButton.Content=PageName(3); HomeSettingsButton.Content=PageName(1);
+        Name(DesktopHomeItem,L("Audio","الصوت")); Name(HomePhoneButton,PageName(3)); Name(HomeSettingsButton,PageName(1));
+        PageTitle.Text = PageName(_page);
+        if (HomePanel == null) return;
+        Name(HomeSettingsButton, PageName(1)); Name(HomePhoneButton, PageName(3));
     }
 
-    private void Navigate(int page)
+    private void Navigate(int page, bool remember = true)
     {
-        if (page != 2) StopBrand();
+        bool animate=_loaded && page!=_page;
+        if (remember && _loaded && page != _page) _pageHistory.Push(_page);
+        if (page != 1) StopBrand();
         bool previous = _applying; _applying = true;
         _page = page;
-        View.HomeLoaded = page == 0; View.SettingsLoaded = page == 1; View.AboutLoaded = page == 2; View.PhoneLoaded = page == 3;
-        Navigation.SelectedItem = page == 0 ? HomeNavItem : page == 2 ? AboutNavItem : page == 3 ? PhoneNavItem : Navigation.SettingsItem;
+        DesktopNavigation.SelectedItem=page==1?HomeSettingsButton:page==3?HomePhoneButton:DesktopHomeItem;
+        View.HomeLoaded = page == 0; View.SettingsLoaded = page == 1; View.PhoneLoaded = page == 3;
+        SubPageHeader.Visibility = page == 0 ? Visibility.Collapsed : Visibility.Visible;
+        // Phone has one Back command in its fixed footer, with setup-step semantics.
+        PageBackButton.Visibility = page == 3 ? Visibility.Collapsed : Visibility.Visible;
+        SubPageHeader.ColumnSpacing = page == 3 ? 0 : 10;
+        FitPageViewport();
+        LocalizeNavigation();
         _applying = previous;
+        if(animate) AnimatePageContent(PageHost);
+        // Keep keyboard focus useful after a page swap: Back on sub-pages.
+        if (page == 1 && _loaded) DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => PageBackButton.Focus(FocusState.Programmatic));
+    }
+
+    private void GoBack()
+    {
+        if (_setupVisible || _quitting) return;
+        if (_page == 3 && _phoneTask != PhoneTask.Choices) { PhoneGoBack(); return; }
+        if (_pageHistory.TryPop(out int previous)) Navigate(previous, remember: false);
+        else if (_page != 0) Navigate(0, remember: false);
+    }
+    private void PageBack_Click(object sender, RoutedEventArgs args) => GoBack();
+
+    private void DesktopBack_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        if (_setupVisible || _quitting || _page == 0 || _modeHelpOpen) return;
+        if (Root.XamlRoot != null && Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(Root.XamlRoot).Any(popup => popup.Child is not ToolTip)) return;
+        // Escape first closes an overlay navigation pane; an expanded desktop
+        // sidebar stays in place when returning to Audio.
+        if (sender.Key == VirtualKey.Escape && DesktopNavigation.IsPaneOpen && DesktopNavigation.DisplayMode != NavigationViewDisplayMode.Expanded) return;
+        args.Handled = true;
+        GoBack();
     }
 
     private void SetEnabled(bool force = false)
     {
-        bool enabled = _initialized && !_command && (_state?.Busy ?? 0) == 0;
+        bool enabled = _initialized && !_command && (_state?.Busy ?? 0) == 0 && (_state?.HostCommand ?? 0) == 0;
         if (force || _controlsEnabled != enabled)
         {
             _controlsEnabled = enabled;
-            if (OutputButton != null) OutputButton.IsEnabled = enabled && !_openingOutput;
-            if (OutputSourceAppChoice != null) OutputSourceAppChoice.IsEnabled = enabled;
+            if (OutputList != null) OutputList.IsEnabled = enabled;
+            if(PowerButton!=null)PowerButton.IsEnabled=enabled;
+            if (SourceAppList != null) SourceAppList.IsEnabled = enabled;
+            if (RefreshAppsButton != null) RefreshAppsButton.IsEnabled = enabled;
             if (InputChoice != null) InputChoice.IsEnabled = enabled;
             if (CaptureChoice != null) CaptureChoice.IsEnabled = enabled;
             if (AppChoice != null) AppChoice.IsEnabled = enabled;
@@ -311,7 +337,7 @@ public sealed partial class ShellView : UserControl
             if (SetupBuffering != null) SetupBuffering.IsEnabled = enabled;
             if (AmplificationSlider != null) AmplificationSlider.IsEnabled = enabled;
         }
-        bool modesEnabled = _initialized && ModeSetupReady;
+        bool modesEnabled = enabled;
         if (RestartErrorButton != null) RestartErrorButton.IsEnabled = enabled && _mode != 0;
         if (RestartOverloadButton != null) RestartOverloadButton.IsEnabled = enabled && _mode != 0;
         if (OptimizedBackgroundSlider != null) OptimizedBackgroundSlider.IsEnabled = enabled;
@@ -324,8 +350,10 @@ public sealed partial class ShellView : UserControl
 
     private string StatusText() => _status switch
     {
-        "Active" => _mode == 1 ? L("Music Filter", "مرشّح الموسيقى") : _mode == 3 ? L("Strict", "صارم") : L("Optimized", "محسّن"),
-        "Preparing" => _command ? L("Switching", "جارٍ التبديل") : L("Preparing", "جارٍ التجهيز"),
+        // Standby: nothing is playing, so the AI rests until sound returns.
+        "Active" when _state?.Standby == 1 => L("Standby", "استعداد"),
+        "Active" => L("On", "يعمل"),
+        "Preparing" => _command ? L("Starting…", "جارٍ التشغيل…") : L("Preparing", "جارٍ التجهيز"),
         "Reconnecting" => L($"Reconnecting {Math.Min(3, _audioRestart.Attempts + (_automaticRestarting ? 0 : 1))}/3", $"إعادة الاتصال {Math.Min(3, _audioRestart.Attempts + (_automaticRestarting ? 0 : 1))}/3"),
         "Recovering" => _state?.Paused != 0 ? L("Recovering", "جارٍ الاستعادة") : L("Recently recovered", "استُعيد الصوت مؤخرًا"), "Attention" => L("Attention", "تنبيه"), _ => L("Off", "متوقف")
     };
@@ -339,8 +367,8 @@ public sealed partial class ShellView : UserControl
     private void RenderStatus()
     {
         _statusText = StatusText();
-        if (StatusHost != null) { VisualStateManager.GoToState(StatusHost, _status, false); StatusLabel.Text = _statusText; }
-        _tray?.SetTip("سُكوت Sukut · " + _statusText);
+        if (StatusHost != null) StatusLabel.Text = _statusText;
+        RefreshHomeAppearance();
     }
 
     private string ErrorText(string raw) => !Arabic ? raw : raw switch
@@ -374,8 +402,22 @@ public sealed partial class ShellView : UserControl
         {
             _state = await _engine.Read();
             if (_quitting) return;
+            // A mode chosen from the tray flyout while this window is open.
+            if (!_command && _state.HostCommand == 0 && _state.Mode is >= 0 and <= 3 && _state.Mode != _mode)
+            {
+                _mode = _state.Mode; CancelAutomaticRestart(); SyncModeSelection();
+            }
             _initialized = _state.Initialized != 0; _setupScanned = _state.Busy == 0;
+            if (!_command && _hostSettings.TryAdopt(_state, _preferences))
+            {
+                CancelAutomaticRestart();
+                Save();
+                RenderEngineRow(); RenderBufferingSettings(); RenderSourceAppChoices(); RenderModeDetails(_selectedMode);
+            }
             UpdateEndpoints(_state); SetEnabled();
+            // The host owns a device/tray switch even while the window is open.
+            // Do not launch a competing recovery while that command is running.
+            if (_state.HostCommand != 0) { Status("Preparing"); return; }
             ObserveRecovery(_state);
             if (_state.Error == "selected source app is no longer running" && _state.Busy == 0 && _state.State == 0 && _state.PipelineActive == 0)
             {
@@ -406,7 +448,6 @@ public sealed partial class ShellView : UserControl
                 }
                 Status(_automaticRestarting || _audioRestart.Pending ? "Reconnecting" : _state.Busy != 0 || !_initialized ? "Preparing" : _state.State == 2 ? "Attention" : _state.State == 1 ? _state.Paused != 0 || Environment.TickCount64 < _recoveryUntil ? "Recovering" : "Active" : "Off");
             }
-            _tray.SetActive(_state.State == 1 && _mode != 0);
             if (SetupPanel != null) UpdateSetupState();
         }
         catch (Exception error) { AudioFault(error.Message); }
@@ -433,21 +474,25 @@ public sealed partial class ShellView : UserControl
         var source = _sources.Find(x => x.Id == _preferences.Source) ?? _sources.Find(x => x.Id == state.Source) ?? _sources.Find(x => x.Name.StartsWith("CABLE Input", StringComparison.OrdinalIgnoreCase)) ?? _sources.FirstOrDefault();
         var capture = _captures.Find(x => x.Id == _preferences.Capture) ?? _captures.Find(x => x.Id == state.Capture) ?? _captures.Find(x => x.Name.StartsWith("CABLE Output", StringComparison.OrdinalIgnoreCase)) ?? _captures.FirstOrDefault();
         bool dirty = output != null && output.Id != _preferences.Output || source != null && source.Id != _preferences.Source || capture != null && capture.Id != _preferences.Capture;
-        if (output != null) _preferences.Output = output.Id; if (source != null) _preferences.Source = source.Id; if (capture != null) _preferences.Capture = capture.Id;
+        if (output != null && state.HostCommand == 0) _preferences.Output = output.Id; if (source != null) _preferences.Source = source.Id; if (capture != null) _preferences.Capture = capture.Id;
         if (dirty) Save();
         if (HomePanel != null) RenderHome(); if (SettingsPanel != null) RenderSettings(); if (SetupPanel != null) RenderSetupOutput();
     }
 
-    private async Task LoadApps()
+    private Task? _appsLoading;
+    private Task LoadApps() => _appsLoading is { IsCompleted: false } ? _appsLoading : _appsLoading = LoadAppsCore();
+    private async Task LoadAppsCore()
     {
-        var apps = await _engine.Apps();
+        var windows = SourceAppDiscovery.RunningWindows();
+        var apps = SourceAppDiscovery.Merge(await _engine.Apps(), await windows);
         await _sourceAppIcons.Populate(apps);
         if (_quitting) return;
         _apps = apps; _apps.Insert(0, new SourceApp { Name = L("All system audio", "صوت النظام بالكامل") });
-        if (!_apps.Exists(x => x.Pid == _preferences.SourcePid)) { _preferences.SourcePid = 0; Save(); }
+        if (!_apps.Exists(x => x.Pid == _preferences.SourcePid))
+            _apps.Add(new SourceApp { Pid = _preferences.SourcePid, Name = L("Selected app (unavailable)", "التطبيق المحدد (غير متاح)") });
         if (SettingsPanel != null) RenderSettings();
         else RenderSourceAppChoices();
-        RenderCableVolumeTip();
+        
     }
 
     private void RenderSourceAppChoices()
@@ -455,10 +500,19 @@ public sealed partial class ShellView : UserControl
         bool previous = _applying; _applying = true;
         try
         {
-            if (_apps.Count > 0) _apps[0].Name = L("All system audio", "صوت النظام بالكامل");
+            string systemLabel = L("All system audio", "صوت النظام بالكامل");
+            bool renamed = _apps.Count > 0 && _apps[0].Name != systemLabel;
+            if (_apps.Count > 0) _apps[0].Name = systemLabel;
             var selected = _apps.Find(x => x.Pid == _preferences.SourcePid);
-            foreach (var picker in new Microsoft.UI.Xaml.Controls.Primitives.Selector?[] { AppChoice, OutputSourceAppChoice })
-                if (picker != null) { picker.ItemsSource = null; picker.ItemsSource = _apps; picker.SelectedItem = selected; }
+            foreach (var picker in new Microsoft.UI.Xaml.Controls.Primitives.Selector?[] { AppChoice, SourceAppList })
+                if (picker != null)
+                {
+                    // A selection should not rebuild the horizontal list and
+                    // jump away from the card the user just chose.
+                    if (renamed || !ReferenceEquals(picker.ItemsSource, _apps)) { picker.ItemsSource = null; picker.ItemsSource = _apps; }
+                    if (!ReferenceEquals(picker.SelectedItem, selected)) picker.SelectedItem = selected;
+                }
+            if (SourceAppHint != null) SourceAppHint.Text = L("Open an app, then refresh to add it here.", "افتح تطبيقًا ثم حدّث القائمة لإضافته هنا.");
         }
         finally { _applying = previous; }
     }
@@ -470,14 +524,14 @@ public sealed partial class ShellView : UserControl
         if (!automatic && (mode == 0 || mode != _mode || restart)) CancelAutomaticRestart();
         if (mode != 0 && !ModeSetupReady)
         {
-            Navigate(0); RenderCableVolumeTip(); SyncModeSelection();
-            DispatcherQueue.TryEnqueue(() => CableVolumeTip?.StartBringIntoView());
+            ShowSetup(); SyncModeSelection();
             return false;
         }
         _command = true; _poll.Stop(); SetEnabled(); _rawError = ""; _errorOpen = false; RenderError(); Status(automatic ? "Reconnecting" : "Preparing");
         bool success = false;
         try
         {
+            if (!await SaveNow()) return false;
             await _engine.Select(mode, _preferences.Source, _preferences.Capture, _preferences.Output, _preferences.SourcePid, Math.Clamp(_preferences.Buffering, 0, 2), _preferences.CableVolumeDisabledConfirmed, _preferences.OptimizedBackgroundDb, restart);
             _mode = mode; success = true;
         }
@@ -496,94 +550,41 @@ public sealed partial class ShellView : UserControl
     }
     private void SyncModeSelection()
     {
-        if (ModeChoices == null) return;
-        bool previous = _applying; _applying = true; ModeChoices.SelectedIndex = _mode; _applying = previous;
-        RenderModeDetails(_mode);
+        if(_mode!=0) {
+            _selectedMode=_mode;
+            if(_preferences.PreferredMode!=_mode){_preferences.PreferredMode=_mode;Save();}
+        }
+        RefreshHomeAppearance();
+        if(ModeChoices==null)return;
+        bool previous=_applying;_applying=true;ModeChoices.SelectedIndex=_selectedMode-1;_applying=previous;
+        RenderModeDetails(_selectedMode);
     }
-    private void Modes_SizeChanged(object sender, SizeChangedEventArgs args)
+    private void Modes_SizeChanged(object sender,SizeChangedEventArgs args)
     {
-        if (ModeChoices == null) return;
-        // Measure the deferred content in DIPs, including the compact navigation
-        // pane and page margins, rather than the top-level window width.
-        double width = Math.Clamp(Math.Floor((args.NewSize.Width - 24) / 4), 96, 148);
-        foreach (var card in new[] { OffCard, HalalCard, OptimizedCard, StrictCard })
-            if (Math.Abs(card.Width - width) > .5 || double.IsNaN(card.Width)) card.Width = width;
+        if(ModeChoices==null)return;
+        double width=Math.Max(0,Math.Floor(args.NewSize.Width));
+        foreach(var card in new[]{HalalCard,OptimizedCard,StrictCard})card.Width=width;
     }
-    private async void Modes_SelectionChanged(object sender, SelectionChangedEventArgs args)
+    private async void Modes_SelectionChanged(object sender,SelectionChangedEventArgs args)
     {
-        if (_applying || ModeChoices == null) return;
-        if (_command || !_initialized || !ModeSetupReady) { SyncModeSelection(); return; }
-        int mode = ModeChoices.SelectedIndex;
-        if (mode >= 0 && mode <= 3) { RenderModeDetails(mode); await ChangeMode(mode); }
+        if(_applying || ModeChoices==null)return;
+        if(_command || !_initialized){SyncModeSelection();return;}
+        int mode=ModeChoices.SelectedIndex+1;
+        if(mode<1 || mode>3)return;
+        _selectedMode=mode;_preferences.PreferredMode=mode;Save();RenderModeDetails(mode);RefreshHomeAppearance();
+        if(_mode!=0)await ChangeMode(mode);
     }
     private void RenderEngineRow()
     {
-        if (OutputValue == null) return;
-        var output = SelectedOutput;
-        OutputGlyph.Glyph = output?.Glyph ?? "\uE7F6";
-        OutputValue.Text = output?.Name ?? L("No device", "لا يوجد جهاز");
-        BufferingValue.Text = _preferences.Buffering switch { 1 => L("Balanced", "متوازن"), 2 => L("Maximum", "الأكبر"), _ => L("Lowest", "الأقل") };
-    }
-    private bool _openingOutput;
-    private async void OutputButton_Click(object sender, RoutedEventArgs args)
-    {
-        if (!_setupEngineReady || _command || _quitting || _openingOutput || _dropdownRefresh is { IsCompleted: false }) return;
-        bool previous;
-        _openingOutput = true;
-        OutputButton.IsEnabled = false;
-        try
-        {
-            _dropdownRefresh = _engine.RefreshDevices();
-            var state = await _dropdownRefresh;
-            if (_quitting) return;
-            _state = state; _initialized = state.Initialized != 0; _setupScanned = state.Busy == 0;
-            UpdateEndpoints(state); SetEnabled(true);
-            await LoadApps();
-            if (_quitting || !_visible || OutputButton?.IsLoaded != true) return;
-            if (SetupPanel != null) UpdateSetupState();
-            previous = _applying; _applying = true;
-            OutputList.ItemsSource = _outputs; OutputList.SelectedItem = SelectedOutput;
-            _applying = previous;
-            RenderEngineRow();
-            double contentWidth = AlignAudioFlyout(OutputFlyout, OutputButton);
-            OutputFlyoutContent.Width = contentWidth;
-            OutputFlyout.ShowAt(OutputButton);
-        }
-        catch (Exception error) { Error(error.Message); }
-        finally { _openingOutput = false; if (!_quitting) SetEnabled(true); }
-    }
-    private double AlignAudioFlyout(Flyout flyout, Button button)
-    {
-        // Width includes the presenter's border and padding. Align both edges to
-        // the trigger instead of allowing the caption's desired width to expand it.
-        double width = Math.Max(120, button.ActualWidth);
-        var style = new Style { TargetType = typeof(FlyoutPresenter) };
-        style.Setters.Add(new Setter(FrameworkElement.WidthProperty, width));
-        style.Setters.Add(new Setter(FrameworkElement.MinWidthProperty, 0d));
-        style.Setters.Add(new Setter(FrameworkElement.MaxWidthProperty, width));
-        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12)));
-        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-        style.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
-        // Popups have a separate visual root. Do not rely on Root inheritance
-        // for Arabic direction, font or text shaping.
-        style.Setters.Add(new Setter(FrameworkElement.FlowDirectionProperty, Arabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight));
-        style.Setters.Add(new Setter(FrameworkElement.LanguageProperty, Arabic ? "ar" : "en"));
-        style.Setters.Add(new Setter(Control.FontFamilyProperty, FontFamily));
-        flyout.FlyoutPresenterStyle = style;
-        return Math.Max(0, width - 26);
-    }
-    private void BufferingFlyout_Opening(object sender, object args)
-    {
-        double contentWidth = AlignAudioFlyout(BufferingFlyout, BufferingButton);
-        HomeBuffering.MinWidth = 0;
-        HomeBuffering.MaxWidth = HomeBuffering.Width = contentWidth;
-        ArabicTypography.Apply(BufferingFlyout.Content, Arabic);
+        if (OutputList == null) return;
+        bool previous = _applying; _applying = true;
+        if (!ReferenceEquals(OutputList.ItemsSource, _outputs)) OutputList.ItemsSource = _outputs;
+        OutputList.SelectedItem = SelectedOutput;
+        _applying = previous;
     }
     private async void OutputList_Changed(object sender, SelectionChangedEventArgs args)
     {
         if (_applying || OutputList?.SelectedItem is not Endpoint endpoint) return;
-        OutputFlyout?.Hide();
         if (endpoint.Id == _preferences.Output) return;
         _preferences.Output = endpoint.Id; Save();
         RenderEngineRow();
@@ -600,8 +601,7 @@ public sealed partial class ShellView : UserControl
     private async void App_Changed(object sender, SelectionChangedEventArgs args)
     {
         if (_applying || _command || sender is not Microsoft.UI.Xaml.Controls.Primitives.Selector { SelectedItem: SourceApp source } || source.Pid == _preferences.SourcePid) return;
-        OutputFlyout?.Hide();
-        _preferences.SourcePid = source.Pid; Save(); RenderSourceAppChoices(); RenderCableVolumeTip(); if (_mode != 0) await ChangeMode(_mode, true);
+        _preferences.SourcePid = source.Pid; Save(); RenderSourceAppChoices();  if (_mode != 0) await ChangeMode(_mode, true);
     }
     private void Language_Changed(object sender, SelectionChangedEventArgs args)
     {
@@ -650,7 +650,7 @@ public sealed partial class ShellView : UserControl
         if (_poll.Interval != interval) _poll.Interval = interval;
         if (!_poll.IsEnabled) _poll.Start();
     }
-    private void UpdateLifecycle() { WindowSizing.UpdateMinimum(_window); UpdatePoll(); if (_visible && !Minimized && _page == 2 && !_setupVisible && AboutPanel != null) StartBrand(); else StopBrand(); }
+    private void UpdateLifecycle() { WindowSizing.UpdateMinimum(_window); UpdatePoll(); TrimWhenMinimized();if (_visible && !Minimized && _page == 1 && !_setupVisible && AboutPanel != null) StartBrand(); else StopBrand(); }
     private void ShowWindow()
     {
         _visible = true;
@@ -659,32 +659,30 @@ public sealed partial class ShellView : UserControl
         if (_setupVisible) View.SetupLoaded = true; else Navigate(_page);
         UpdateLifecycle(); if (_setupEngineReady) _ = Poll();
     }
-    private void HideToTray()
-    {
-        if (_quitting || !_visible) return;
-        _visible = false; AppWindow.Hide(); StopBrand();
-        View.HomeLoaded = View.SettingsLoaded = View.AboutLoaded = View.PhoneLoaded = View.SetupLoaded = false;
-        // Source-app process lists can be large and are only needed in Settings.
-        _apps.Clear();
-        UpdatePoll();
-    }
-    private async Task Quit()
+    // Close this window process; the tray host keeps Sukut running.
+    private Task CloseWindow() => Shutdown(exitSukut: false);
+    // Exit Sukut entirely; the host restores the original audio routes.
+    private Task Quit() => Shutdown(exitSukut: true);
+    private async Task Shutdown(bool exitSukut)
     {
         if (_quitting) return;
         _quitting = true; _poll.Stop(); CancelAutomaticRestart(); StopBrand();
+        // Disappear at once; saving and disconnecting finish in the background.
+        AppWindow.Hide();
         // Exit is a teardown command, not another filtering/route-selection
         // request. Old capture faults and a closed source app cannot veto it.
         try { await _settings.Flush(_preferences).WaitAsync(TimeSpan.FromSeconds(2)); }
         catch (Exception error) { RecordShutdownError(error.Message); }
-        bool timedOut = false;
-        try { await _engine.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)); }
-        catch (Exception error) { timedOut = true; RecordShutdownError(error.Message); }
+        if (exitSukut)
+        {
+            try { await _engine.ExitHost().WaitAsync(TimeSpan.FromSeconds(3)); }
+            catch (Exception error) { RecordShutdownError(error.Message); }
+        }
+        try { await _engine.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(3)); }
+        catch (Exception error) { RecordShutdownError(error.Message); }
         try { await _settings.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(2)); }
         catch (Exception error) { RecordShutdownError(error.Message); }
-        _tray.Dispose(); _allowExit = true; (Application.Current as App)?.ReleaseInstance();
-        // If a driver refuses cancellation, process exit lets the independent
-        // journal guard finish restoration. Never reopen an Attention loop.
-        if (timedOut) Environment.Exit(0);
+        _windowModeIcons?.Dispose(); _host.Dispose(); _allowExit = true; (Application.Current as App)?.ReleaseInstance();
         _window.Close(); Application.Current.Exit();
     }
     private void RecordShutdownError(string error)

@@ -9,7 +9,6 @@ import android.provider.Settings
 import android.widget.Toast
 
 internal object AudioTools {
-    fun shizukuInstalled(activity: Activity): Boolean = runCatching { activity.packageManager.getPackageInfo("moe.shizuku.privileged.api", 0) }.isSuccess
     fun openVolume(activity: Activity) = open(activity, listOf(Intent(Settings.Panel.ACTION_VOLUME), Intent(Settings.ACTION_SOUND_SETTINGS)))
     fun openEffects(activity: Activity) {
         // MusicFX's Compatibility.Redirector can accept the session-less intent
@@ -19,19 +18,27 @@ internal object AudioTools {
         if (target?.exported == true && target.enabled && runCatching { activity.startActivity(xiaomi) }.isSuccess) return
         open(activity, listOf(Intent(Settings.ACTION_SOUND_SETTINGS)))
     }
-    fun openShizuku(activity: Activity) {
-        val intent = activity.packageManager.getLaunchIntentForPackage("moe.shizuku.privileged.api")
-        if (intent != null) open(activity, listOf(intent))
-        else openShizukuStore(activity)
-    }
-    fun openShizukuStore(activity: Activity) = open(activity, listOf(
-        Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=moe.shizuku.privileged.api")),
-        Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api"))))
     fun openAboutPhone(activity: Activity) = open(activity, listOf(
         Intent(Settings.ACTION_DEVICE_INFO_SETTINGS), Intent(Settings.ACTION_SETTINGS)))
     fun website(activity: Activity, url: String) = open(activity, listOf(Intent(Intent.ACTION_VIEW, Uri.parse(url))))
-    fun openWirelessDebugging(activity: Activity) = open(activity, listOf(
-        Intent("android.settings.WIRELESS_DEBUGGING_SETTINGS"), Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)))
+    fun support(activity:Activity) {
+        if(runCatching { activity.startActivity(Intent(Intent.ACTION_SENDTO,Uri.parse("mailto:"+ReleaseLinks.SUPPORT_EMAIL))) }.isSuccess)return
+        activity.getSystemService(android.content.ClipboardManager::class.java)
+            .setPrimaryClip(android.content.ClipData.newPlainText("Sukut support",ReleaseLinks.SUPPORT_EMAIL))
+        Toast.makeText(activity,R.string.email_copied,Toast.LENGTH_SHORT).show()
+    }
+    @Suppress("DEPRECATION")
+    fun openWirelessDebugging(activity: Activity, requestCode:Int?=null) {
+        val targets=listOf(
+            Intent("android.settings.WIRELESS_DEBUGGING_SETTINGS"),
+            Intent().setComponent(ComponentName("com.android.settings","com.android.settings.SubSettings"))
+                .putExtra(":settings:show_fragment","com.android.settings.development.WirelessDebuggingFragment"),
+            Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS).putExtra(":settings:fragment_args_key","toggle_adb_wireless"))
+        for(target in targets) {
+            if(runCatching { if(requestCode==null)activity.startActivity(target) else activity.startActivityForResult(target,requestCode) }.isSuccess)return
+        }
+        Toast.makeText(activity,R.string.cannot_open_settings,Toast.LENGTH_LONG).show()
+    }
     private fun open(activity: Activity, intents: List<Intent>) {
         for (intent in intents) {
             if (runCatching { activity.startActivity(intent) }.isSuccess) return

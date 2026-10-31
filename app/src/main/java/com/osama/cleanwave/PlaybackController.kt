@@ -35,7 +35,7 @@ internal object PlaybackController {
                 CleanerPrefs.setStatus(context, "Could not stop", problem.message ?: context.getString(R.string.audio_issue))
             }
         } else {
-            ShizukuBackend.stopExisting(context) {
+            WorkerBackend.stopExisting(context) {
                 CleanerPrefs.clearStartPending(context); CleanerPrefs.setStatus(context, "Off")
                 CleanerTileService.requestRefresh(context)
             }

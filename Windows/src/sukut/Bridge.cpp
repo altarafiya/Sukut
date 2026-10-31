@@ -1,4 +1,4 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <atomic>
 #include <cmath>
 #include <cstring>
@@ -18,9 +18,9 @@ struct BufferingSettings {
 };
 class RoutedBackend final:public DesktopBackend {
  public:
-  RoutedBackend(const std::filesystem::path& root,const DesktopPreferences& p,std::shared_ptr<std::atomic<unsigned>> source,
+  RoutedBackend(const std::filesystem::path& root,const std::filesystem::path& resources,const DesktopPreferences& p,std::shared_ptr<std::atomic<unsigned>> source,
                 std::shared_ptr<std::atomic<int>> preset_mode, std::shared_ptr<BufferingSettings> buffering)
-    :root_(root),preferences_(p),routing_(root/L"runtime/sukut-routing.ini"),source_(std::move(source)),preset_mode_(std::move(preset_mode)),buffering_(std::move(buffering)) {
+    :root_(root),resources_(resources),preferences_(p),routing_(root/L"runtime/sukut-routing.ini"),source_(std::move(source)),preset_mode_(std::move(preset_mode)),buffering_(std::move(buffering)) {
     routing_.Restore();routing_.RestorePending();
   }
   ~RoutedBackend(){Stop();if(lease_)CloseHandle(lease_);}
@@ -43,7 +43,9 @@ class RoutedBackend final:public DesktopBackend {
       // The interpreter, tensor arena, FFT buffers and audio pipeline only
       // exist while processing. OFF never loads the model at startup.
       const int level=buffering_->requested.load();
-      session_=std::make_unique<LiveSession>(root_/L"assets/engine/separator.tflite",root_/L"assets/engine/window_576_q15.bin",root_/L"assets/engine/window_960_q15.bin",preferences_.route,true,level,false,buffering_->amplification_db,true);
+      session_=std::make_unique<LiveSession>(resources_/L"assets/engine/separator.tflite",resources_/L"assets/engine/window_576_q15.bin",resources_/L"assets/engine/window_960_q15.bin",preferences_.route,true,level,false,buffering_->amplification_db,true);
+      // Standby during digital silence and the >16 kHz music guard (as Android).
+      session_->EnableEfficiency(true);
       ApplyConfiguration();session_->Start();
       volume_guard_=std::make_unique<sukut::VolumeGuard>(root_);
       routing_.Begin(preferences_.route.source_render_id,preferences_.route.physical_render_id,source_->load(),volume_guard_->Owner());route_error_.clear();
@@ -53,12 +55,13 @@ class RoutedBackend final:public DesktopBackend {
   }
   bool Stop()override{
     // Never release buffers while audio workers still hold them.
-    if(session_ && !session_->Stop())return false;
-    session_.reset();
+    const bool workers_stopped=!session_ || session_->Stop();
+    if(workers_stopped)session_.reset();
     try{
       routing_.Restore();
-      if(volume_guard_){volume_guard_->Stop();volume_guard_.reset();}
-      route_error_.clear();
+      routing_.RestorePending();
+      if(workers_stopped && volume_guard_){volume_guard_->Stop();volume_guard_.reset();}
+      route_error_=workers_stopped?"":"Audio workers are still stopping; original playback has been restored.";
     }
     catch(const std::exception& e){route_error_=e.what();}
     // Keep the lease/guard when restoration fails, allowing OFF to retry and
@@ -93,7 +96,7 @@ class RoutedBackend final:public DesktopBackend {
     if(preferences_.mode==ProcessingMode::Custom)session_->Configure(preferences_.custom,mode!=0);
     else session_->SetMode(preferences_.mode);
   }
-  std::filesystem::path root_;DesktopPreferences preferences_;
+  std::filesystem::path root_,resources_;DesktopPreferences preferences_;
   std::unique_ptr<LiveSession> session_;
   sukut::AudioRouting routing_;
   std::unique_ptr<sukut::VolumeGuard> volume_guard_;
@@ -118,21 +121,23 @@ std::string Quote(const std::wstring& value){return "\""+EscapeJson(Utf8(value))
 }
 #define EXPORT extern "C" __declspec(dllexport)
 EXPORT int __cdecl Sukut_RestoreRouting(const wchar_t* root,const wchar_t* owner){
-  try{sukut::AudioRouting routing(std::filesystem::path(root)/L"runtime/sukut-routing.ini");routing.Restore(owner);return 1;}
+  try{sukut::AudioRouting routing(std::filesystem::path(root)/L"runtime/sukut-routing.ini");routing.Restore(owner);return routing.RestorePending(0,false,owner)?1:2;}
   catch(const std::exception& e){last_error=e.what();return 0;}
 }
 EXPORT int __cdecl Sukut_SetCablePassthroughConfirmed(void* handle,int confirmed){
   static_cast<Context*>(handle)->buffering->cable_passthrough_confirmed.store(confirmed!=0);return 1;
 }
-EXPORT void* __cdecl Sukut_Create(const wchar_t* root){
-  try{auto c=std::make_unique<Context>();auto r=std::filesystem::path(root);auto source=c->source;auto preset_mode=c->preset_mode;auto buffering=c->buffering;
-    const auto route_file=r/L"docs/route.json";
+static void* CreateContext(const wchar_t* root,const wchar_t* resource_root){
+  try{auto c=std::make_unique<Context>();auto r=std::filesystem::path(root);auto resources=std::filesystem::path(resource_root);auto source=c->source;auto preset_mode=c->preset_mode;auto buffering=c->buffering;
+    const auto route_file=resources/L"docs/route.json";
     const auto fallback=std::filesystem::exists(route_file)?ReadPreparedRoute(route_file):AudioRoute{};
     c->controller=std::make_unique<DesktopController>(r/L"runtime/sukut-engine.ini",fallback,
-      [r,source,preset_mode,buffering](const auto& p){return std::make_unique<RoutedBackend>(r,p,source,preset_mode,buffering);},[](bool){});
+      [r,resources,source,preset_mode,buffering](const auto& p){return std::make_unique<RoutedBackend>(r,resources,p,source,preset_mode,buffering);},[](bool){});
     return c.release();
   }catch(const std::exception& e){last_error=e.what();return nullptr;}
 }
+EXPORT void* __cdecl Sukut_Create(const wchar_t* root){return CreateContext(root,root);}
+EXPORT void* __cdecl Sukut_CreateWithPaths(const wchar_t* root,const wchar_t* resources){return CreateContext(root,resources);}
 EXPORT int __cdecl Sukut_Error(char* output,int capacity){return Copy(last_error,output,capacity);}
 static int ReadSnapshot(void* handle,std::int64_t known_endpoints,char* output,int capacity){
   try{auto& c=*static_cast<Context*>(handle);auto s=c.controller->Snapshot();std::ostringstream o;
@@ -140,6 +145,8 @@ static int ReadSnapshot(void* handle,std::int64_t known_endpoints,char* output,i
      <<",\"session\":"<<c.buffering->session.load()<<",\"fallbacks\":"<<s.live.cleaner.fallbacks<<",\"recoveries\":"<<s.live.cleaner.recoveries
      <<",\"bypasses\":"<<s.live.cleaner.bypasses<<",\"coveredOverruns\":"<<s.live.cleaner.burst_covered_overruns
      <<",\"pipelineActive\":"<<s.live.pipeline.active
+     <<",\"standby\":"<<(s.live.cleaner.standby?1:0)<<",\"standbyPackets\":"<<s.live.cleaner.standby_packets
+     <<",\"highBandGain\":"<<s.live.cleaner.high_band_gain<<",\"kernels\":\""<<EscapeJson(s.live.cleaner.kernels)<<"\""
      <<",\"controllerAgeMs\":"<<(s.published.time_since_epoch().count()?std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-s.published).count():0)
      <<",\"processingMeanMs\":"<<s.live.pipeline.ai_engine.mean_ms<<",\"processingMaxMs\":"<<s.live.pipeline.ai_engine.max_ms
      <<",\"error\":\""<<EscapeJson(s.error.empty()?s.live.error:s.error)<<"\",\"output\":"<<Quote(s.preferences.route.physical_render_id)

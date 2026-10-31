@@ -23,9 +23,7 @@ class ThreadParityTest {
         val priority=Process.getThreadPriority(Process.myTid())
         Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
         try {
-            val model=context.assets.openFd("separator.tflite").use { fd ->
-                FileInputStream(fd.fileDescriptor).channel.use { it.map(FileChannel.MapMode.READ_ONLY,fd.startOffset,fd.length).order(ByteOrder.nativeOrder()) }
-            }
+            val model=AssetSeal.model(context)
             SeparationModel(model,1).use { reference -> SeparationModel(model,2).use { parallel ->
                 val state=SeparationModel::class.java.getDeclaredField("currentState").apply { isAccessible=true }
                 val left=FloatArray(1024); val right=FloatArray(1024)

@@ -57,8 +57,11 @@ void VolumeGuard::Check() const {
 }
 void VolumeGuard::Stop(){
   if(!process_)return;
-  if(!SetEvent(stop_) || WaitForSingleObject(process_,3000)!=WAIT_OBJECT_0)
-    throw std::runtime_error("Sukut volume restoration guard is still closing");
+  if(!SetEvent(stop_))throw std::runtime_error("cannot request final audio restoration");
+  // The active route has already been restored synchronously by the owner.
+  // A closed app may need a live PID later, so the helper can outlive the UI
+  // until that app's durable pending route has been restored.
+  WaitForSingleObject(process_,250);
   CloseHandle(process_);process_=nullptr;CloseHandle(stop_);stop_=nullptr;
 }
 }

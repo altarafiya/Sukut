@@ -1,9 +1,10 @@
 <resources>
+ <!-- The launch window matches the app background and shows no icon, so the
+      first frame is Home itself rather than a branded pause. -->
  <style name="Theme.Sukut.Launch" parent="Theme.CleanWave">
-  <item name="android:windowSplashScreenBackground">?android:attr/colorBackground</item>
+  <item name="android:windowSplashScreenBackground">@color/sukut_background</item>
   <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
   <item name="android:windowSplashScreenAnimationDuration">0</item>
-  <item name="android:windowBackground">?android:attr/colorBackground</item>
-  <item name="android:windowDisablePreview">true</item>
+  <item name="android:windowBackground">@color/sukut_background</item>
  </style>
 </resources>

@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
@@ -8,8 +8,9 @@ namespace Sukut;
 
 public sealed partial class ShellView
 {
-    private const int PhoneStepCount = 7;
-    private enum PhoneTask { Choices, Install, Update, FullSetup }
+    private const int PhoneStepCount = 5;
+    private const double PhoneIconSize = 24, PhoneSmallIconSize = 16;
+    private enum PhoneTask { Choices, FullSetup, UsbHelp, ActivateWorker, SmartSukut }
     private PhoneTask _phoneTask;
     private readonly PhoneTools _phoneTools = new();
     private List<PhoneDevice> _phoneKnown = [];
@@ -19,7 +20,6 @@ public sealed partial class ShellView
     private StackPanel? _phonePageHost;
     private TextBlock? _phoneStepLabel;
     private Button? _phoneBack, _phoneNext;
-    private Button? _phoneSukutUpdate;
     private PhoneDevice? _phoneSelected;
     private int _phoneStep;
     private bool _phoneBusy;
@@ -27,34 +27,70 @@ public sealed partial class ShellView
     private TextBlock? _phoneProgressLabel;
 
     private static Style PhoneText(string key) => (Style)Application.Current.Resources[key];
-    private static Brush? PhoneBrush(string key) => new TextBlock { Style = PhoneText(key) }.Foreground;
+    private Brush? PhoneBrush(string key)
+    {
+        // An unattached TextBlock resolves ThemeResource against the app default,
+        // which can be dark while this window explicitly uses Light.
+        string resource = key switch
+        {
+            "AccentText" => "SukutAccentBrush", "ModeOffText" => "ModeOffBrush",
+            "ModeHalalText" => "ModeHalalBrush", "ModeOptimizedText" => "ModeOptimizedBrush",
+            "ModeStrictText" => "ModeStrictBrush", "GainRaised" => "GainRaisedBrush",
+            "GainMuted" => "GainMutedBrush", "GainReduced" => "GainReducedBrush", _ => ""
+        };
+        string theme = new Windows.UI.ViewManagement.AccessibilitySettings().HighContrast ? "HighContrast"
+            : Root.ActualTheme == ElementTheme.Light ? "Light" : "Default";
+        var palette = (ResourceDictionary)Application.Current.Resources.ThemeDictionaries[theme];
+        return resource.Length != 0 ? (Brush)palette[resource] : new TextBlock { Style = PhoneText(key) }.Foreground;
+    }
     private static TextBlock PhoneBody(string text) => new() { Text = text, TextWrapping = TextWrapping.Wrap };
 
-    private void PhonePanel_Loaded(object sender, RoutedEventArgs args) { FitPageViewport(); RenderPhone(); }
+    private void PhonePanel_Loaded(object sender, RoutedEventArgs args) { FitPageViewport(); RenderPhone(); _=RefreshPhoneQuietly(); }
+    private void PhonePanel_Unloaded(object sender, RoutedEventArgs args)
+    {
+        if (PhonePanel != null && !ReferenceEquals(sender, PhonePanel)) return;
+        // x:Load releases the page; these managed fields must not retain its pictures/controls.
+        _phonePageHost?.Children.Clear();
+        _phonePageHost = null; _phoneActions = null; _phoneDevices = null; _phoneMessage = null;
+        _phoneProgress = null; _phoneProgressLabel = null;
+        _phoneStepLabel = null; _phoneBack = null; _phoneNext = null;
+        _phoneNameText=_phoneConnectionText=_phoneVersionText=null;_phoneConnectionIcon=null;_phoneRefreshButton=null;
+    }
 
     private void RenderPhone()
     {
         if (PhoneContent == null) return;
         PhonePanel.FontFamily = (FontFamily)Application.Current.Resources[Arabic ? "SukutArabicFontFamily" : "ContentControlThemeFontFamily"];
         PhoneContent.Children.Clear();
-        PhoneContent.Children.Add(new TextBlock { Text = L("Set up your phone", "إعداد هاتفك"), Style = PhoneText("TitleTextBlockStyle") });
-        PhoneContent.Children.Add(PhoneBody(L("Connect your unlocked Android phone by USB, then choose an option.", "وصّل هاتف أندرويد مفتوح القفل عبر USB، ثم اختر ما تحتاجه.")));
-        _phonePageHost = new StackPanel { Spacing = 14 };
+        // The shell provides the title; step navigation lives only in the footer.
+        // Keep device status out of the guide; it has a compact, fixed strip below.
+        PhoneConnectionHost.Child = BuildPhoneConnectionCard();
+        _phonePageHost = new StackPanel { Spacing = 10 };
         PhoneContent.Children.Add(_phonePageHost);
 
         var footer = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 6, 0, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        _phoneBack = new Button { Content = L("Back", "السابق"), MinWidth = 110 };
-        _phoneBack.Click += (_, _) => { if (_phoneBusy) return; if (_phoneTask == PhoneTask.FullSetup && _phoneStep > 0) { _phoneStep--; RenderPhonePage(); } else SelectPhoneTask(PhoneTask.Choices); };
+        _phoneBack = new Button { MinWidth = 110, MinHeight = 44, CornerRadius = new CornerRadius(4) };
+        SetPhoneButtonLabel(_phoneBack, L("\uE72B", "\uE72A"), L("Back", "السابق"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_phoneBack, "PhonePrevious");
+        _phoneBack.Click += (_, _) => PhoneGoBack();
         _phoneStepLabel = new TextBlock { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Style = PhoneText("CaptionTextBlockStyle") };
-        _phoneNext = new Button { MinWidth = 130, Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
-        _phoneNext.Click += (_, _) => { if (_phoneBusy) return; if (_phoneStep < PhoneStepCount - 1) { _phoneStep++; RenderPhonePage(); } else SelectPhoneTask(PhoneTask.Choices); };
+        _phoneNext = new Button { MinWidth = 130, MinHeight = 44, CornerRadius = new CornerRadius(4), Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_phoneNext, "PhoneNext");
+        _phoneNext.Click += (_, _) => { if (_phoneBusy) return; if (_phoneStep < PhoneStepCount - 1) { _phoneStep++; RenderPhonePage(animate: true); } else SelectPhoneTask(PhoneTask.Choices); };
         Grid.SetColumn(_phoneStepLabel, 1); Grid.SetColumn(_phoneNext, 2);
         footer.Children.Add(_phoneBack); footer.Children.Add(_phoneStepLabel); footer.Children.Add(_phoneNext);
         PhoneFooter.Child = footer;
         RenderPhonePage();
+    }
+
+    private void PhoneGoBack()
+    {
+        if (_phoneBusy) return;
+        if (_phoneTask == PhoneTask.FullSetup && _phoneStep > 0) { _phoneStep--; RenderPhonePage(animate: true); }
+        else SelectPhoneTask(PhoneTask.Choices);
     }
 
     private void SelectPhoneTask(PhoneTask task)
@@ -62,82 +98,70 @@ public sealed partial class ShellView
         if (_phoneBusy) return;
         _phoneTask = task;
         if (task == PhoneTask.FullSetup) _phoneStep = 0;
-        RenderPhonePage();
+        RenderPhonePage(animate: true);
     }
-
-    private bool PhoneShowsSukutUpdate => _phoneTask == PhoneTask.Update || _phoneTask == PhoneTask.FullSetup && _phoneStep == 5;
 
     private void PhoneChoicesPage()
     {
-        _phoneActions = new StackPanel { Spacing = 12 };
+        _phoneActions = new StackPanel { Spacing = 14 };
         _phonePageHost!.Children.Add(_phoneActions);
-        PhoneChoice(PhoneTask.Install, "\uE896", "ModeHalalText", L("Install Sukut", "تثبيت سُكوت"),
-            L("Add Sukut to your phone. Already set up USB debugging? Start here.", "ثبّت سُكوت في هاتفك. ابدأ هنا إذا كان تصحيح USB جاهزًا."), "PhoneInstallOption");
-        PhoneChoice(PhoneTask.Update, "\uE895", "ModeOptimizedText", L("Update Sukut", "تحديث سُكوت"),
-            L("Install the included update and keep your settings.", "ثبّت التحديث المرفق مع الاحتفاظ بإعداداتك."), "PhoneUpdateOption");
-        PhoneChoice(PhoneTask.FullSetup, "\uE713", "ModeOffText", L("Full setup", "الإعداد الكامل"),
-            L("First time? Follow USB debugging, Shizuku and Sukut step by step.", "للمرة الأولى؟ اتبع خطوات تصحيح USB وإعداد Shizuku وسُكوت."), "PhoneFullSetupOption");
+        PhoneChoice(PhoneTask.FullSetup,"\uE713","ModeOptimizedText",L("Full setup","الإعداد الكامل"),
+            L("Connect, install and activate. We’ll guide you through each step.","توصيل وتثبيت وتفعيل. نرشدك في كل خطوة."),"PhoneFullSetupOption");
+        var tools=new StackPanel { Spacing=6 };
+        tools.Children.Add(new TextBlock { Text=L("Tools","الأدوات"), Style=PhoneText("BodyStrongTextBlockStyle"), Margin=new Thickness(4,0,4,2) });
+        PhoneChoice(PhoneTask.ActivateWorker,"\uE90F","GainRaised",L("Activate Sukut","تفعيل سُكوت"),
+            L("Activate the audio worker over USB.","تفعيل عامل الصوت عبر USB."),"PhoneActivateWorkerOption",tools);
+        PhoneChoice(PhoneTask.SmartSukut,"\uE895","ModeOptimizedText",L("Install or update Sukut","تثبيت سُكوت أو تحديثه"),
+            L("Install, update or open it. Keep your settings.","تثبيت التطبيق أو تحديثه أو فتحه، مع الاحتفاظ بإعداداتك."),"PhoneSmartSukutOption",tools);
+        _phoneActions.Children.Add(new Border { Style=(Style)Application.Current.Resources["SetupGuideCard"], Padding=new Thickness(8), Child=tools });
+        var connection=new HyperlinkButton { Content=L("USB connection help","المساعدة في اتصال USB"), HorizontalAlignment=HorizontalAlignment.Left, Padding=new Thickness(4,6,4,6) };
+        connection.Click+=(_,_)=>SelectPhoneTask(PhoneTask.UsbHelp);
+        _phoneActions.Children.Add(connection);
     }
 
-    private void PhoneChoice(PhoneTask task, string glyph, string color, string title, string detail, string id)
+    private void PhoneSection(string title) => _phoneActions!.Children.Add(new TextBlock {
+        Text = title, Style = PhoneText("BodyStrongTextBlockStyle"), Margin = new Thickness(4, 12, 0, 0), TextWrapping = TextWrapping.Wrap });
+
+    private void PhoneChoice(PhoneTask task, string glyph, string color, string title, string detail, string id, Panel? host = null)
     {
-        var button = new Button { HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(18), CornerRadius = new CornerRadius(10) };
-        var row = new Grid { ColumnSpacing = 16 };
+        var button = new Button { HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(12,10,12,10), MinHeight = task == PhoneTask.FullSetup ? 88 : 72, VerticalAlignment=VerticalAlignment.Stretch, VerticalContentAlignment=VerticalAlignment.Center, CornerRadius = new CornerRadius(8) };
+        var row = new Grid { ColumnSpacing = 12 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var icon = new FontIcon { Glyph = glyph, FontSize = 28, VerticalAlignment = VerticalAlignment.Center, Foreground = PhoneBrush(color) };
-        var words = new StackPanel { Spacing = 5 };
-        words.Children.Add(new TextBlock { Text = title, Style = PhoneText(color), FontSize = 19, TextWrapping = TextWrapping.Wrap });
+        var icon = new FontIcon { Glyph = glyph, FontSize = PhoneIconSize, Width = PhoneIconSize, Height = PhoneIconSize, VerticalAlignment = VerticalAlignment.Center, Foreground = PhoneBrush(color) };
+        var words = new StackPanel { Spacing = 2 };
+        words.Children.Add(new TextBlock { Text = title, Style = PhoneText(color), FontSize = task == PhoneTask.FullSetup ? 20 : 16, TextWrapping = TextWrapping.Wrap });
         words.Children.Add(new TextBlock { Text = detail, Style = PhoneText("CaptionTextBlockStyle"), TextWrapping = TextWrapping.Wrap });
-        var arrow = new FontIcon { Glyph = L("\uE76C", "\uE76B"), FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
+        var arrow = new FontIcon { Glyph = L("\uE76C", "\uE76B"), FontSize = PhoneSmallIconSize, VerticalAlignment = VerticalAlignment.Center };
         Grid.SetColumn(words, 1); Grid.SetColumn(arrow, 2);
         row.Children.Add(icon); row.Children.Add(words); row.Children.Add(arrow); button.Content = row;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, title);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(button, id);
         button.Click += (_, _) => SelectPhoneTask(task);
-        _phoneActions!.Children.Add(button);
+        if (host is Grid grid) Grid.SetColumn(button, grid.Children.Count);
+        (host ?? _phoneActions!).Children.Add(button);
     }
 
-    private void PhoneQuickAppPage(bool update)
-    {
-        var page = PhonePage(update ? "\uE895" : "\uE896", update ? "ModeOptimizedText" : "ModeHalalText", update ? L("Update Sukut", "تحديث سُكوت") : L("Install Sukut", "تثبيت سُكوت"));
-        page.Children.Add(PhoneBody(update
-            ? L("Update an existing Sukut with the included APK. Your settings stay saved; newer versions are kept.", "حدّث سُكوت المثبّت بملف التطبيق المرفق. إعداداتك محفوظة، ولن نستبدل نسخة أحدث.")
-            : L("Install the included Android app. If Sukut is already installed, use Update Sukut.", "ثبّت تطبيق أندرويد المرفق. إذا كان سُكوت مثبّتًا بالفعل، اختر تحديث سُكوت.")));
-        var primary = PhoneToolActions(page, update ? "Update Sukut" : "Install Sukut", update ? "تحديث سُكوت" : "تثبيت سُكوت", async device => {
-            string result = await _phoneTools.InstallSukut(device, update);
-            if (update) await RefreshSukutUpdate(device);
-            return result;
-        }, update ? "\uE895" : "\uE896");
-        if (update) _phoneSukutUpdate = primary;
-        page.Children.Add(PhoneBody(L("USB debugging must be enabled. Approve any prompt on the phone.", "يجب تفعيل تصحيح USB. وافق على أي طلب يظهر في الهاتف.")));
-        var help = new Button { HorizontalAlignment = HorizontalAlignment.Stretch };
-        SetPhoneButtonLabel(help, "\uE713", L("Need help? Full setup", "تحتاج إلى مساعدة؟ الإعداد الكامل"));
-        help.Click += (_, _) => SelectPhoneTask(PhoneTask.FullSetup);
-        _phoneActions!.Children.Add(help);
-        QueueSukutUpdateCheck();
-    }
-
-    private void RenderPhonePage()
+    private void RenderPhonePage(bool animate = false)
     {
         if (_phonePageHost == null) return;
         _phoneStep = Math.Clamp(_phoneStep, 0, PhoneStepCount - 1);
         _phonePageHost.Children.Clear();
-        _phoneMessage = null; _phoneActions = null; _phoneDevices = null; _phoneSukutUpdate = null;
+        _phoneMessage = null; _phoneActions = null;
         _phoneProgress = null; _phoneProgressLabel = null;
         PhoneScroll.ChangeView(null, 0, null, true);
         PhoneFooter.Visibility = _phoneTask == PhoneTask.Choices ? Visibility.Collapsed : Visibility.Visible;
         if (_phoneTask == PhoneTask.Choices) PhoneChoicesPage();
-        else if (_phoneTask != PhoneTask.FullSetup) PhoneQuickAppPage(_phoneTask == PhoneTask.Update);
+        else if (_phoneTask == PhoneTask.UsbHelp) PhoneUsbHelpPage();
+        else if (_phoneTask == PhoneTask.ActivateWorker) PhoneInstallPage();
+        else if (_phoneTask == PhoneTask.SmartSukut) PhoneSukutPage();
         else switch (_phoneStep)
         {
-            case 0: PhoneOverviewPage(); break;
-            case 1: PhoneDeveloperPage(); break;
-            case 2: PhoneDebuggingPage(); break;
+            case 0: PhoneDeveloperPage(); break;
+            case 1: PhoneDebuggingPage(); break;
+            case 2: PhoneSukutPage(); break;
             case 3: PhoneInstallPage(); break;
-            case 4: PhoneStartPage(); break;
-            case 5: PhoneSukutPage(); break;
             default: PhoneAllowPage(); break;
         }
         if (_phoneStepLabel != null) _phoneStepLabel.Text = _phoneTask == PhoneTask.FullSetup ? L($"Step {_phoneStep + 1} of {PhoneStepCount}", $"الخطوة {_phoneStep + 1} من {PhoneStepCount}") : "";
@@ -145,25 +169,20 @@ public sealed partial class ShellView
         SetPhoneActionsEnabled(!_phoneBusy);
         ArabicTypography.Apply(PhonePanel, Arabic);
         QueueTypography();
+        if(animate) AnimatePageContent(_phonePageHost);
     }
 
-    private StackPanel PhonePage(string glyph, string color, string heading)
+    private StackPanel PhonePage(string heading)
     {
         var page = new StackPanel { Spacing = 12 };
-        var head = new Grid { ColumnSpacing = 12 };
-        head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var icon = new FontIcon { Glyph = glyph, FontSize = 26, VerticalAlignment = VerticalAlignment.Center };
-        if (PhoneBrush(color) is { } mark) icon.Foreground = mark;
-        var title = new TextBlock { Text = heading, Style = PhoneText(color), FontSize = 22, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(title, 1);
-        head.Children.Add(icon); head.Children.Add(title);
-        page.Children.Add(head);
+        var title = new TextBlock { Text = heading, FontSize = 24, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 4) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetHeadingLevel(title, Microsoft.UI.Xaml.Automation.Peers.AutomationHeadingLevel.Level2);
+        page.Children.Add(title);
         _phonePageHost!.Children.Add(page);
         return page;
     }
 
-    private static TextBlock PhoneRich(params (string Text, string? Color)[] parts)
+    private TextBlock PhoneRich(params (string Text, string? Color)[] parts)
     {
         var block = new TextBlock { TextWrapping = TextWrapping.Wrap };
         foreach (var (text, color) in parts)
@@ -179,7 +198,7 @@ public sealed partial class ShellView
         return block;
     }
 
-    private static StackPanel PhoneBullets(params (string Glyph, string Color, string Title, string Detail)[] items)
+    private StackPanel PhoneBullets(params (string Glyph, string Color, string Title, string Detail)[] items)
     {
         var list = new StackPanel { Spacing = 10 };
         foreach (var item in items)
@@ -187,11 +206,11 @@ public sealed partial class ShellView
             var row = new Grid { ColumnSpacing = 10 };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var icon = new FontIcon { Glyph = item.Glyph, FontSize = 18, VerticalAlignment = VerticalAlignment.Center };
+            var icon = new FontIcon { Glyph = item.Glyph, FontSize = PhoneIconSize, Width = PhoneIconSize, Height = PhoneIconSize, VerticalAlignment = VerticalAlignment.Center };
             if (PhoneBrush(item.Color) is { } mark) icon.Foreground = mark;
             var text = new StackPanel { Spacing = 2 };
-            text.Children.Add(new TextBlock { Text = item.Title, Style = PhoneText(item.Color), TextWrapping = TextWrapping.Wrap });
-            text.Children.Add(new TextBlock { Text = item.Detail, Style = PhoneText("CaptionTextBlockStyle"), TextWrapping = TextWrapping.Wrap });
+            text.Children.Add(new TextBlock { Text = item.Title, FontSize = 16, Style = PhoneText(item.Color), TextWrapping = TextWrapping.Wrap });
+            text.Children.Add(new TextBlock { Text = item.Detail, FontSize = 14, Style = PhoneText("CaptionTextBlockStyle"), TextWrapping = TextWrapping.Wrap });
             Grid.SetColumn(text, 1);
             row.Children.Add(icon); row.Children.Add(text);
             list.Children.Add(row);
@@ -199,14 +218,14 @@ public sealed partial class ShellView
         return list;
     }
 
-    private static Border PhoneNote(string color, string text)
+    private Border PhoneNote(string color, string text)
     {
         var border = new Border { Padding = new Thickness(12), CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1) };
         if (PhoneBrush(color) is { } mark) border.BorderBrush = mark;
         var row = new Grid { ColumnSpacing = 10 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var icon = new FontIcon { Glyph = "\uE946", FontSize = 18, VerticalAlignment = VerticalAlignment.Center };
+        var icon = new FontIcon { Glyph = "\uE946", FontSize = PhoneIconSize, Width = PhoneIconSize, Height = PhoneIconSize, VerticalAlignment = VerticalAlignment.Center };
         if (PhoneBrush(color) is { } mark2) icon.Foreground = mark2;
         var body = PhoneBody(text);
         Grid.SetColumn(body, 1);
@@ -215,146 +234,91 @@ public sealed partial class ShellView
         return border;
     }
 
-    private static Image PhonePicture(string picture) => new()
+    private Expander PhonePicture(string picture)
     {
-        Source = new BitmapImage(new Uri("ms-appx:///Assets/Setup/" + picture)) { DecodePixelWidth = 520 },
-        MaxHeight = 330,
-        Stretch = Stretch.Uniform,
-        HorizontalAlignment = HorizontalAlignment.Center,
-    };
+        var expander = new Expander { Header = picture.Contains("developer") ? L("Show developer options", "عرض صورة خيارات المطوّر") : L("Show USB debugging", "عرض صورة تصحيح USB"), HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch };
+        expander.Expanding += (_, _) => expander.Content = new Image {
+            Source = new BitmapImage(new Uri("ms-appx:///Assets/Setup/" + picture)) { DecodePixelWidth = 520 },
+            MaxHeight = 330, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center };
+        expander.Collapsed += (_, _) => expander.Content = null;
+        return expander;
+    }
+
+    private void PhoneUsbHelpPage()
+    {
+        var page = PhonePage(L("Connect your phone", "توصيل هاتفك"));
+        page.Children.Add(PhoneBullets(("\uE713", "ModeOptimizedText", L("1 · Enable developer options", "١ · تفعيل خيارات المطوّر"),
+            L("Settings → About phone → tap Build number seven times. On Xiaomi, tap OS version.", "الإعدادات ← حول الهاتف ← اضغط رقم الإصدار سبع مرات. في شاومي اضغط إصدار النظام."))));
+        page.Children.Add(PhonePicture("phone-developer-options.png"));
+        page.Children.Add(PhoneBullets(("\uE72E", "ModeOptimizedText", L("2 · Enable USB debugging", "٢ · تفعيل تصحيح USB"),
+            L("Open Developer options and turn on USB debugging.", "افتح خيارات المطوّر وشغّل تصحيح USB."))));
+        page.Children.Add(PhonePicture("phone-usb-debugging.png"));
+        page.Children.Add(PhoneBullets(("\uE73E", "ModeHalalText", L("3 · Connect and approve", "٣ · التوصيل والموافقة"),
+            L("Use a USB data cable, unlock the phone and approve this PC on the phone.", "استخدم كابل USB للبيانات، وافتح قفل الهاتف ووافق على اتصال هذا الحاسوب."))));
+        PhoneToolActions(page, "Check connection", "التحقّق من الاتصال", _ => Task.FromResult(L("Phone connected. Install Sukut or activate its audio worker.", "الهاتف متصل. ثبّت سُكوت أو فعّل عامل الصوت.")), "\uE721");
+    }
 
     private void PhoneOverviewPage()
     {
-        var page = PhonePage("\uE8EA", "ModeOptimizedText", L("What you need", "ما تحتاجه"));
-        page.Children.Add(PhoneRich(
-            (L("Shizuku runs on your phone and lets Sukut change audio ", "يعمل Shizuku في هاتفك ويمكّن سُكوت من تغيير الصوت "), null),
-            (L("without root", "دون روت"), "ModeHalalText"),
-            (L(". After every phone restart, start Shizuku again using the PC or wireless method. Installation and pairing usually stay saved.", ". بعد كل إعادة تشغيل للهاتف، شغّل Shizuku مجددًا بالحاسوب أو بالطريقة اللاسلكية. لا يلزم عادةً تكرار التثبيت أو الإقران."), null)));
+        var page = PhonePage(L("What you need", "ما تحتاجه"));
+        page.Children.Add(PhoneBody(L("Sukut uses its own audio worker on your phone. Install the app, then activate it over USB. No root or separate Android app is needed.", "يستخدم سُكوت عامل صوت خاصًا به في هاتفك. ثبّت التطبيق، ثم فعّله عبر USB؛ لا تحتاج إلى روت أو تطبيق أندرويد آخر.")));
         page.Children.Add(PhoneBullets(
-            ("\uE945", "ModeOptimizedText", L("A USB data cable", "كابل USB للبيانات"), L("A charging-only cable will not work.", "الكابل المخصّص للشحن فقط لن يعمل.")),
-            ("\uE774", "ModeHalalText", L("Internet, once", "إنترنت لمرة واحدة"), L("This PC downloads the official Shizuku tools.", "ينزّل هذا الحاسوب أدوات Shizuku الرسمية.")),
-            ("\uE823", "ModeOffText", L("About three minutes", "حوالي ثلاث دقائق"), L("Keep the phone unlocked while you follow the steps.", "أبقِ الهاتف مفتوحًا أثناء اتباع الخطوات."))));
-        page.Children.Add(PhoneNote("ModeHalalText", L("You approve USB debugging on your phone. This guide installs Shizuku and Sukut, then starts Shizuku.", "توافق أنت على تصحيح USB في هاتفك. يثبّت هذا الدليل Shizuku وسُكوت، ثم يشغّل Shizuku.")));
+            ("\uE945", "ModeOptimizedText", L("A USB data cable", "كابل USB للبيانات"), L("Unlock your phone and approve this PC.", "افتح قفل الهاتف ووافق على اتصال هذا الحاسوب.")),
+            ("\uE774", "ModeHalalText", L("Internet, once", "إنترنت لمرة واحدة"), L("Only the official Google USB tools need downloading.", "يلزم تنزيل أدوات USB الرسمية من Google فقط."))));
+        page.Children.Add(PhoneNote("ModeHalalText", L("After activation you can unplug USB. Activate again after a phone restart, an app update or if Android ends the worker.", "بعد التفعيل يمكنك فصل USB. أعد التفعيل بعد إعادة تشغيل الهاتف أو تحديث التطبيق أو إنهاء أندرويد لعامل الصوت.")));
     }
 
     private void PhoneDeveloperPage()
     {
-        var page = PhonePage("\uE713", "ModeOptimizedText", L("Enable developer options", "تفعيل خيارات المطوّر"));
-        page.Children.Add(PhoneRich(
-            (L("On your phone open ", "في هاتفك افتح "), null),
-            (L("Settings → About phone", "الإعدادات ← حول الهاتف"), "ModeOptimizedText"),
-            (L(", then tap ", "، ثم اضغط "), null),
-            (L("Build number", "رقم الإصدار"), "ModeOptimizedText"),
-            (L(" seven times. On Xiaomi tap ", " سبع مرات. وفي شاومي اضغط "), null),
-            (L("OS version", "إصدار النظام"), "ModeOptimizedText"),
-            (L(" instead. Enter your phone PIN if asked, then open ", " بدلًا منها. أدخل رمز القفل إذا طُلب، ثم افتح "), null),
-            (L("Developer options", "خيارات المطوّر"), "ModeOptimizedText"),
-            (L(", which is often under Additional settings.", "، وهي غالبًا ضمن الإعدادات الإضافية."), null)));
+        var page = PhonePage(L("Enable developer options", "تفعيل خيارات المطوّر"));
+        page.Children.Add(PhoneBullets(
+            ("\uE713", "AccentText", L("Open Settings → About phone", "افتح الإعدادات ← حول الهاتف"), L("Find Build number. On Xiaomi, use OS version.", "ابحث عن رقم الإصدار. في شاومي استخدم إصدار النظام.")),
+            ("\uE73E", "GainRaised", L("Tap seven times", "اضغط سبع مرات"), L("Enter your phone PIN if asked. Then open Developer options.", "أدخل رمز قفل هاتفك إذا طُلب، ثم افتح خيارات المطوّر."))));
         page.Children.Add(PhonePicture("phone-developer-options.png"));
         page.Children.Add(PhoneNote("ModeOptimizedText", L("You will see a warning that these options are for developers. That is normal.", "ستظهر رسالة تحذير بأن هذه الخيارات للمطوّرين. هذا طبيعي.")));
     }
 
     private void PhoneDebuggingPage()
     {
-        var page = PhonePage("\uE72E", "ModeOptimizedText", L("Allow USB debugging", "السماح بتصحيح USB"));
-        page.Children.Add(PhoneRich(
-            (L("In ", "في "), null),
-            (L("Developer options", "خيارات المطوّر"), "ModeOptimizedText"),
-            (L(" turn on ", " شغّل "), null),
-            (L("USB debugging", "تصحيح USB"), "ModeOptimizedText"),
-            (L(". Connect the phone to this PC with the cable and tap ", ". وصّل الهاتف بهذا الحاسوب بالكابل ثم اضغط "), null),
-            (L("Allow", "السماح"), "ModeOptimizedText"),
-            (L(" on the phone. Keep the phone unlocked during setup.", " في الهاتف. أبقِ الهاتف مفتوحًا أثناء الإعداد."), null)));
+        var page = PhonePage(L("Allow USB debugging", "السماح بتصحيح USB"));
+        page.Children.Add(PhoneBullets(
+            ("\uE713", "AccentText", L("Turn on USB debugging", "شغّل تصحيح USB"), L("You’ll find it in Developer options.", "تجده في خيارات المطوّر.")),
+            ("\uE88E", "GainRaised", L("Connect and allow this PC", "وصّل الهاتف واسمح لهذا الحاسوب"), L("Use a USB data cable. Keep the phone unlocked and tap Allow.", "استخدم كابل USB للبيانات، وأبقِ الهاتف مفتوحًا ثم اضغط السماح."))));
         page.Children.Add(PhonePicture("phone-usb-debugging.png"));
-        page.Children.Add(PhoneNote("ModeOptimizedText", L("If installing Shizuku is blocked, also allow Install via USB on the phone.", "إذا حُظر تثبيت Shizuku، اسمح أيضًا بـ«التثبيت عبر USB» في الهاتف.")));
+        page.Children.Add(PhoneNote("ModeOptimizedText", L("If installation is blocked, also allow Install via USB on the phone.", "إذا حُظر التثبيت، اسمح أيضًا بـ«التثبيت عبر USB» في الهاتف.")));
     }
 
     private void PhoneInstallPage()
     {
-        var page = PhonePage("\uE896", "ModeHalalText", L("Install Shizuku", "تثبيت Shizuku"));
-        page.Children.Add(PhoneRich(
-            (L("Download the official tools once on this PC, connect the phone, then install ", "نزّل الأدوات الرسمية مرة واحدة على هذا الحاسوب، وصّل الهاتف، ثم ثبّت "), null),
-            (L("Shizuku 13.5.4", "Shizuku 13.5.4"), "ModeHalalText"),
-            (L(". The internet is needed only for this step.", ". الإنترنت مطلوب في هذه الخطوة فقط."), null)));
-        PhoneToolActions(page, "Install Shizuku 13.5.4", "تثبيت Shizuku 13.5.4", device => _phoneTools.Install(device, PhoneDownloadProgress()));
-    }
-
-    private void PhoneStartPage()
-    {
-        var page = PhonePage("\uE768", "ModeHalalText", L("Start Shizuku", "تشغيل Shizuku"));
-        page.Children.Add(PhoneRich(
-            (L("The button opens Shizuku on your phone and starts it over USB. Keep the phone unlocked and approve any prompt.", "يفتح الزر Shizuku في هاتفك ويشغّله عبر USB. أبقِ الهاتف مفتوحًا ووافق على أي طلب يظهر."), null)));
-        PhoneToolActions(page, "Open and start Shizuku", "فتح Shizuku وتشغيله", async device => { await _phoneTools.Open(device); return await _phoneTools.Start(device); });
-        page.Children.Add(PhoneNote("ModeOptimizedText", L("After every phone restart, reconnect and repeat this Start step, or start Shizuku wirelessly. You do not need to reinstall it.", "بعد كل إعادة تشغيل للهاتف، أعد توصيله وكرّر خطوة التشغيل هذه، أو شغّل Shizuku لاسلكيًا. لا تحتاج إلى إعادة تثبيته.")));
+        var page = PhonePage(L("Activate Sukut", "تفعيل سُكوت"));
+        page.Children.Add(PhoneBody(L("Keep your phone unlocked. Activate the audio worker, then unplug USB when it is ready.", "أبقِ الهاتف مفتوحًا. فعّل عامل الصوت ثم افصل USB عندما يصبح جاهزًا.")));
+        PhoneToolActions(page, "Activate Sukut", "تفعيل سُكوت", device => _phoneTools.ActivateSukut(device), "\uE768");
+        page.Children.Add(PhoneNote("AccentText", L("Activation does not start audio. Press Start in Sukut on your phone. Activate again after a phone restart or update.", "التفعيل لا يشغّل الصوت. اضغط زر التشغيل في سُكوت على هاتفك. أعد التفعيل بعد إعادة تشغيل الهاتف أو تحديث التطبيق.")));
+        var stop = PhoneActionButton("Deactivate worker", "إلغاء تفعيل عامل الصوت", async () => await _phoneTools.DeactivateSukut(await GetPhone()), "\uE71A");
+        _phoneActions!.Children.Add(stop);
     }
 
     private void PhoneAllowPage()
     {
-        var page = PhonePage("\uE73E", "ModeHalalText", L("Allow Sukut on your phone", "السماح لسُكوت في هاتفك"));
-        page.Children.Add(PhoneRich(
-            (L("Open ", "افتح "), null),
-            (L("Sukut", "سُكوت"), "ModeHalalText"),
-            (L(" on the phone and allow its Shizuku request. Once Shizuku is running you can unplug the USB cable.", " في الهاتف واسمح بطلب Shizuku. بعد تشغيله يمكنك فصل كابل USB."), null)));
+        var page = PhonePage(L("Ready on your phone", "جاهز في هاتفك"));
+        page.Children.Add(PhoneBody(L("Check that the phone says Audio worker ready. Choose a mode and press Start. You can unplug the cable.", "تحقّق من ظهور «عامل الصوت جاهز» في الهاتف. اختر وضعًا واضغط زر التشغيل. يمكنك فصل الكابل.")));
         PhoneToolActions(page, "Open Sukut on the phone", "فتح سُكوت في الهاتف", device => _phoneTools.OpenSukut(device));
-        var restart = new Button { HorizontalAlignment = HorizontalAlignment.Stretch };
-        var restartLabel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        restartLabel.Children.Add(new FontIcon { Glyph = "\uE72C", FontSize = 16 });
-        restartLabel.Children.Add(PhoneBody(L("Start again", "البدء مجدّدًا")));
-        restart.Content = restartLabel;
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(restart, L("Start phone setup again", "بدء دليل إعداد الهاتف مجدّدًا"));
-        restart.Click += (_, _) => { if (!_phoneBusy) { _phoneStep = 0; RenderPhonePage(); } };
-        _phoneActions!.Children.Add(restart);
-        page.Children.Add(PhoneNote("ModeOptimizedText", L("Start Shizuku again after restarting the phone. You can unplug the cable; keep debugging enabled while using Shizuku.", "شغّل Shizuku مجددًا بعد إعادة تشغيل الهاتف. يمكنك فصل الكابل؛ أبقِ التصحيح مفعّلًا أثناء استخدام Shizuku.")));
     }
 
     private void PhoneSukutPage()
     {
-        var page = PhonePage("\uE896", "ModeOptimizedText", L("Install or update Sukut", "تثبيت سُكوت أو تحديثه"));
-        page.Children.Add(PhoneBody(L("Install the included Android app, or update an older Sukut without removing your settings. A newer installed version is kept.", "ثبّت تطبيق أندرويد المرفق، أو حدّث نسخة سُكوت القديمة مع الاحتفاظ بإعداداتك. لن نستبدل نسخة أحدث مثبّتة في الهاتف.")));
-        page.Children.Add(PhoneNote("ModeOffText", L("Keep the phone unlocked. If Android asks, approve the installation on the phone.", "أبقِ الهاتف مفتوحًا. وافق على طلب التثبيت في الهاتف إذا ظهر.")));
-        PhoneToolActions(page, "Check and install Sukut", "التحقّق من سُكوت وتثبيته", async device => {
-            string result = await _phoneTools.InstallSukut(device);
-            await RefreshSukutUpdate(device); return result;
-        });
-        _phoneSukutUpdate = PhoneActionButton("Update Sukut to the latest version", "تحديث سُكوت إلى أحدث نسخة", async () => {
-            var device = await GetPhone();
-            string result = await _phoneTools.InstallSukut(device, update: true);
-            await RefreshSukutUpdate(device); return result;
-        });
-        _phoneSukutUpdate.Visibility = Visibility.Collapsed;
-        _phoneActions!.Children.Add(_phoneSukutUpdate);
-        QueueSukutUpdateCheck();
-    }
-
-    private void QueueSukutUpdateCheck()
-    {
-        if (PhoneShowsSukutUpdate && _phoneTools.AdbReady && _phoneSelected?.State == "device")
-            DispatcherQueue.TryEnqueue(async () => { if (PhoneShowsSukutUpdate && !_phoneBusy && _phoneSelected is { } device) await PhoneAction(async () => { await RefreshSukutUpdate(device); return L("Sukut checked. Use Update if an older version is installed.", "تم التحقّق من سُكوت. استخدم زر التحديث إذا كانت النسخة المثبّتة أقدم."); }); });
-    }
-
-    private async Task RefreshSukutUpdate(PhoneDevice device)
-    {
-        var status = await _phoneTools.SukutStatus(device);
-        if (!PhoneShowsSukutUpdate || _phoneSukutUpdate == null || _phoneSelected?.Serial != device.Serial) return;
-        string label = status.IsCurrent ? L("Sukut is up to date", "سُكوت محدّث بالفعل") : status.InstalledCode == null ? L("Install Sukut first", "ثبّت سُكوت أولًا") : L($"Update Sukut to {status.BundledVersion}", $"تحديث سُكوت إلى {status.BundledVersion}");
-        SetPhoneButtonLabel(_phoneSukutUpdate, "\uE895", label);
-        _phoneSukutUpdate.Visibility = _phoneTask == PhoneTask.Update || status.InstalledCode != null ? Visibility.Visible : Visibility.Collapsed;
-        _phoneSukutUpdate.IsEnabled = status.CanUpdate;
+        var page=PhonePage(L("Install or update Sukut","تثبيت سُكوت أو تحديثه"));
+        page.Children.Add(PhoneBody(L("Your settings and newer versions are kept.","نحتفظ بإعداداتك والنسخ الأحدث.")));
+        PhoneToolActions(page,"Set up Sukut","إعداد سُكوت",device=>_phoneTools.SetupSukut(device),"\uE895");
     }
 
     private Button PhoneToolActions(StackPanel page, string en, string ar, Func<PhoneDevice, Task<string>> action, string? glyph = null)
     {
         _phoneActions = new StackPanel { Spacing = 12 };
-        var devicesRow = new Grid { ColumnSpacing = 8 };
-        devicesRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        devicesRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        devicesRow.Children.Add(PhoneDevicePicker());
-        var refresh = PhoneActionButton("Find phone", "البحث عن الهاتف", RefreshPhoneDevices, "\uE721");
-        Grid.SetColumn(refresh, 1); devicesRow.Children.Add(refresh);
-        _phoneActions.Children.Add(devicesRow);
         var primary = PhoneActionButton(en, ar, async () => await action(await GetPhone()), glyph);
         primary.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
-        primary.MinHeight = 42;
+        primary.MinHeight = 52; primary.FontSize = 16; primary.Padding = new Thickness(16, 12, 16, 12);
         _phoneActions.Children.Add(primary);
         page.Children.Add(_phoneActions);
         _phoneProgress = new ProgressBar { Visibility = Visibility.Collapsed, IsIndeterminate = true };
@@ -373,7 +337,7 @@ public sealed partial class ShellView
         _phoneProgress.Visibility = _phoneProgressLabel!.Visibility = Visibility.Visible;
         _phoneProgress.IsIndeterminate = transfer.Total is not > 0;
         double received = transfer.Received / 1048576d;
-        string item = transfer.Item == "USB tools" ? L("USB tools", "أدوات USB") : "Shizuku";
+        string item = L("USB tools", "أدوات USB");
         if (transfer.Total is > 0)
         {
             _phoneProgress.Value = Math.Clamp(100d * transfer.Received / transfer.Total.Value, 0, 100);
@@ -384,7 +348,7 @@ public sealed partial class ShellView
 
     private async Task<PhoneDevice> GetPhone()
     {
-        if (!_phoneTools.AdbReady) await _phoneTools.Prepare(PhoneDownloadProgress(), includeShizuku: false);
+        if (!_phoneTools.AdbReady) await _phoneTools.Prepare(PhoneDownloadProgress());
         await RefreshPhoneDevices();
         var device = PhoneSelected();
         if (device.State != "device") throw new IOException(device.State == "unauthorized"
@@ -397,15 +361,18 @@ public sealed partial class ShellView
 
     private static void SetPhoneButtonLabel(Button button, string glyph, string text)
     {
-        var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
-        content.Children.Add(new FontIcon { Glyph = glyph, FontSize = 17 });
-        content.Children.Add(PhoneBody(text)); button.Content = content;
+        var content = new Grid { ColumnSpacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        content.Children.Add(new FontIcon { Glyph = glyph, FontSize = PhoneIconSize, Width = PhoneIconSize, Height = PhoneIconSize, VerticalAlignment = VerticalAlignment.Center });
+        var label = PhoneBody(text); label.VerticalAlignment = VerticalAlignment.Center; Grid.SetColumn(label, 1);
+        content.Children.Add(label); button.Content = content; button.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, text);
     }
 
     private Button PhoneActionButton(string en, string ar, Func<Task<string>> action, string? glyph = null)
     {
-        var button = new Button { Content = L(en, ar), HorizontalAlignment = HorizontalAlignment.Stretch };
+        var button = new Button { Content = L(en, ar), MinHeight = 44, Padding = new Thickness(14, 10, 14, 10), CornerRadius = new CornerRadius(4), HorizontalAlignment = HorizontalAlignment.Stretch };
         if (glyph != null) SetPhoneButtonLabel(button, glyph, L(en, ar));
         button.Click += async (_, _) => await PhoneAction(action);
         return button;
@@ -415,31 +382,34 @@ public sealed partial class ShellView
     {
         _phoneDevices = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, DisplayMemberPath = "Label", PlaceholderText = L("Choose phone", "اختر الهاتف"), MaxDropDownHeight = 240, ItemsSource = _phoneKnown, SelectedItem = _phoneSelected };
         _phoneDevices.SelectionChanged += async (_, _) => {
-            if (_phoneDevices?.SelectedItem is not PhoneDevice device) return;
-            _phoneSelected = device;
-            if (!_phoneBusy && PhoneShowsSukutUpdate && device.State == "device" && _phoneSukutUpdate?.IsLoaded == true)
-                await PhoneAction(async () => { await RefreshSukutUpdate(device); return L("Sukut checked. Use Update if an older version is installed.", "تم التحقّق من سُكوت. استخدم زر التحديث إذا كانت النسخة المثبّتة أقدم."); });
+            if (_applyingPhone || _phoneDevices?.SelectedItem is not PhoneDevice device) return;
+            _phoneSelected = device;UpdatePhoneConnectionCard();await ReadPhoneInfo(device);
+
         };
         return _phoneDevices;
     }
 
     private PhoneDevice PhoneSelected() => _phoneDevices?.SelectedItem as PhoneDevice ?? _phoneSelected ?? throw new IOException(L("Select your phone first.", "اختر هاتفك أولًا."));
 
-    private async Task<string> RefreshPhoneDevices()
+    private async Task<string> RefreshPhoneDevicesCore()
     {
-        if (!_phoneTools.AdbReady) await _phoneTools.Prepare(PhoneDownloadProgress(), includeShizuku: false);
+        if (!_phoneTools.AdbReady) await _phoneTools.Prepare(PhoneDownloadProgress());
         var devices = await _phoneTools.Devices();
         _phoneKnown = devices;
-        _phoneSelected = devices.Count == 1 ? devices[0] : devices.Find(x => x.Serial == _phoneSelected?.Serial);
+        _phoneSelected = PhoneTools.SelectDevice(devices, _phoneSelected?.Serial);
+        _applyingPhone=true;
         if (_phoneDevices != null) { _phoneDevices.ItemsSource = null; _phoneDevices.ItemsSource = _phoneKnown; _phoneDevices.SelectedItem = _phoneSelected; }
-        if (devices.Count == 0) throw new IOException(L("No phone found. Unlock it, check the USB data cable, and allow USB debugging. A manufacturer USB driver may be needed.", "لم يُعثر على هاتف. افتح قفله، وتحقّق من كابل البيانات، واسمح بتصحيح USB. قد تحتاج إلى تعريف USB من الشركة المصنّعة."));
-        if (PhoneShowsSukutUpdate && _phoneSelected?.State == "device") await RefreshSukutUpdate(_phoneSelected);
-        return L("Phone found. Select it, then use the button below. If it says unauthorized, allow USB debugging on the phone first.", "عُثر على الهاتف. اختره واستخدم الزر أدناه. إذا ظهر unauthorized، وافق على تصحيح USB في الهاتف أولًا.");
+        _applyingPhone=false;UpdatePhoneConnectionCard();
+        if(_phoneSelected is {} selected)await ReadPhoneInfo(selected);
+        if (devices.Count == 0) throw new IOException(L("Connect your phone by USB and allow debugging.", "وصّل الهاتف عبر USB واسمح بتصحيح USB."));
+        return L("Phone connected.", "الهاتف متصل.");
     }
 
     private void SetPhoneActionsEnabled(bool enabled)
     {
         if (_phoneActions != null) { _phoneActions.IsHitTestVisible = enabled; _phoneActions.Opacity = enabled ? 1 : .6; }
+        if(_phoneRefreshButton!=null)_phoneRefreshButton.IsEnabled=enabled;
+        if(_phoneDevices!=null)_phoneDevices.IsEnabled=enabled;
         if (_phoneBack != null) _phoneBack.IsEnabled = enabled;
         if (_phoneNext != null) _phoneNext.IsEnabled = enabled;
     }
@@ -455,12 +425,12 @@ public sealed partial class ShellView
             "Sukut installed. Continue to open it on the phone." => "تم تثبيت سُكوت. تابع لفتحه في الهاتف.",
             "Sukut updated. Your settings are kept." => "تم تحديث سُكوت. إعداداتك محفوظة.",
             "Sukut is already up to date. Your settings are kept." => "سُكوت محدّث بالفعل. إعداداتك محفوظة.",
-            "Sukut opened. Allow its Shizuku request on the phone." => "تم فتح سُكوت. وافق على طلب Shizuku في الهاتف.",
+            "Sukut opened. Activate its audio worker, then press Start on the phone." => "تم فتح سُكوت. فعّل عامل الصوت، ثم اضغط زر التشغيل في الهاتف.",
             "Tools ready. Refresh devices." => "الأدوات جاهزة. حدّث قائمة الأجهزة.",
-            "Shizuku 13.5.4 or newer is already installed." => "Shizuku 13.5.4 أو أحدث مثبت بالفعل.",
-            "Shizuku installed. Open it once, then choose Start Shizuku." => "تم تثبيت Shizuku. افتحه مرة، ثم اختر تشغيل Shizuku.",
-            "Shizuku opened on the phone." => "تم فتح Shizuku في الهاتف.",
-            "Shizuku is running. Open Sukut on the phone and allow its Shizuku request. Start Shizuku again after a phone restart." => "Shizuku يعمل. افتح سُكوت في الهاتف واسمح بطلب الوصول. شغّل Shizuku مجددًا بعد إعادة تشغيل الهاتف.",
+            "Sukut is installed and ready for activation." => "سُكوت مثبّت وجاهز للتفعيل.",
+            "Sukut audio worker is already ready. Press Start on the phone." => "عامل الصوت جاهز بالفعل. اضغط زر التشغيل في الهاتف.",
+            "Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart." => "عامل الصوت جاهز. يمكنك فصل USB والضغط على زر التشغيل في الهاتف. أعد التفعيل بعد إعادة تشغيل الهاتف.",
+            "Sukut audio worker deactivated. Activate it again before using Start." => "أُلغي تفعيل عامل الصوت. فعّله مجدّدًا قبل استخدام زر التشغيل.",
             _ => result } : result; } }
         catch (Exception error) { if (message != null) {
             message.Severity = InfoBarSeverity.Warning;
@@ -472,8 +442,6 @@ public sealed partial class ShellView
                     => L("Approve the installation on your phone. On Xiaomi, enable Install via USB in Developer options, then retry.", "وافق على التثبيت في هاتفك. في شاومي، فعّل «التثبيت عبر USB» من خيارات المطوّر، ثم أعد المحاولة."),
                 _ when detail.Contains("INSTALL_FAILED_UPDATE_INCOMPATIBLE", StringComparison.OrdinalIgnoreCase)
                     => L("The installed app has a different signing key. Use an update signed with the same key; your installed app and data have been kept.", "للنسخة المثبّتة مفتاح توقيع مختلف. استخدم تحديثًا بالمفتاح نفسه. احتُفظ بالتطبيق المثبّت وبياناته."),
-                _ when detail.Contains("Shizuku did not start", StringComparison.OrdinalIgnoreCase)
-                    => L("Shizuku did not start. Open it on the phone once, keep the USB cable connected, then retry.", "لم يبدأ Shizuku. افتحه في الهاتف مرة واحدة، وأبقِ كابل USB موصولًا، ثم أعد المحاولة."),
                 _ when detail.Contains("Sukut APK", StringComparison.OrdinalIgnoreCase)
                     => L("The included Sukut APK is missing or damaged. Use the complete Sukut folder.", "ملف تثبيت سُكوت المرفق مفقود أو تالف. استخدم مجلد سُكوت كاملًا."),
                 _ when detail.Contains("Sukut is not installed", StringComparison.OrdinalIgnoreCase)
@@ -483,10 +451,11 @@ public sealed partial class ShellView
         } }
         finally {
             _phoneBusy = false; SetPhoneActionsEnabled(true);
+            _=RefreshPhoneQuietly();
             if (_phoneProgress != null) _phoneProgress.Visibility = Visibility.Collapsed;
             if (_phoneProgressLabel != null) _phoneProgressLabel.Visibility = Visibility.Collapsed;
             if (_phoneMessage != null && message != null && !ReferenceEquals(message, _phoneMessage))
-            { _phoneMessage.Severity = message.Severity; _phoneMessage.Message = message.Message; }
+            { _phoneMessage.Severity = message.Severity; _phoneMessage.Message = message.Message; _phoneMessage.IsOpen = message.IsOpen; }
         }
     }
 }

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="launcher_background">#F6EFE3</color>
+    <!-- Flat charcoal / off-white surfaces with teal accents. -->
+    <color name="sukut_background_light">#FFFFFF</color>
+    <color name="sukut_background_dark">#000000</color>
+    <color name="sukut_background">@color/sukut_background_light</color>
+    <color name="sukut_accent">#326A56</color>
+    <bool name="sukut_light_bars">true</bool>
 </resources>

@@ -1,0 +1,32 @@
+#!/bin/sh
+# Sukut's USB access fix for the phone tools (Linux/PLAN.md section 7, "Phone
+# page"). The Phone page's Allow access button runs it as root through pkexec
+# (polkit action io.github.altarafiya.Sukut.usb-access), so the desktop asks for
+# the administrator password; Sukut never sees it. It takes no input:
+#   1. adds the user who asked (PKEXEC_UID) to plugdev, the group the Android
+#      udev rules give phones to;
+#   2. makes udev apply those rules again to phones that are already plugged in.
+set -eu
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+[ "$(id -u)" = 0 ] || { echo "Run through pkexec." >&2; exit 1; }
+uid=${PKEXEC_UID:-}
+case "$uid" in ''|*[!0-9]*) echo "Run through pkexec." >&2; exit 1;; esac
+[ "$uid" != 0 ] || { echo "Run from your own account." >&2; exit 1; }
+user=$(getent passwd "$uid" | cut -d: -f1)
+[ -n "$user" ] || { echo "Unknown user $uid." >&2; exit 1; }
+
+group=none
+if getent group plugdev > /dev/null; then
+    if id -nG "$user" | tr ' ' '\n' | grep -qx plugdev; then
+        group=already
+    else
+        usermod -aG plugdev "$user"
+        group=added
+    fi
+fi
+
+udevadm control --reload-rules
+udevadm trigger --subsystem-match=usb --action=add
+udevadm settle --timeout=10 || true
+echo "SUKUT_USB_ACCESS_READY group=$group"

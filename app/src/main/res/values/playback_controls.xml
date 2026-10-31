@@ -1,0 +1,10 @@
+<resources>
+ <string name="phone_effects">Dolby &amp; phone effects</string>
+ <string name="phone_effects_delay">Keep on for Bluetooth speakers, headphones and earbuds. Off may skip Dolby and other phone effects. On can add a little audio delay.</string>
+ <string name="buffering_short_note">A little more delay can prevent stutters and pauses.</string>
+ <string name="performance_help_title">Playback help</string>
+ <string name="effects_on">Phone effects on</string>
+ <string name="effects_off">Phone effects off</string>
+ <string name="effects_help_detail">Phone effects uses Android’s normal sound path for supported Dolby and equalisers. Enable the effects in your phone settings. This can add audio delay.</string>
+ <string name="buffer_help_detail">Buffering controls how long Sukut waits before playing cleaned sound. Lowest starts sooner. Balanced helps keep sound steady. Maximum waits longer to prevent pauses. The music filter stays the same.</string>
+</resources>

@@ -6,7 +6,9 @@ $paths=Get-Content -LiteralPath (Join-Path $taskRoot 'local.build.json') -Raw | 
 $taskProject=[xml](Get-Content -LiteralPath (Join-Path $taskRoot 'src/sukut-ui/Sukut.csproj') -Raw)
 $taskVersion=$taskProject.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()
 $taskGradle=Get-Content -LiteralPath (Join-Path $taskRepo 'app/build.gradle.kts') -Raw
-$taskAndroidVersion=[regex]::Match($taskGradle,'versionName\s*=\s*"([0-9.]+)"').Groups[1].Value
+$taskAndroidVersion=[regex]::Match($taskGradle,'versionName\s*=\s*"(\d+\.\d+(?:\.\d+)?(?:-beta\.\d+)?)"').Groups[1].Value
+$taskParsedVersion=[version]([regex]::Match($taskVersion,'^\d+\.\d+(?:\.\d+)?').Value)
+$taskNumericVersion=('{0}.{1}.{2}' -f $taskParsedVersion.Major,$taskParsedVersion.Minor,[Math]::Max(0,$taskParsedVersion.Build))
 $taskApk=Join-Path $taskRepo ('Builds/Sukut-'+$taskAndroidVersion+'-android-arm64.apk')
 $taskBundle=Join-Path $taskRoot ('build/sukut-'+$taskVersion+'/Assets/Phone/Sukut.apk')
 $taskCurrentApk=Join-Path $taskRepo 'app/build/outputs/apk/engine/app-engine.apk'
@@ -24,11 +26,11 @@ $taskSignature=Get-AuthenticodeSignature -LiteralPath $taskDriver
 if($taskSignature.Status -ne 'Valid' -or $taskSignature.SignerCertificate.Subject -notlike '*BUREL VINCENT*'){throw 'Invalid VB-CABLE signature'}
 if(-not $SkipPayloadStage){& (Join-Path $PSScriptRoot 'package-sukut.ps1') -NoArchive}
 $taskCompiler=Join-Path $paths.dependencies 'inno-7.1.0/ISCC.exe'
-& $taskCompiler ("/DAppVersion="+$taskVersion) ("/DAndroidVersion="+$taskAndroidVersion) ("/DDependencyRoot="+$paths.dependencies) (Join-Path $taskRoot 'installer/Sukut.iss')
+& $taskCompiler ("/DAppVersion="+$taskVersion) ("/DAppNumericVersion="+$taskNumericVersion) ("/DAndroidVersion="+$taskAndroidVersion) ("/DDependencyRoot="+$paths.dependencies) (Join-Path $taskRoot 'installer/Sukut.iss')
 if($LASTEXITCODE -ne 0){throw 'Installer compiler failed'}
 $taskOutput=Join-Path $taskRoot ('dist/installer-final/Sukut-'+$taskVersion+'-Setup.exe')
 $record=[ordered]@{version=$taskVersion;android_version=$taskAndroidVersion;android_sha256=$taskApkHash;installer=$taskOutput;bytes=(Get-Item -LiteralPath $taskOutput).Length;sha256=(Get-FileHash -LiteralPath $taskOutput -Algorithm SHA256).Hash;driver_signature=$taskSignature.Status.ToString();built_date=(Get-Date -Format 'yyyy-MM-dd')}
-$evidence=Join-Path $taskRepo ('docs/release-'+$taskVersion+'-'+$taskAndroidVersion)
+$evidence=if($taskVersion.Contains('-beta.')){Join-Path $taskRepo 'docs/beta-0.4'}else{Join-Path $taskRepo ('docs/release-'+$taskVersion+'-'+$taskAndroidVersion)}
 New-Item -ItemType Directory -Path $evidence -Force | Out-Null
 $record | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'installer-built.json') -Encoding utf8
 Write-Output ('Installer: '+$taskOutput)

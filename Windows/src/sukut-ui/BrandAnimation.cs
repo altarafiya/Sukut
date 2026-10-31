@@ -22,7 +22,7 @@ public sealed partial class ShellView
 
     private void StartBrand()
     {
-        if (BrandName == null || !_visible || Minimized || _setupVisible || _page != 2) return;
+        if (BrandName == null || !_visible || Minimized || _setupVisible || _page != 1 || !AboutInView()) return;
         if (!_uiSettings.AnimationsEnabled || _accessibilitySettings.HighContrast) { StopBrand(); return; }
         if (_brandRunning) return;
         try
@@ -57,6 +57,15 @@ public sealed partial class ShellView
             StopBrand();
         }
     }
+
+    // About is the last Settings card: animate only while some of it is on screen.
+    private bool AboutInView()
+    {
+        if (AboutPanel == null || SettingsPanel == null || AboutPanel.ActualHeight <= 0) return false;
+        double top = AboutPanel.TransformToVisual(SettingsPanel).TransformPoint(default).Y;
+        return top < SettingsPanel.ViewportHeight && top + AboutPanel.ActualHeight > 0;
+    }
+    private void UpdateBrandInView() { if (AboutInView()) StartBrand(); else StopBrand(); }
 
     private void AddSparkle(DependencyObject target, double seconds)
     {

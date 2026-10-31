@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "model/AssetSeal.h"
 #include "tensorflow/lite/c/c_api.h"
 #include "tensorflow/lite/interpreter.h"
 #include "tensorflow/lite/interpreter_builder.h"
@@ -148,14 +149,7 @@ void RequireFloatTensor(const TfLiteTensor* tensor, const std::vector<int>& shap
 class ReferenceInterpreter {
  public:
   explicit ReferenceInterpreter(const std::filesystem::path& model_path) {
-    std::ifstream stream(model_path, std::ios::binary | std::ios::ate);
-    if (!stream) throw std::runtime_error("reference model open failed");
-    const std::streamoff size = stream.tellg();
-    if (size <= 0) throw std::runtime_error("reference model is empty");
-    model_bytes_.resize(static_cast<std::size_t>(size));
-    stream.seekg(0, std::ios::beg);
-    stream.read(reinterpret_cast<char*>(model_bytes_.data()), size);
-    if (!stream) throw std::runtime_error("reference model read failed");
+    model_bytes_ = cleanwave::seal::ReadFile(model_path, "reference model");
     model_ = tflite::FlatBufferModel::VerifyAndBuildFromBuffer(
         reinterpret_cast<const char*>(model_bytes_.data()), model_bytes_.size());
     if (!model_) throw std::runtime_error("reference VerifyAndBuildFromBuffer failed");

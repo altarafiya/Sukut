@@ -58,7 +58,13 @@ object UiPrefs {
         return base.createConfigurationContext(config)
     }
 
-    fun signature(context: Context): String = "${theme(context)}:${language(context)}"
+    fun tinted(context: Context): Boolean = prefs(context).getBoolean("surface_tinted", false)
+    fun tintColor(context: Context): Int = prefs(context).getInt("surface_tint_color", 0xFF2379B5.toInt()) or 0xFF000000.toInt()
+    fun setTinted(context: Context, enabled: Boolean) { prefs(context).edit().putBoolean("surface_tinted", enabled).apply() }
+    fun setTintColor(context: Context, color: Int) { prefs(context).edit().putInt("surface_tint_color", color or 0xFF000000.toInt()).apply() }
+    fun signature(context: Context): String = "${theme(context)}:${language(context)}:${tinted(context)}:${tintColor(context)}"
     fun setupCompleted(context: Context): Boolean = prefs(context).getBoolean("sukut_setup_v1", false)
+    fun activationMethod(context: Context): Int = prefs(context).getInt("activation_method",0).coerceIn(0,1)
+    fun setActivationMethod(context: Context, method: Int) { prefs(context).edit().putInt("activation_method",method.coerceIn(0,1)).apply() }
     fun finishSetup(context: Context) { prefs(context).edit().putBoolean("sukut_setup_v1", true).apply() }
 }

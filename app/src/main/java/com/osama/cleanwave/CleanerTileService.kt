@@ -11,7 +11,6 @@ import android.os.Handler
 import android.os.Looper
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import rikka.shizuku.Shizuku
 
 class CleanerTileService : TileService() {
     companion object {
@@ -20,17 +19,21 @@ class CleanerTileService : TileService() {
     private var listening = false
     private val handler = Handler(Looper.getMainLooper())
     private val update = Runnable { if (listening) refresh() }
-    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> queueRefresh() }
-    private val received = Shizuku.OnBinderReceivedListener { queueRefresh() }
-    private val dead = Shizuku.OnBinderDeadListener { queueRefresh() }
+    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (ControlPlanePolicy.affectsTile(key)) queueRefresh()
+    }
+    private var lastTileState = ""
+    private val received = WorkerConnection.OnChanged { queueRefresh() }
+    private val dead = WorkerConnection.OnChanged { queueRefresh() }
     private val tileIcon by lazy { Icon.createWithResource(this, R.drawable.ic_sukut_tile) }
 
     override fun onStartListening() {
         super.onStartListening()
+        lastTileState = "" // SystemUI may have recreated its tile while we weren't listening.
         if (!listening) {
             listening = true
             CleanerPrefs.registerListener(this, preferenceListener)
-            Shizuku.addBinderReceivedListenerSticky(received); Shizuku.addBinderDeadListener(dead)
+            WorkerConnection.addListener(received); WorkerConnection.addListener(dead)
         }
         refresh()
     }
@@ -40,7 +43,7 @@ class CleanerTileService : TileService() {
         if (!listening) return
         listening = false; handler.removeCallbacksAndMessages(null)
         CleanerPrefs.unregisterListener(this, preferenceListener)
-        Shizuku.removeBinderReceivedListener(received); Shizuku.removeBinderDeadListener(dead)
+        WorkerConnection.removeListener(received); WorkerConnection.removeListener(dead)
     }
     private fun queueRefresh() { handler.removeCallbacks(update); handler.post(update) }
     override fun onClick() {
@@ -56,16 +59,17 @@ class CleanerTileService : TileService() {
         } else PlaybackController.enable(this)
         refresh()
     }
-    private fun ready() = when (ShizukuBackend.availabilityState()) {
-        ShizukuBackend.Companion.Availability.READY_SHELL, ShizukuBackend.Companion.Availability.READY_ROOT,
-        ShizukuBackend.Companion.Availability.READY_OTHER -> true
+    private fun ready() = when (WorkerBackend.availabilityState()) {
+        WorkerBackend.Companion.Availability.READY -> true
         else -> false
     }
     // The PendingIntent overload exists only from API 34. The guarded legacy
     // branch is required on API 29–33; lint's target-SDK check ignores that guard.
     @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
     @Suppress("DEPRECATION") private fun openGuide() {
-        val intent = Intent(this, SetupActivity::class.java).putExtra("page", if (UiPrefs.setupCompleted(this)) 1 else 0)
+        val completed = UiPrefs.setupCompleted(this)
+        val intent = Intent(this, if (completed) MainActivity::class.java else SetupActivity::class.java)
+            .putExtra("reconnect", completed)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         if (Build.VERSION.SDK_INT >= 34) startActivityAndCollapse(PendingIntent.getActivity(this, 37, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
@@ -80,14 +84,18 @@ class CleanerTileService : TileService() {
             status == "Stopping" -> ui.getString(R.string.stopping)
             enabled && status == "Starting privileged audio route" -> ui.getString(R.string.starting)
             enabled -> ui.getString(AudioModes.mode(CleanerPrefs.sourcePreset(this)).label)
-            !ready() -> ui.getString(R.string.run_setup)
+            !ready() -> ui.getString(R.string.reconnect_worker)
             else -> ui.getString(R.string.off)
         }
+        val nextState = when { status == "Stopping" -> Tile.STATE_UNAVAILABLE; enabled -> Tile.STATE_ACTIVE; else -> Tile.STATE_INACTIVE }
+        val signature = "$nextState:$description:${ui.getString(R.string.app_name)}"
+        if (signature == lastTileState) return
         qsTile?.apply {
-            state = when { status == "Stopping" -> Tile.STATE_UNAVAILABLE; enabled -> Tile.STATE_ACTIVE; else -> Tile.STATE_INACTIVE }
+            state = nextState
             label = ui.getString(R.string.app_name); subtitle = description; icon = tileIcon
             contentDescription = "$label · $description"
             updateTile()
+            lastTileState = signature
         }
     }
 }

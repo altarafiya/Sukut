@@ -1,27 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Framework themes only: no AppCompat or Material Components runtime. -->
     <style name="Theme.Sukut.Launch" parent="Theme.CleanWave">
-        <item name="android:windowBackground">?android:attr/colorBackground</item>
-        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowBackground">@color/sukut_background</item>
+        <item name="android:windowDisablePreview">false</item>
     </style>
-    <style name="Theme.CleanWave" parent="android:style/Theme.DeviceDefault">
-        <item name="android:fontFamily">sans</item>
+    <style name="Theme.CleanWave" parent="@android:style/Theme.DeviceDefault.DayNight">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
-        <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
-        <item name="android:statusBarColor">?android:attr/colorBackground</item>
+        <item name="android:windowBackground">@color/sukut_background</item>
+        <item name="android:colorBackground">@color/sukut_background</item>
+        <item name="android:colorAccent">@color/sukut_accent</item>
+        <item name="android:colorPrimary">@color/sukut_accent</item>
+        <item name="android:navigationBarColor">@color/sukut_background</item>
+        <item name="android:statusBarColor">@color/sukut_background</item>
+        <item name="android:windowLightStatusBar">@bool/sukut_light_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/sukut_light_bars</item>
     </style>
-    <style name="Theme.CleanWave.Light" parent="android:style/Theme.DeviceDefault.Light">
-        <item name="android:fontFamily">sans</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowActionModeOverlay">true</item>
+    <style name="Theme.CleanWave.Light" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/sukut_background_light</item>
+        <item name="android:colorBackground">@color/sukut_background_light</item>
+        <item name="android:colorAccent">#326A56</item>
+        <item name="android:colorPrimary">#326A56</item>
+        <item name="android:colorControlActivated">#326A56</item>
+        <item name="android:textColorPrimary">#202723</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
-    <style name="Theme.CleanWave.Dark" parent="android:style/Theme.DeviceDefault">
-        <item name="android:fontFamily">sans</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowActionModeOverlay">true</item>
+    <style name="Theme.CleanWave.Dark" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/sukut_background_dark</item>
+        <item name="android:colorBackground">@color/sukut_background_dark</item>
+        <item name="android:colorAccent">#87B9A7</item>
+        <item name="android:colorPrimary">#87B9A7</item>
+        <item name="android:colorControlActivated">#87B9A7</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+    <style name="Sukut.Sheet" parent="@android:style/Theme.Material.Dialog.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.45</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
     </style>
 </resources>

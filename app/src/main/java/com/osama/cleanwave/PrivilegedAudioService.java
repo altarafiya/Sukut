@@ -19,6 +19,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.util.Log;
 
 import org.lsposed.hiddenapibypass.HiddenApiBypass;
@@ -26,7 +27,7 @@ import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Shizuku UserService. With Shizuku started through ADB this process runs as UID 2000
+ * Sukut audio worker. Started through authorised ADB, this process runs as UID 2000
  * (shell), which AOSP grants MODIFY_AUDIO_ROUTING. That lets us register a dynamic
  * AudioPolicy and replace matching playback with a REMOTE_SUBMIX loopback.
  *
@@ -44,6 +45,7 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
     private Context context;
     private volatile String status = "Idle";
     private AudioManager audioManager;
+    private volatile PowerManager powerManager;
     private Object audioPolicy;
     private Object audioMix;
     private AudioRecord audioRecord;
@@ -81,11 +83,19 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
     };
 
     public PrivilegedAudioService() {
-        // Shizuku < 13 fallback. CleanWave requires v13+ for the Context constructor.
+        // Only used by local developer probes; the worker supplies its installed package Context.
     }
 
     public PrivilegedAudioService(Context context) {
         this.context = context;
+    }
+
+    @Override public boolean onTransact(int code, android.os.Parcel data, android.os.Parcel reply, int flags)
+            throws android.os.RemoteException {
+        int owner = context != null ? context.getApplicationInfo().uid : Process.myUid();
+        if (!WorkerProtocol.trustedController(Binder.getCallingUid(), owner, Process.myUid()))
+            throw new SecurityException("Only the installed Sukut app can control audio");
+        return super.onTransact(code, data, reply, flags);
     }
 
     @Override
@@ -108,7 +118,7 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
                 return false;
             }
             if (context == null) {
-                status = "Shizuku v13+ is required: privileged service Context is unavailable";
+                status = "Sukut worker Context is unavailable; activate it again from Windows";
                 return false;
             }
 
@@ -123,15 +133,31 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
                 final long current = ++generation;
                 pipeline = new BufferedAudioPipeline(processor,
                         (data, offset, count) -> record.read(data, offset, count, AudioRecord.READ_BLOCKING),
-                        (data, offset, count) -> {
-                            synchronized (lock) {
-                                if (!running.get() || current != generation) return -1;
-                                if (playbackStarted.compareAndSet(false, true)) {
-                                    track.play();
-                                    configureOutputBuffer(track, record);
+                        new BufferedAudioPipeline.Output() {
+                            // Only the playback worker writes, pauses and resumes this track.
+                            private boolean resting;
+                            @Override public int write(byte[] data, int offset, int count) {
+                                synchronized (lock) {
+                                    if (!running.get() || current != generation) return -1;
+                                    if (playbackStarted.compareAndSet(false, true)) {
+                                        track.play();
+                                        configureOutputBuffer(track, record);
+                                    } else if (resting) {
+                                        // The paused buffer still holds its silent reserve,
+                                        // so resuming keeps the configured delay and no gap.
+                                        resting = false;
+                                        track.play();
+                                    }
+                                }
+                                return track.write(data, offset, count, AudioTrack.WRITE_BLOCKING);
+                            }
+                            @Override public void standby() {
+                                synchronized (lock) {
+                                    if (!running.get() || current != generation || resting || !playbackStarted.get()) return;
+                                    resting = true;
+                                    track.pause();
                                 }
                             }
-                            return track.write(data, offset, count, AudioTrack.WRITE_BLOCKING);
                         },
                         problem -> pipelineFailed(current, problem),
                         () -> Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO),
@@ -142,6 +168,7 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
                 return true;
             } catch (Throwable t) {
                 status = "Routing failed: " + concise(t);
+                Log.e("CleanWaveAudio", "Could not start Sukut audio route", t);
                 releaseUnstartedPipeline();
                 return false;
             }
@@ -159,6 +186,9 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
     }
 
     private void stopAsServiceIdentity() {
+        // The endpoint survives Off. Drop the old controller's callback so its
+        // stopped foreground service can be collected in the app process.
+        synchronized (lock) { routeObserver = null; }
         shutdown(true, -1);
     }
 
@@ -217,8 +247,17 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
             processor = null;
             pipeline = null;
             closing = !ended;
-            if (!ended) status = "Audio worker is still stopping. Restart the Shizuku audio service.";
+            if (!ended) status = "Audio worker is still stopping. Deactivate and activate Sukut again from Windows.";
             else if (clearStatus) status = "Off";
+        }
+        // An idle worker allocates almost nothing, so no collection would run and the
+        // released model buffer, interpreter wrappers and DSP tables would stay
+        // resident until the next Start. Collect once at Off, outside the lock, then
+        // let the native allocator return the freed pages (measured: 48 MB).
+        if (ended && !preserveRecordingRoute) {
+            System.gc();
+            System.runFinalization();
+            WorkerMemory.purge();
         }
     }
 
@@ -231,11 +270,7 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
     @Override
     public String getStatus() {
         MusicRemovalProcessor current = processor;
-        if (running.get() && current != null) {
-            return current.isBypassed()
-                    ? "AI temporarily bypassed while the device is busy; automatic recovery is active."
-                    : runningStatus();
-        }
+        if (running.get() && current != null) return liveStatus(current);
         return status;
     }
 
@@ -291,13 +326,30 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
     }
 
     @Override
-    public String getProcessingMetrics() {
+    public String[] getHealthSnapshot() {
+        final boolean screenOff = screenOffSnapshot();
         synchronized (lock) {
+            if (processor != null) processor.setScreenOff(screenOff);
+            // Query PowerManager outside the lock shared by playback. The local
+            // status/metrics still describe one consistent route generation.
+            String metrics = processingMetricsLocked();
+            return new String[]{Boolean.toString(isRunning()), getStatus(), metrics};
+        }
+    }
+
+    @Override
+    public String getProcessingMetrics() {
+        final boolean screenOff = screenOffSnapshot();
+        synchronized (lock) {
+            if (processor != null) processor.setScreenOff(screenOff);
+            return processingMetricsLocked();
+        }
+    }
+
+    private String processingMetricsLocked() {
             if(recordingRouter!=null && recordingRoutingEnabled.get())recordingRouter.requestRefresh();
             if (processor == null) return "AI engine is stopped";
-            status = processor.isBypassed()
-                    ? "AI temporarily bypassed while the device is busy; automatic recovery is active."
-                    : runningStatus();
+            status = liveStatus(processor);
             return processor.metrics() + (audioTrack == null ? "" : "; output_underruns=" + audioTrack.getUnderrunCount()
                     + "; queue_frames=" + audioTrack.getBufferSizeInFrames())
                     + (audioTrack == null ? "" : "; output_capacity_frames=" + audioTrack.getBufferCapacityInFrames()
@@ -308,7 +360,6 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
                     + "; silent_recovery=" + silentRecovery + "; effects_compatibility=" + effectsCompatibility
                     + "; recording_capture=" + (recordingRouter==null?"idle":recordingRouter.status())
                     + timingMetrics();
-        }
     }
 
     // Sampled only by the low-frequency health poll, never in the audio hot path.
@@ -326,10 +377,23 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
         return "; capture_render_gap_ms=unavailable";
     }
 
+    static final String STANDBY_STATUS = "Standby: nothing is playing";
+
+    private String liveStatus(MusicRemovalProcessor current) {
+        if (current.isBypassed()) return "AI temporarily bypassed while the device is busy; automatic recovery is active.";
+        return current.isStandby() ? STANDBY_STATUS : runningStatus();
+    }
+
     private String runningStatus() {
         if (BuildConfig.ENGINE_RUNTIME) return "audio separation is active";
         return processingMode == MusicRemovalProcessor.SINGING
                 ? "Singing music removal is running (buffered)" : "Dialogue music removal is running";
+    }
+    private boolean screenOffSnapshot() {
+        // Called by health checks, outside the lock used by live playback.
+        PowerManager current = powerManager;
+        try { return current != null && !current.isInteractive(); }
+        catch (RuntimeException unavailable) { return false; }
     }
 
     @Override
@@ -338,7 +402,7 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
         System.exit(0);
     }
 
-    // This method runs in Shizuku's shell/root process, which owns RECORD_AUDIO
+    // This method runs in Sukut's shell process, which owns RECORD_AUDIO
     // and MODIFY_AUDIO_ROUTING. The controller APK never records directly.
     @SuppressLint("MissingPermission")
     private void createRoutingPipeline() throws Exception {
@@ -376,17 +440,17 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
         addUsage(ruleBuilderClass, ruleBuilder, AudioAttributes.USAGE_MEDIA);
         addUsage(ruleBuilderClass, ruleBuilder, AudioAttributes.USAGE_GAME);
         addUsage(ruleBuilderClass, ruleBuilder, AudioAttributes.USAGE_UNKNOWN);
-        if (sourceUid >= 0) HiddenApiBypass.invoke(ruleBuilderClass, ruleBuilder,
-                "addMixRule", RULE_MATCH_UID, Integer.valueOf(sourceUid));
-
-        // Our re-rendered AudioTrack runs as shell too. Excluding UID 2000 prevents feedback.
-        HiddenApiBypass.invoke(
-                ruleBuilderClass,
-                ruleBuilder,
-                "excludeMixRule",
-                RULE_MATCH_UID,
-                Integer.valueOf(Process.myUid())
-        );
+        if (sourceUid >= 0) {
+            if (sourceUid == Process.myUid()) throw new IllegalArgumentException("The audio worker cannot capture its own output");
+            // A positive app-UID rule already excludes the worker. Android 16
+            // rejects mixing MATCH_UID and EXCLUDE_UID in the same dimension.
+            HiddenApiBypass.invoke(ruleBuilderClass, ruleBuilder,
+                    "addMixRule", RULE_MATCH_UID, Integer.valueOf(sourceUid));
+        } else {
+            // All media: exclude the shell re-renderer to prevent feedback.
+            HiddenApiBypass.invoke(ruleBuilderClass, ruleBuilder, "excludeMixRule",
+                    RULE_MATCH_UID, Integer.valueOf(Process.myUid()));
+        }
         Object rule = HiddenApiBypass.invoke(ruleBuilderClass, ruleBuilder, "build");
 
         Class<?> mixBuilderClass = Class.forName("android.media.audiopolicy.AudioMix$Builder");
@@ -401,7 +465,11 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
         audioPolicy = HiddenApiBypass.invoke(policyBuilderClass, policyBuilder, "build");
 
         audioManager = (AudioManager) audioContext.getSystemService(Context.AUDIO_SERVICE);
-        if (audioManager == null) throw new IllegalStateException("AudioManager unavailable in UserService");
+        try { powerManager = (PowerManager) audioContext.getSystemService(Context.POWER_SERVICE); }
+        catch (RuntimeException unavailable) { powerManager = null; }
+        // Startup has no active audio workers yet.
+        processor.setScreenOff(screenOffSnapshot());
+        if (audioManager == null) throw new IllegalStateException("AudioManager unavailable in Sukut worker");
 
         Object registerResult = HiddenApiBypass.invoke(
                 AudioManager.class,
@@ -499,6 +567,9 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
         }
     }
 
+    // The SDK's device-type IntDef omits TYPE_UNKNOWN, although an unrouted
+    // AudioTrack can return it. Ignore that state instead of treating it as BT loss.
+    @SuppressLint("WrongConstant")
     private void reportOutputRoute() {
         if (routeObserver == null || audioTrack == null) return;
         AudioDeviceInfo device = audioTrack.getRoutedDevice();
@@ -609,12 +680,12 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
             } catch (Throwable ignored) { }
         }
         audioManager = null;
+        powerManager = null;
         audioPolicy = null;
         audioMix = null;
     }
 
     private static String concise(Throwable t) {
-        String message = t.getMessage();
-        return t.getClass().getSimpleName() + (message == null || message.isEmpty() ? "" : ": " + message);
+        return WorkerErrors.concise(t);
     }
 }

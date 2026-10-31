@@ -1,0 +1,10 @@
+<resources>
+ <string name="phone_effects">Dolby ومؤثرات الهاتف</string>
+ <string name="phone_effects_delay">يُنصح بإبقائه مفعّلًا لسماعات البلوتوث ومكبرات الصوت اللاسلكية. قد يتجاوز تعطيله Dolby ومؤثرات الهاتف الأخرى. وقد يزيد تفعيله تأخير الصوت قليلًا.</string>
+ <string name="buffering_short_note">تأخير أكبر قليلًا قد يمنع التقطّع والتوقفات.</string>
+ <string name="performance_help_title">المساعدة في التشغيل</string>
+ <string name="effects_on">مؤثرات الهاتف مفعّلة</string>
+ <string name="effects_off">مؤثرات الهاتف معطّلة</string>
+ <string name="effects_help_detail">تمرّر مؤثرات الهاتف الصوت عبر مسار أندرويد المعتاد لدعم Dolby والمعادل المتاحين على جهازك. فعّل المؤثرات من إعدادات الهاتف. قد يزيد ذلك تأخير الصوت.</string>
+ <string name="buffer_help_detail">يحدّد التخزين المؤقت مدة الانتظار قبل تشغيل الصوت المعالَج. «الأقل» يبدأ أسرع، و«متوازن» يساعد على سلاسة الصوت، و«الأكبر» ينتظر أطول لتقليل التوقفات. لا تتغيّر إزالة الموسيقى.</string>
+</resources>

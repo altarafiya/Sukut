@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+# Sukut for Debian (Linux/PLAN.md section 10). Built from a source tree that
+# Linux/scripts/build-deb.sh assembles: Linux/ (this CMake project), the shared
+# engine in Windows/src and the sealed files in Windows/assets/engine.
+# The pinned dependency sources come from SUKUT_DEPS_DIR; nothing is downloaded.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+SUKUT_DEPS_DIR ?= $(HOME)/sukut-deps
+VERSION_LABEL := $(shell dpkg-parsechangelog -SVersion | sed -e 's/-[^-]*$$//' -e 's/~/-/')
+
+%:
+	dh $@ --buildsystem=cmake+ninja --sourcedirectory=Linux --builddirectory=build
+
+# Release, as in the stage 1 parity build; developer tools left out.
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release -DSUKUT_DEV_TOOLS=OFF \
+		-DSUKUT_DEPS_DIR=$(SUKUT_DEPS_DIR) -DSUKUT_VERSION_LABEL=$(VERSION_LABEL)
+
+# The engine's checks run in development (Linux/scripts); nothing to test here.
+override_dh_auto_test:
+
+# Only Sukut's own files: TFLite's bundled dependencies have install rules too.
+override_dh_auto_install:
+	DESTDIR=$(CURDIR)/debian/sukut cmake --install build --component sukut
+
+# No debug data at all: symbols would label the sealed key constants. No
+# -dbgsym package, and no dwz file (dh_dwz would leave /usr/lib/debug/.dwz).
+override_dh_dwz:
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym

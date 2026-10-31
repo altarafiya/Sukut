@@ -7,7 +7,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** Capture, inference and playback progress independently, with bounded queues. */
 final class BufferedAudioPipeline implements AutoCloseable {
     interface Input { int read(byte[] block, int offset, int count) throws Exception; }
-    interface Output { int write(byte[] block, int offset, int count) throws Exception; }
+    interface Output {
+        int write(byte[] block, int offset, int count) throws Exception;
+        /** Nothing is playing: pause output so the audio hardware can sleep. The next write resumes it. */
+        default void standby() throws Exception { }
+    }
+    /** Zero-length marker: playback reached standby after every earlier packet was written. */
+    private static final byte[] STANDBY = new byte[0];
     interface Failure { void failed(Throwable problem); }
     private final AudioCleaner cleaner;
     private final Input input;
@@ -88,6 +94,7 @@ final class BufferedAudioPipeline implements AutoCloseable {
     private void process() throws Exception {
         boolean first=true;
         byte[] directPacket=directOutput?new byte[cleaner.getOutputFrames()*4]:null;
+        boolean resting=false;
         while(active.get()) {
             byte[] packet=captured.poll(100,TimeUnit.MILLISECONDS);
             if(packet==null) continue;
@@ -95,6 +102,18 @@ final class BufferedAudioPipeline implements AutoCloseable {
             cleaner.process(packet,first,clean,captured.size());
             if(!first) inputPool.put(packet);
             if(!active.get()) break;
+            if(cleaner.isStandby()) {
+                // Silent packets are dropped instead of keeping the output awake.
+                if(!directOutput) outputPool.put(clean);
+                if(!resting) {
+                    resting=true;
+                    if(directOutput) output.standby();
+                    else if(!rendered.offer(STANDBY,1,TimeUnit.SECONDS)) throw new IllegalStateException("Audio playback queue saturated");
+                }
+                first=false;
+                continue;
+            }
+            resting=false;
             if(directOutput) writePacket(clean);
             else if(!rendered.offer(clean,1,TimeUnit.SECONDS)) throw new IllegalStateException("Audio playback queue saturated");
             first=false;
@@ -108,13 +127,15 @@ final class BufferedAudioPipeline implements AutoCloseable {
         for(int i=0;i<reserve.length;i++) reserve[i]=rendered.take();
         for(byte[] packet:reserve) if(active.get()) writePacket(packet);
         while(active.get()) {
-            byte[] packet=rendered.poll(100,TimeUnit.MILLISECONDS);
+            // Standby sends nothing; a long poll avoids frequent idle wakeups.
+            byte[] packet=rendered.poll(500,TimeUnit.MILLISECONDS);
             if(packet==null) continue;
             writePacket(packet);
         }
     }
 
     private void writePacket(byte[] packet) throws Exception {
+        if(packet==STANDBY) { if(active.get()) output.standby(); return; }
         int offset=0, empty=0;
         while(offset<packet.length && active.get()) {
             int written=output.write(packet,offset,packet.length-offset);

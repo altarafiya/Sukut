@@ -31,7 +31,7 @@ int main() {
     kiss_fftr_free(inverse);
 
     std::cout << "KissFFT real FFT size 1536: plan creation OK\n";
-    std::cout << "Audio model loading: intentionally not implemented in Step 2\n";
+    std::cout << "Sukut model loading: intentionally not implemented in Step 2\n";
     std::cout << "Streaming DSP/live audio: intentionally not implemented in Step 2\n";
     return EXIT_SUCCESS;
 }

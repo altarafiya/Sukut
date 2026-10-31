@@ -24,11 +24,11 @@ android {
     testBuildType = "engine"
 
     defaultConfig {
-        applicationId = "com.osama.sukut"
+        applicationId = "com.altarafiyah.sukut"
         minSdk = 29
         targetSdk = 36
-        versionCode = 37
-        versionName = "0.3.31"
+        versionCode = 56
+        versionName = "0.4.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -91,19 +91,20 @@ android {
         includeInBundle = false
     }
     packaging { jniLibs.useLegacyPackaging = true }
+    // The in-app language picker works offline and must retain both locales in Play installs.
+    bundle { language { enableSplit = false } }
     androidResources { noCompress += listOf("onnx", "tflite") }
 }
 
 dependencies {
-    implementation("dev.rikka.shizuku:api:13.1.5")
-    implementation("dev.rikka.shizuku:provider:13.1.5")
+    // The interface uses framework Views only (no AppCompat/Material runtime).
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
     compileOnly("com.microsoft.onnxruntime:onnxruntime-android:1.23.2")
     "debugImplementation"("com.microsoft.onnxruntime:onnxruntime-android:1.23.2")
     "releaseImplementation"("com.microsoft.onnxruntime:onnxruntime-android:1.23.2")
     implementation("com.github.wendykierp:JTransforms:3.1")
-    "engineImplementation"(files("vendor/tensorflow-lite-2.16.1-neutral.aar"))
-    "engineImplementation"("org.tensorflow:tensorflow-lite-api:2.16.1")
+    "engineImplementation"(files("vendor/litert-1.0.1-arm64.aar"))
+    "engineImplementation"(files("vendor/litert-api-1.0.1.aar"))
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.microsoft.onnxruntime:onnxruntime:1.23.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
@@ -117,4 +118,13 @@ tasks.withType<Test>().configureEach {
     inputs.files(rootProject.fileTree("work/quality-upgrade/fixtures") {
         include("*-mixture.wav", "*-vocals.wav", "clean-speech-48k.wav", "dialogue-music-48k.wav")
     }).withPropertyName("privateQualityFixtures")
+}
+
+// Keep device-test annotations resolvable from this workspace's offline cache.
+// The production APK has no AndroidX UI/annotation dependency.
+configurations.matching { it.name.contains("AndroidTest") }.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("androidx.annotation:annotation"))
+            .using(module("androidx.annotation:annotation-jvm:1.9.1"))
+    }
 }

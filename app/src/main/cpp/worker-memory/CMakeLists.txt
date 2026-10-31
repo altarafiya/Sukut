@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.22)
+project(sukut_memory LANGUAGES C)
+add_library(sukut_memory SHARED memory.c)
+target_compile_options(sukut_memory PRIVATE -Os -fvisibility=hidden)
+target_link_options(sukut_memory PRIVATE -Wl,--gc-sections -Wl,-z,max-page-size=16384 -Wl,--strip-all)

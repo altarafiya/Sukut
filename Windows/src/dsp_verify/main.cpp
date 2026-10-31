@@ -22,6 +22,7 @@
 #include "dsp/OfflineCleaner.h"
 #include "dsp/StreamingDsp.h"
 #include "kiss_fftr.h"
+#include "model/AssetSeal.h"
 #include "offline/OfflinePipeline.h"
 #include "offline/WavIO.h"
 #include "tensorflow/lite/interpreter.h"
@@ -59,12 +60,8 @@ double MaxAbs(const Container& values) {
 
 std::vector<float> LoadWindowIndependent(const std::filesystem::path& path,
                                          std::size_t count) {
-  std::ifstream stream(path, std::ios::binary);
-  if (!stream) throw std::runtime_error("independent window open failed");
-  std::vector<unsigned char> bytes(count * 2);
-  stream.read(reinterpret_cast<char*>(bytes.data()),
-              static_cast<std::streamsize>(bytes.size()));
-  if (!stream || stream.peek() != std::char_traits<char>::eof()) {
+  const auto bytes = cleanwave::seal::ReadFile(path, "independent window");
+  if (bytes.size() != count * 2) {
     throw std::runtime_error("independent window size mismatch");
   }
   std::vector<float> result(count);
@@ -119,14 +116,7 @@ struct ReferenceModelOutputs {
 class ReferenceModel final {
  public:
   explicit ReferenceModel(const std::filesystem::path& path) {
-    std::ifstream stream(path, std::ios::binary | std::ios::ate);
-    if (!stream) throw std::runtime_error("reference model open failed");
-    const auto size = stream.tellg();
-    if (size <= 0) throw std::runtime_error("reference model is empty");
-    bytes_.resize(static_cast<std::size_t>(size));
-    stream.seekg(0, std::ios::beg);
-    stream.read(reinterpret_cast<char*>(bytes_.data()), size);
-    if (!stream) throw std::runtime_error("reference model read failed");
+    bytes_ = cleanwave::seal::ReadFile(path, "reference model");
     model_ = tflite::FlatBufferModel::VerifyAndBuildFromBuffer(
         reinterpret_cast<const char*>(bytes_.data()), bytes_.size());
     if (!model_) throw std::runtime_error("reference model verification failed");
@@ -422,7 +412,7 @@ void VerifyWindowsAndFft(const std::filesystem::path& rise_path,
                  std::abs(static_cast<double>(a * a + b * b) - target) / target);
   }
   Require(metrics.window_complement_relative < 0.0002,
-          "Audio window complement invariant failed");
+          "Sukut window complement invariant failed");
 
   std::array<float, Dsp::kFftSize> signal{};
   for (std::size_t i = 0; i < signal.size(); ++i) {
@@ -1101,7 +1091,12 @@ int Run(const std::filesystem::path& model,
 
 }  // namespace
 
+// Windows passes UTF-16 paths; Linux passes UTF-8. Both become std::filesystem::path.
+#if defined(_WIN32)
 int wmain(int argc, wchar_t** argv) {
+#else
+int main(int argc, char** argv) {
+#endif
   try {
     if (argc != 5) {
       std::cerr << "Usage: cleanwave_dsp_verify <model.tflite> <rise.bin> <hop.bin> "

@@ -13,17 +13,18 @@ public sealed partial class ShellView
 
     private void ShowSetup()
     {
+        _pageHistory.Clear();
         _setupVisible = true; _setupStep = 0; _skipCableStep = CableReady; StopBrand();
         bool previous = _applying; _applying = true;
-        Navigation.Visibility = Visibility.Collapsed;
-        View.HomeLoaded = View.SettingsLoaded = View.AboutLoaded = View.PhoneLoaded = false;
+        DesktopNavigation.Visibility = Visibility.Collapsed;
+        View.HomeLoaded = View.SettingsLoaded = View.PhoneLoaded = false;
         View.SetupLoaded = true;
         _applying = previous;
     }
     private void HideSetup()
     {
         _setupVisible = false; View.SetupLoaded = false;
-        Navigation.Visibility = Visibility.Visible; Navigate(0);
+        DesktopNavigation.Visibility = Visibility.Visible; Navigate(0);
     }
     private void SetupPanel_Loaded(object sender, RoutedEventArgs args)
     {
@@ -38,28 +39,17 @@ public sealed partial class ShellView
         SetupWelcomeDescription.Text = L("Enjoy the internet. Without the music.", "استمتع بالإنترنت، بلا موسيقى.");
         SetupOverviewCable.Text = L("Connect your apps with VB-CABLE", "وصّل صوت تطبيقاتك عبر VB-CABLE");
         SetupOverviewOutput.Text = L("Choose your speakers or headphones", "اختر السماعات أو مكبر الصوت");
-        SetupOverviewVolume.Text = L("Link real output volume, then choose a mode", "اربط مستوى السماعات، ثم اختر وضعًا");
+        SetupOverviewVolume.Text = L("Choose your audio mode", "اختر وضع الصوت المناسب لك");
         SetupLanguageLabel.Text = L("Language", "اللغة");
         SetupCableTitle.Text = L("Set up VB-CABLE", "إعداد VB-CABLE");
         SetupCableDescription.Text = L("VB-CABLE is a virtual audio driver. It sends sound from your apps into Sukut for music removal, then Sukut plays the result through your speakers or headphones.", "VB-CABLE برنامج تشغيل صوت افتراضي. ينقل صوت تطبيقاتك إلى سُكوت لإزالة الموسيقى، ثم يشغّل سُكوت النتيجة عبر سماعاتك.");
         SetupInstallSteps.Text = L("1. Download VB-CABLE and extract the files.\n2. Run its setup program as administrator.\n3. Restart Windows and reopen Sukut.", "١. حمّل VB-CABLE وفك ضغط الملفات.\n٢. شغّل برنامج التثبيت كمسؤول.\n٣. أعد تشغيل ويندوز وافتح سُكوت.");
         SetupDownloadButton.Content = L("Open driver download website", "فتح موقع تحميل برنامج التشغيل");
         SetupRefreshButton.Content = L("Refresh devices", "تحديث الأجهزة");
-        SetupVolumeOpenTitle.Text = L("1 · Open VB-CABLE as administrator", "١ · افتح VB-CABLE كمسؤول");
-        SetupPanelScreenshot.Header = L("VB-CABLE control panel", "لوحة تحكم VB-CABLE");
         SetupOutputTitle.Text = L("Choose your audio output", "اختر مخرج الصوت");
         SetupOutputDescription.Text = L("Pick the speakers or headphones you listen through.", "اختر السماعات أو مكبر الصوت الذي تستمع من خلاله.");
+        RenderHeadphoneEffects(SetupEffectsText);
         SetupPhysicalHint.Text = L("Choose your real headphones or speakers here. Sukut handles VB-CABLE routing automatically when you choose a mode.", "اختر سماعاتك الفعلية هنا. يتولى سُكوت التوجيه عبر VB-CABLE تلقائيًا عند اختيار وضع.");
-        SetupVolumeTitle.Text = L("Make the volume keys work", "فعّل أزرار التحكم بالصوت");
-        SetupVolumeDescription.Text = L("Just a precaution: this option is normally off after a fresh VB-CABLE install.", "للتأكّد فقط: يكون هذا الخيار معطّلًا عادةً بعد تثبيت VB-CABLE الجديد.");
-        SetupVolumeEnableTitle.Text = L("2 · Open Options from the menu bar", "٢ · افتح Options من شريط القوائم");
-        SetupVolumeLead.Text = L("From the menu bar, open ", "من شريط القوائم، افتح ");
-        SetupVolumeThen.Text = L(", uncheck ", "، ألغِ ");
-        SetupVolumeTail.Text = L(". Leave this option OFF.", ". أبقِ هذا الخيار معطّلًا.");
-        SetupCablePanelLabel.Text = L("Open VB-CABLE as administrator", "فتح VB-CABLE كمسؤول");
-        AutomationProperties.SetName(SetupCablePanelButton, SetupCablePanelLabel.Text);
-        SetupVolumeScreenshot.Header = L("Options menu · turn volume control off", "قائمة Options · تعطيل التحكم بالصوت");
-        SetupCheckedHint.Text = L("If this option is checked, turn it off. Otherwise, leave it as it is.", "إن كان الخيار محددًا، ألغِ تحديده. وإلا فاتركه كما هو.");
         SetupReadyTitle.Text = L("You’re ready", "أنت جاهز");
         SetupRoutingHint.Text = L("Choose a mode on Home. Sukut switches audio to VB-CABLE automatically.", "اختر وضعًا من الرئيسية. يحوّل سُكوت الصوت إلى VB-CABLE تلقائيًا.");
         SetupHalalHint.Text = L("Music Filter — removes music and improves speech clarity.", "مرشّح الموسيقى — يزيل الموسيقى ويحسّن وضوح الكلام.");
@@ -88,7 +78,6 @@ public sealed partial class ShellView
         SetupWelcomePage.Visibility = _setupStep == 0 ? Visibility.Visible : Visibility.Collapsed;
         SetupCablePage.Visibility = _setupStep == 1 ? Visibility.Visible : Visibility.Collapsed;
         SetupOutputPage.Visibility = _setupStep == 2 ? Visibility.Visible : Visibility.Collapsed;
-        SetupVolumePage.Visibility = _setupStep == 3 ? Visibility.Visible : Visibility.Collapsed;
         SetupReadyPage.Visibility = _setupStep == 4 ? Visibility.Visible : Visibility.Collapsed;
         UpdateSetupProgress();
         SetupBackButton.IsEnabled = _setupStep > 0; SetupNextButton.Content = _setupStep == 4 ? L("Open Sukut", "فتح سُكوت") : L("Next", "التالي");
@@ -114,15 +103,15 @@ public sealed partial class ShellView
     }
     private void UpdateSetupProgress()
     {
-        int total = _skipCableStep ? 4 : 5;
-        int current = _skipCableStep && _setupStep >= 2 ? _setupStep : _setupStep + 1;
+        int total = _skipCableStep ? 3 : 4;
+        int current = _setupStep == 4 ? total : _skipCableStep && _setupStep >= 2 ? _setupStep : _setupStep + 1;
         SetupStepLabel.Text = L($"Step {current} of {total}", $"الخطوة {current} من {total}"); SetupProgress.Maximum = total; SetupProgress.Value = current;
     }
-    private void SetupBack_Click(object sender, RoutedEventArgs args) { if (_setupStep == 2 && _skipCableStep) _setupStep = 0; else if (_setupStep > 0) _setupStep--; UpdateSetupPage(); }
+    private void SetupBack_Click(object sender, RoutedEventArgs args) { if (_setupStep == 2 && _skipCableStep) _setupStep = 0; else if (_setupStep == 4) _setupStep = 2; else if (_setupStep > 0) _setupStep--; UpdateSetupPage(); }
     private async void SetupNext_Click(object sender, RoutedEventArgs args)
     {
         if (SetupNextButton == null || !SetupNextButton.IsEnabled) return;
-        if (_setupStep < 4) { if (_setupStep == 0 && CableReady) { _skipCableStep = true; _setupStep = 2; } else _setupStep++; UpdateSetupPage(); return; }
+        if (_setupStep < 4) { if (_setupStep == 0 && CableReady) { _skipCableStep = true; _setupStep = 2; } else _setupStep = _setupStep == 2 ? 4 : _setupStep + 1; UpdateSetupPage(); return; }
         _preferences.SetupCompleted = true;
         if (!await SaveNow()) { _preferences.SetupCompleted = false; return; }
         HideSetup();

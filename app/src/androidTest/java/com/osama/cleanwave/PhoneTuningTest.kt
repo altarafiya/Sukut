@@ -14,7 +14,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import rikka.shizuku.Shizuku
 import java.io.File
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -44,17 +43,16 @@ class PhoneTuningTest {
         while(CleanerService.isAlive && SystemClock.elapsedRealtime()<stopUntil) SystemClock.sleep(100)
         assertFalse("Normal processing must stop before the isolated probe",CleanerService.isAlive)
         val binderUntil=SystemClock.elapsedRealtime()+10000
-        while(!runCatching { Shizuku.pingBinder() }.getOrDefault(false) && SystemClock.elapsedRealtime()<binderUntil) SystemClock.sleep(100)
-        assertTrue("Shizuku must be available",Shizuku.pingBinder() && Shizuku.checkSelfPermission()==0)
-        val args=Shizuku.UserServiceArgs(ComponentName(context,PrivilegedAudioService::class.java))
-            .processNameSuffix("sukut_latency").tag("sukut-latency-probe").version(BuildConfig.VERSION_CODE).daemon(false)
+        while(!runCatching { WorkerConnection.ready }.getOrDefault(false) && SystemClock.elapsedRealtime()<binderUntil) SystemClock.sleep(100)
+        assertTrue("Sukut worker must be available",WorkerConnection.ready && 0==0)
+
         val latch=CountDownLatch(1)
         var api:ICleanWaveService?=null
         val connection=object:ServiceConnection {
             override fun onServiceConnected(name:ComponentName?,binder:IBinder?) { api=ICleanWaveService.Stub.asInterface(binder);latch.countDown() }
             override fun onServiceDisconnected(name:ComponentName?)=Unit
         }
-        ins.runOnMainSync { Shizuku.bindUserService(args,connection) }
+        ins.runOnMainSync { connection.onServiceConnected(null, WorkerConnection.api?.asBinder()) }
         assertTrue("Latency worker did not connect",latch.await(15,TimeUnit.SECONDS))
         try {
             val phases=(arguments.getString("phases") ?: "off_a,unity,optimized,off_b").split(',')
@@ -90,7 +88,7 @@ class PhoneTuningTest {
             }
         } finally {
             api?.stopProcessing()
-            ins.runOnMainSync { Shizuku.unbindUserService(args,connection,true) }
+            ins.runOnMainSync { WorkerConnection.api?.stopProcessing() }
         }
     }
 
@@ -104,13 +102,11 @@ class PhoneTuningTest {
                 val hash = MessageDigest.getInstance("SHA-256")
                 // Disable the wall-clock recovery guard for deterministic quality comparison.
                 // The live routing tests below retain normal overload protection.
-                val model = context.assets.openFd("separator.tflite").use { fd ->
-                    FileInputStream(fd.fileDescriptor).channel.use { it.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.length).order(ByteOrder.nativeOrder()) }
-                }
+                val model = AssetSeal.model(context)
                 val type = Class.forName("com.osama.cleanwave.StreamingCleaner")
                 val cleaner = type.getConstructor(ByteBuffer::class.java, ByteArray::class.java, ByteArray::class.java, Boolean::class.javaPrimitiveType)
-                    .newInstance(model, context.assets.open("window_576_q15.bin").use { it.readBytes() },
-                        context.assets.open("window_960_q15.bin").use { it.readBytes() }, false) as AudioCleaner
+                    .newInstance(model, AssetSeal.bytes(context, "window_576_q15.bin"),
+                        AssetSeal.bytes(context, "window_960_q15.bin"), false) as AudioCleaner
                 cleaner.use {
                     it.setReduction(100); it.setAmplification(0)
                     it.setSourceMix(0, if (preset == 0) -20 else -100, when (preset) { 0 -> -10; 3 -> -100; else -> 0 })
@@ -130,17 +126,16 @@ class PhoneTuningTest {
         } finally { Process.setThreadPriority(before) }
 
         val until = SystemClock.elapsedRealtime() + 10000
-        while (!runCatching { Shizuku.pingBinder() }.getOrDefault(false) && SystemClock.elapsedRealtime() < until) SystemClock.sleep(100)
-        assertTrue("Shizuku must be running and authorized", Shizuku.pingBinder() && Shizuku.checkSelfPermission() == 0)
-        val args = Shizuku.UserServiceArgs(ComponentName(context, PrivilegedAudioService::class.java))
-            .processNameSuffix("sukut_tuning").tag("sukut-phone-tuning").version(BuildConfig.VERSION_CODE).daemon(false)
+        while (!runCatching { WorkerConnection.ready }.getOrDefault(false) && SystemClock.elapsedRealtime() < until) SystemClock.sleep(100)
+        assertTrue("Sukut worker must be running and authorized", WorkerConnection.ready && 0 == 0)
+
         val latch = CountDownLatch(1)
         var api: ICleanWaveService? = null
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) { api = ICleanWaveService.Stub.asInterface(binder); latch.countDown() }
             override fun onServiceDisconnected(name: ComponentName?) = Unit
         }
-        ins.runOnMainSync { Shizuku.bindUserService(args, connection) }
+        ins.runOnMainSync { connection.onServiceConnected(null, WorkerConnection.api?.asBinder()) }
         assertTrue("Test audio worker did not connect", latch.await(15, TimeUnit.SECONDS))
         try {
             val arguments = InstrumentationRegistry.getArguments()
@@ -179,7 +174,7 @@ class PhoneTuningTest {
                     }
                 } finally { playing.set(false); player.join(2000); remote.stopProcessing() }
             }
-        } finally { ins.runOnMainSync { Shizuku.unbindUserService(args, connection, true) } }
+        } finally { ins.runOnMainSync { WorkerConnection.api?.stopProcessing() } }
     }
 
     @Test fun restoreRequestedState() {
@@ -188,7 +183,7 @@ class PhoneTuningTest {
         val mode=arguments.getString("mode")?.toInt() ?: 3
         val enabled=arguments.getString("enabled") != "false"
         val until=SystemClock.elapsedRealtime()+10000
-        while(!runCatching { Shizuku.pingBinder() }.getOrDefault(false) && SystemClock.elapsedRealtime()<until) SystemClock.sleep(100)
+        while(!runCatching { WorkerConnection.ready }.getOrDefault(false) && SystemClock.elapsedRealtime()<until) SystemClock.sleep(100)
         PlaybackController.disable(context)
         val stopping=SystemClock.elapsedRealtime()+10000
         while(CleanerService.isAlive && SystemClock.elapsedRealtime()<stopping) SystemClock.sleep(100)

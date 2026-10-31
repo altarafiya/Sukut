@@ -1,0 +1,43 @@
+Sukut 0.4 · سُكوت
+Enjoy the internet. Without the music.
+استمتع بالإنترنت، بلا موسيقى.
+
+Extract the complete folder and open Sukut.exe. Windows 11 x64; AVX-capable CPU.
+Exit an older tray instance first. Follow the in-app setup for VB-CABLE and choose
+your real speakers/headphones. The Setup EXE includes the driver; portable users can download it in setup.
+
+Volume precaution: open VB-CABLE as administrator from setup or Settings → Shortcuts.
+In Options, leave Enable Windows Volume Control OFF. New installations normally
+already have it off. No confirmation checkbox is required. See the in-app menu
+picture. Windows volume controls your selected physical output.
+
+Music Filter mutes music; Optimized mutes music with adjustable background;
+Strict mutes music and background. Voice stays at 0 dB. OFF stops the bridge and
+returns to the selected output. Separation results depend on the recording.
+
+Audio → Audio buffering: more buffering can prevent short pauses but adds delay.
+The top-right ? explains audio modes and buffering together. The refresh beside
+Audio output updates both output devices and source apps.
+Shortcuts contains VB-CABLE and Windows Sound. The headphone-effects note also
+appears in setup. Advanced
+contains Source app, Virtual input / Audio capture and Refresh devices.
+Closing hides to tray when enabled; use the native tray menu to exit completely.
+
+Phone: connect/unlock Android with a USB data cable and approve this PC.
+Open Phone → Install or update Sukut, then Activate Sukut. This package includes
+Android 0.4/code54/com.altarafiyah.sukut. Existing settings and newer versions are kept.
+Wait for Audio worker ready on the phone, choose a mode and press Start.
+Activation does not start audio. You can unplug USB afterward.
+Off releases model/audio resources while keeping the worker ready. Activate
+again after reboot, app update, worker death or manual deactivation.
+Full setup explains developer options and USB debugging. No Shizuku app is
+needed, downloaded, changed or removed. Internet is needed only to obtain
+the official Google USB tools on the PC; the signed Sukut APK is included.
+
+Stable 0.4 portable; Windows binaries are unsigned. See THIRD_PARTY_NOTICES.txt.
+
+Android uses the existing production signing key. A signing mismatch must be
+resolved with the correct signed update; the tools keep the installed app and
+its data. Do not uninstall an existing app merely to bypass a signing mismatch.
+
+The older com.osama.sukut installation is a separate app; its data is preserved but not migrated to com.altarafiyah.sukut.

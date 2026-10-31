@@ -1,6 +1,6 @@
 # Step 5 worker contract
 
-`cleanwave_realtime` contains the Audio processor, timing-only recovery policy and a bounded capture/process/playback pipeline. The core does not call Windows audio APIs. Step 6 provides `StreamInput` and `StreamOutput` WASAPI adapters under `src/audio/`.
+`cleanwave_realtime` contains the Sukut processor, timing-only recovery policy and a bounded capture/process/playback pipeline. The core does not call Windows audio APIs. Step 6 provides `StreamInput` and `StreamOutput` WASAPI adapters under `src/audio/`.
 
 Adapters expose their sample rate; Start rejects anything other than 48 kHz. Open and Close run on the owning capture/playback thread, including error cleanup. Playback Open completes before the readiness barrier allows capture; normal output EOS invokes Finish before Close, while cancellation skips drain and closes promptly. This preserves WASAPI's COM/client/service ownership requirements. Refer to `src/audio/README.md` for the native contract.
 

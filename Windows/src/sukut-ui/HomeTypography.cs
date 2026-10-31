@@ -12,9 +12,9 @@ public sealed partial class ShellView
         if (HomePanel == null) return;
         var face = (FontFamily)Application.Current.Resources[Arabic ? "SukutArabicFontFamily" : "ContentControlThemeFontFamily"];
         HomePanel.FontFamily = face;
-        OutputButton.FontFamily = BufferingButton.FontFamily = face;
-        OffCard.FontFamily = HalalCard.FontFamily = OptimizedCard.FontFamily = StrictCard.FontFamily = face;
-        TextBlock[] labels = [HeaderSubtitle, OutputLabel, BufferingLabel, ModeHeading, StatusLabel, OffLabel, HalalLabel, OptimizedLabel, StrictLabel, ModeDetailTitle, ModeDetailDescription];
+        OutputList.FontFamily = SourceAppList.FontFamily = face;
+        HalalCard.FontFamily = OptimizedCard.FontFamily = StrictCard.FontFamily = face;
+        TextBlock[] labels = [HeaderSubtitle, OutputLabel, BufferingLabel, OutputSourceAppTitle, ModeHeading, StatusLabel, HalalLabel, OptimizedLabel, StrictLabel, HalalDescription, OptimizedDescription, StrictDescription, PowerActionLabel];
         foreach (var label in labels) label.FontFamily = face;
     }
 
@@ -26,8 +26,6 @@ public sealed partial class ShellView
     private void ApplyPageTypography()
     {
         ArabicTypography.Apply(Root, Arabic);
-        ArabicTypography.Apply(OutputFlyout?.Content, Arabic);
-        ArabicTypography.Apply(BufferingFlyout?.Content, Arabic);
         if (Root.XamlRoot != null)
             foreach (var popup in Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(Root.XamlRoot))
                 ArabicTypography.Apply(popup.Child, Arabic);

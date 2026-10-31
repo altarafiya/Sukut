@@ -1,0 +1,14 @@
+{
+  "runtime": "Google LiteRT 1.0.1, legacy Interpreter API",
+  "purpose": "16KB ELF page compatibility for Android 0.4",
+  "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.0.1/litert-1.0.1.aar",
+  "upstream_aar_sha256": "467679820f836fe70418f01c9f6689f328f79fbf2cbabe197eab70b209b43e8d",
+  "packaged_aar_sha256": "38dc4c10cbc5acda51e159db792b2aadfa974deaff3dbe323fd9ba4b2a9295c3",
+  "api_aar_sha256": "b51b05d8160a9e59e5a6140a228421bd8c594f205a7a7dfa2028bfacaf5a74aa",
+  "arm64_library_sha256": "cfecb1f2da022a555dc916fd890df385221034cc3bd27365706a3f91847a1990",
+  "native_library_unmodified": true,
+  "other_abis_removed": true,
+  "model_and_dsp_unchanged": true,
+  "parity_status": "PASS: all320 synthetic output/recurrent-state rows bit-identical to original2.16.1 on Xiaomi14TPro/Android16, threads1 and2;6,103,040 compared floats. work/android-0.4/runtime-101-compare.log",
+  "elf_audit": "All LOAD alignments >=16384 with congruent file/virtual offsets in signed APK/AAB. Physical test phone uses4KB pages;16KB-device runtime test not performed."
+}

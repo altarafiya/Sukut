@@ -15,8 +15,8 @@ internal object StartupMotion {
     }
     fun enter(view: View, delay: Long = 0) {
         if (!ValueAnimator.areAnimatorsEnabled()) return
-        view.alpha = 0f; view.translationY = 12 * view.resources.displayMetrics.density
-        view.animate().alpha(1f).translationY(0f).setStartDelay(delay).setDuration(260)
+        view.alpha = 0f; view.translationY = 6 * view.resources.displayMetrics.density
+        view.animate().alpha(1f).translationY(0f).setStartDelay(delay).setDuration(140)
             .setInterpolator(DecelerateInterpolator()).start()
     }
     fun hero(view: View) {
@@ -39,12 +39,15 @@ internal object StartupMotion {
             return
         }
         val rtl = page.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
-        val distance = container.width.coerceAtLeast(page.resources.displayMetrics.widthPixels) * direction * if (rtl) -1 else 1
+        val distance = (container.width.takeIf { it > 0 } ?: page.resources.displayMetrics.widthPixels) * direction * if (rtl) -1 else 1
         page.translationX = distance.toFloat()
+        page.alpha = 1f
         previous.translationX = 0f
+        previous.alpha = 1f // Interrupted incoming pages must not leave a blank background.
         previous.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-        previous.animate().translationX(-distance.toFloat()).setDuration(280)
-            .setInterpolator(DecelerateInterpolator()).withEndAction { container.removeView(previous) }.start()
-        page.animate().translationX(0f).setDuration(280).setInterpolator(DecelerateInterpolator()).start()
+        val easing = android.view.animation.PathInterpolator(.4f, 0f, .2f, 1f)
+        previous.animate().translationX(-distance.toFloat()).setDuration(260)
+            .setInterpolator(easing).withEndAction { container.removeView(previous) }.start()
+        page.animate().translationX(0f).setDuration(260).setInterpolator(easing).start()
     }
 }

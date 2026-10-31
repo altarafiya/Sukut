@@ -1,4 +1,4 @@
-#include "dsp/StreamingDsp.h"
+﻿#include "dsp/StreamingDsp.h"
 
 #include <algorithm>
 #include <array>
@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "kiss_fftr.h"
+#include "model/AssetSeal.h"
 
 namespace cleanwave {
 namespace {
@@ -19,17 +20,7 @@ constexpr float kModelInputScale = 32768.0F / 32767.0F;
 constexpr float kModelOutputScale = 32767.0F / 32768.0F;
 
 std::vector<std::uint8_t> ReadBytes(const std::filesystem::path& path) {
-  std::ifstream stream(path, std::ios::binary | std::ios::ate);
-  if (!stream) throw std::runtime_error("unable to open Audio window asset");
-  const std::streamoff size = stream.tellg();
-  if (size < 0) throw std::runtime_error("unable to size Audio window asset");
-  std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
-  stream.seekg(0, std::ios::beg);
-  if (!bytes.empty()) {
-    stream.read(reinterpret_cast<char*>(bytes.data()), size);
-  }
-  if (!stream) throw std::runtime_error("unable to read Audio window asset");
-  return bytes;
+  return seal::ReadFile(path, "Sukut window asset");
 }
 
 }  // namespace
@@ -60,7 +51,7 @@ class StreamingDsp::Impl {
     }
     if (complement_error_ >= 0.0002) {
       CleanupFft();
-      throw std::runtime_error("Audio Q15 windows are not complementary");
+      throw std::runtime_error("Sukut Q15 windows are not complementary");
     }
   }
 
@@ -71,7 +62,7 @@ class StreamingDsp::Impl {
                HopStereo& wet, HopTrace* trace) {
     const std::size_t expected_frames = first ? kFirstInputFrames : kHopFrames;
     if (input.size() != expected_frames * 2) {
-      throw std::runtime_error("unexpected Audio DSP input size");
+      throw std::runtime_error("unexpected Sukut DSP input size");
     }
 
     if (first) {
@@ -104,12 +95,24 @@ class StreamingDsp::Impl {
     model_.Process(model_left, model_right, heads);
     if (trace != nullptr) trace->state_after = model_.StateSnapshot();
 
-    const Spectrum wet_left = RemixSpectrum(left_spectrum, heads.voice_left,
-                                            heads.music_left, voice_q12,
-                                            music_q12, other_q12);
-    const Spectrum wet_right = RemixSpectrum(right_spectrum, heads.voice_right,
-                                             heads.music_right, voice_q12,
-                                             music_q12, other_q12);
+    Spectrum wet_left = RemixSpectrum(left_spectrum, heads.voice_left,
+                                      heads.music_left, voice_q12,
+                                      music_q12, other_q12);
+    Spectrum wet_right = RemixSpectrum(right_spectrum, heads.voice_right,
+                                       heads.music_right, voice_q12,
+                                       music_q12, other_q12);
+    if (guard_high_band_ && music_q12 == 0 && other_q12 > 0) {
+      // One shared stereo gain keeps the image stable above 16 kHz. Those
+      // bins hold only the residual (original * other gain) after the remix.
+      high_band_gain_ = NextHighBandGain(high_band_gain_, left_spectrum,
+                                         right_spectrum, heads);
+      for (std::size_t bin = kModelBins; bin < kSpectrumBins; ++bin) {
+        wet_left[bin].real *= high_band_gain_; wet_left[bin].imag *= high_band_gain_;
+        wet_right[bin].real *= high_band_gain_; wet_right[bin].imag *= high_band_gain_;
+      }
+    } else {
+      high_band_gain_ = 1.0F;
+    }
 
     Inverse(wet_left, left_inverse_);
     Inverse(wet_right, right_inverse_);
@@ -129,7 +132,15 @@ class StreamingDsp::Impl {
   void ResetNeuralState() {
     model_.Reset();
     synthesis_tail_.fill(0.0F);
+    high_band_gain_ = 1.0F;
   }
+
+  void SetHighBandGuard(bool enabled) {
+    guard_high_band_ = enabled;
+    high_band_gain_ = 1.0F;
+  }
+  [[nodiscard]] float HighBandGain() const { return high_band_gain_; }
+  [[nodiscard]] std::string KernelReport() const { return model_.KernelReport(); }
 
   void ResetAll() {
     history_.fill(0.0F);
@@ -214,6 +225,8 @@ class StreamingDsp::Impl {
   std::array<kiss_fft_cpx, kSpectrumBins> right_raw_{};
   std::array<kiss_fft_cpx, kSpectrumBins> inverse_raw_{};
   HopStereo synthesis_tail_{};
+  bool guard_high_band_ = false;
+  float high_band_gain_ = 1.0F;
 };
 
 StreamingDsp::StreamingDsp(
@@ -238,6 +251,36 @@ void StreamingDsp::Process(std::span<const float> interleaved_stereo,
 
 void StreamingDsp::ResetNeuralState() { impl_->ResetNeuralState(); }
 void StreamingDsp::ResetAll() { impl_->ResetAll(); }
+void StreamingDsp::SetHighBandGuard(bool enabled) { impl_->SetHighBandGuard(enabled); }
+float StreamingDsp::HighBandGain() const { return impl_->HighBandGain(); }
+std::string StreamingDsp::KernelReport() const { return impl_->KernelReport(); }
+
+float StreamingDsp::NextHighBandGain(float current, const Spectrum& original_left,
+                                     const Spectrum& original_right,
+                                     const SeparationModel::SourceHeads& heads) {
+  // Same constants as Android's HighBandGuard: 12-16 kHz reference band,
+  // -30 dB floor, fast attack, slower release, hold without evidence.
+  constexpr std::size_t kReferenceStart = 384;
+  constexpr float kFloor = 0.0316F, kAttack = 0.6F, kRelease = 0.15F;
+  constexpr double kEvidence = 0.01;
+  const auto power = [](float re, float im) {
+    return static_cast<double>(re) * re + static_cast<double>(im) * im;
+  };
+  double voice = 0.0, music = 0.0, total = 0.0;
+  for (std::size_t bin = kReferenceStart; bin < kModelBins; ++bin) {
+    const std::size_t re = bin * 2, im = re + 1;
+    voice += power(heads.voice_left[re], heads.voice_left[im]) +
+             power(heads.voice_right[re], heads.voice_right[im]);
+    music += power(heads.music_left[re], heads.music_left[im]) +
+             power(heads.music_right[re], heads.music_right[im]);
+    total += power(original_left[bin].real, original_left[bin].imag) +
+             power(original_right[bin].real, original_right[bin].imag);
+  }
+  const double heads_power = voice + music;
+  if (heads_power <= 0.0 || heads_power < kEvidence * total) return current;
+  const float target = std::max(kFloor, static_cast<float>(voice / heads_power));
+  return current + (target - current) * (target < current ? kAttack : kRelease);
+}
 
 SeparationModel::StateBuffer StreamingDsp::ModelStateSnapshot() const {
   return impl_->StateSnapshot();
@@ -251,7 +294,7 @@ std::vector<float> StreamingDsp::DecodeQ15Window(
     const std::filesystem::path& path, std::size_t expected_samples) {
   const auto bytes = ReadBytes(path);
   if (bytes.size() != expected_samples * 2) {
-    throw std::runtime_error("unexpected Audio Q15 window size");
+    throw std::runtime_error("unexpected Sukut Q15 window size");
   }
   std::vector<float> result(expected_samples);
   for (std::size_t i = 0; i < expected_samples; ++i) {

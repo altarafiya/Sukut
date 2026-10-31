@@ -1,0 +1,7 @@
+<resources>
+ <string name="help_filter_misses">مرشّح الموسيقى ليس مثاليًا. قد تبقى بعض الآلات مسموعة.</string>
+ <string name="help_notifications_title">الإشعارات والأصوات القصيرة</string>
+ <string name="help_notifications_1">قد تنخفض نغمات الإشعارات والمؤثرات أو تُكتم، خصوصًا في الوضع الصارم. وقد تمرّ التنبيهات التي يشغّلها التطبيق كصوت وسائط عبر المرشّح.</string>
+ <string name="help_notifications_2">إذا احتجت إلى سماع كل التنبيهات دون تغيير، أوقف سُكوت.</string>
+ <string name="help_buffer_intro">يحدّد مدة انتظار سُكوت قبل تشغيل الصوت المعالَج. الانتظار قليلًا يمنح الهاتف وقتًا ليحافظ على تشغيل سلس.</string>
+</resources>

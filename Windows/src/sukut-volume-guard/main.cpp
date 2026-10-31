@@ -19,12 +19,20 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,PWSTR,int) {
   if(parent && ready && stop && restore && SetEvent(ready)){
     HANDLE handles[]={parent,stop};
     const auto reason=WaitForMultipleObjects(2,handles,FALSE,INFINITE);
-    if(reason==WAIT_OBJECT_0){
+    if(reason==WAIT_OBJECT_0 || reason==WAIT_OBJECT_0+1){
       // A device can be briefly unavailable during a crash/driver restart.
       // Keep the durable journal if all bounded attempts fail.
       result=1;
-      for(int attempt=0;attempt<20;++attempt){if(restore(root.c_str(),owner.c_str())){result=0;break;}Sleep(500);}
-    }else if(reason==WAIT_OBJECT_0+1)result=0;
+      int failures=0;
+      for(;;){
+        const int restored=restore(root.c_str(),owner.c_str());
+        if(restored==1){result=0;break;}
+        if(restored==0 && ++failures>=20)break;
+        // 2 means a closed source app still owns a pending pin. Retain a
+        // low-frequency restorer until it returns, even after a normal Exit.
+        Sleep(restored==2?1000:500);
+      }
+    }
   }
   if(library)FreeLibrary(library);if(parent)CloseHandle(parent);
   if(ready)CloseHandle(ready);if(stop)CloseHandle(stop);return result;

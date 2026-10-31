@@ -1,0 +1,183 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Sukut
+Upstream-Contact: الطرفية <altarafiyah@gmail.com>
+Source: https://altarafiya.github.io/Sukut
+Comment: Sukut is not free software and is not for Debian's archive. The full
+ licence texts of the bundled third-party components are installed in
+ /usr/share/doc/sukut/licenses/.
+
+Files: *
+Copyright: 2025-2026 الطرفية
+License: Sukut-proprietary
+
+Files: Windows/assets/engine/*
+Copyright: 2025-2026 الطرفية
+License: Sukut-model
+Comment: Sukut's sealed speech-separation model data.
+
+Files: Windows/src/sukut-ui/Assets/IBMPlexSansArabic-*.ttf
+Copyright: 2019 IBM Corp.
+License: OFL-1.1
+
+Files: Windows/src/sukut-ui/Assets/ReadexPro.ttf
+Copyright: 2019 The Readex Pro Project Authors (https://github.com/ThomasJockin/readexpro)
+License: OFL-1.1
+
+Files: Windows/src/sukut-ui/Assets/Handjet.ttf
+Copyright: 2018 The Handjet Project Authors (https://github.com/rosettatype/Handjet/)
+License: OFL-1.1
+
+Files: TensorFlow-Lite/* Abseil/* FlatBuffers/* Gemmlowp/* RUY/* ml_dtypes/*
+Copyright: The TensorFlow Authors, The Abseil Authors, Google Inc. and others
+License: Apache-2.0
+Comment: Statically linked into /usr/libexec/sukut/sukut-host, built from the
+ pinned TensorFlow Lite 2.16.1 sources. Full texts in
+ /usr/share/doc/sukut/licenses/.
+
+Files: Eigen/*
+Copyright: Eigen authors
+License: MPL-2.0
+Comment: Header-only. Some files are BSD-licensed; see licenses/Eigen.
+
+Files: KissFFT/*
+Copyright: 2003-2010 Mark Borgerding and contributors
+License: BSD-3-Clause
+Comment: Full text in /usr/share/doc/sukut/licenses/KissFFT.
+
+Files: FXdiv/* FarmHash/*
+Copyright: 2016-2017 Facebook Inc., Georgia Institute of Technology, Marat Dukhan; 2014 Google Inc.
+License: MIT
+Comment: Full texts in /usr/share/doc/sukut/licenses/.
+
+Files: Pthreadpool/* cpuinfo/*
+Copyright: 2017-2019 Facebook Inc., 2015-2017 Georgia Institute of Technology, Marat Dukhan
+License: BSD-2-Clause
+Comment: Full texts in /usr/share/doc/sukut/licenses/.
+
+Files: FFT2D/*
+Copyright: 1996-2001 Takuya OOURA
+License: Ooura
+Comment: Full notice in /usr/share/doc/sukut/licenses/FFT2D.
+
+License: Sukut-proprietary
+ All rights reserved. You may install and use Sukut. You may not copy,
+ modify or redistribute it.
+
+License: Sukut-model
+ Sealed model data distributed with Sukut. Not for separate use or
+ redistribution.
+
+License: Apache-2.0
+ On Debian systems, the complete text of the Apache License, Version 2.0
+ can be found in /usr/share/common-licenses/Apache-2.0.
+
+License: MPL-2.0
+ On Debian systems, the complete text of the Mozilla Public License,
+ Version 2.0 can be found in /usr/share/common-licenses/MPL-2.0.
+
+License: BSD-3-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the conditions in the BSD
+ 3-Clause licence are met; the full text is in
+ /usr/share/doc/sukut/licenses/KissFFT/COPYING.
+
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files, under the conditions of
+ the MIT licence; the full texts are in /usr/share/doc/sukut/licenses/.
+
+License: BSD-2-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the conditions in the BSD
+ 2-Clause licence are met; the full texts are in
+ /usr/share/doc/sukut/licenses/.
+
+License: Ooura
+ Copyright Takuya OOURA, 1996-2001. You may use, copy, modify and distribute
+ this code for any purpose (include commercial use) and without fee.
+
+License: OFL-1.1
+ SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+ .
+ PREAMBLE
+ The goals of the Open Font License (OFL) are to stimulate worldwide
+ development of collaborative font projects, to support the font creation
+ efforts of academic and linguistic communities, and to provide a free and
+ open framework in which fonts may be shared and improved in partnership
+ with others.
+ .
+ The OFL allows the licensed fonts to be used, studied, modified and
+ redistributed freely as long as they are not sold by themselves. The
+ fonts, including any derivative works, can be bundled, embedded,
+ redistributed and/or sold with any software provided that any reserved
+ names are not used by derivative works. The fonts and derivatives,
+ however, cannot be released under any other type of license. The
+ requirement for fonts to remain under this license does not apply
+ to any document created using the fonts or their derivatives.
+ .
+ DEFINITIONS
+ "Font Software" refers to the set of files released by the Copyright
+ Holder(s) under this license and clearly marked as such. This may
+ include source files, build scripts and documentation.
+ .
+ "Reserved Font Name" refers to any names specified as such after the
+ copyright statement(s).
+ .
+ "Original Version" refers to the collection of Font Software components as
+ distributed by the Copyright Holder(s).
+ .
+ "Modified Version" refers to any derivative made by adding to, deleting,
+ or substituting -- in part or in whole -- any of the components of the
+ Original Version, by changing formats or by porting the Font Software to a
+ new environment.
+ .
+ "Author" refers to any designer, engineer, programmer, technical
+ writer or other person who contributed to the Font Software.
+ .
+ PERMISSION & CONDITIONS
+ Permission is hereby granted, free of charge, to any person obtaining
+ a copy of the Font Software, to use, study, copy, merge, embed, modify,
+ redistribute, and sell modified and unmodified copies of the Font
+ Software, subject to the following conditions:
+ .
+ 1) Neither the Font Software nor any of its individual components,
+ in Original or Modified Versions, may be sold by itself.
+ .
+ 2) Original or Modified Versions of the Font Software may be bundled,
+ redistributed and/or sold with any software, provided that each copy
+ contains the above copyright notice and this license. These can be
+ included either as stand-alone text files, human-readable headers or
+ in the appropriate machine-readable metadata fields within text or
+ binary files as long as those fields can be easily viewed by the user.
+ .
+ 3) No Modified Version of the Font Software may use the Reserved Font
+ Name(s) unless explicit written permission is granted by the corresponding
+ Copyright Holder. This restriction only applies to the primary font name as
+ presented to the users.
+ .
+ 4) The name(s) of the Copyright Holder(s) and the Author(s) of the Font
+ Software shall not be used to promote, endorse or advertise any
+ Modified Version, except to acknowledge the contribution(s) of the
+ Copyright Holder(s) and the Author(s) or with their explicit written
+ permission.
+ .
+ 5) The Font Software, modified or unmodified, in part or in whole,
+ must be distributed entirely under this license, and must not be
+ distributed under any other license. The requirement for fonts to
+ remain under this license does not apply to any document created
+ using the Font Software.
+ .
+ TERMINATION
+ This license becomes null and void if any of the above conditions are
+ not met.
+ .
+ DISCLAIMER
+ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+ OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+ COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+ OTHER DEALINGS IN THE FONT SOFTWARE.

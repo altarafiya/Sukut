@@ -1,0 +1,7 @@
+<resources>
+ <string name="help_filter_misses">Music Filter is not perfect. Some instruments may still be heard.</string>
+ <string name="help_notifications_title">Notifications and short sounds</string>
+ <string name="help_notifications_1">Notification tones and sound effects can also be reduced or muted, especially in Strict. Alerts played as media by an app can go through the filter.</string>
+ <string name="help_notifications_2">If you need to hear every alert unchanged, turn Sukut off.</string>
+ <string name="help_buffer_intro">This controls how long Sukut waits before playing the cleaned sound. Waiting a little gives your phone time to keep playback steady.</string>
+</resources>

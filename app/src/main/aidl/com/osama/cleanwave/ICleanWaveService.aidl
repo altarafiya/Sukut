@@ -16,5 +16,6 @@ interface ICleanWaveService {
     void setPlaybackOptions(int buffering, int amplificationDb, boolean silentRecovery, boolean effectsCompatibility, int sourceUid) = 11;
     void setOutputRouteListener(IOutputRouteListener listener) = 12;
     void stopForRestart() = 13;
+    String[] getHealthSnapshot() = 14;
     void destroy() = 16777114;
 }

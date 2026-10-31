@@ -5,56 +5,45 @@ namespace Sukut;
 
 public sealed partial class ShellView
 {
-    private long _lastEndpointVersion;
-    private int _dropdownRequest;
-    private ComboBox? _freshDropdown;
+    private long _lastEndpointVersion, _lastRoutingRefresh;
     private Task<EngineState>? _dropdownRefresh;
-    private bool _outputFlyoutOpen;
+    private Task? _routingRefresh;
+    private bool _routingAppsRequested;
 
-    private void OutputFlyout_Opened(object sender, object args)
+    private void Routing_DropDownOpened(object sender, object args)
     {
-        _outputFlyoutOpen = true;
-        if (OutputSourceAppChoice != null) OutputSourceAppChoice.IsDropDownOpen = false;
-        ArabicTypography.Apply(OutputFlyout.Content, Arabic); QueueTypography();
+        // Keep the cached list open immediately. Enumeration and icon loading
+        // must never gate a click or close/reopen the user's popup.
+        QueueTypography();
+        _ = RefreshRoutingChoices(ReferenceEquals(sender, AppChoice));
     }
-
-    private void OutputFlyout_Closed(object sender, object args)
+    private Task RefreshRoutingChoices(bool includeApps)
     {
-        _outputFlyoutOpen = false;
-        ++_dropdownRequest;
-        _freshDropdown = null;
-        if (OutputSourceAppChoice != null) OutputSourceAppChoice.IsDropDownOpen = false;
+        if (!_setupEngineReady || _command || _quitting) return Task.CompletedTask;
+        _routingAppsRequested |= includeApps;
+        if (_routingRefresh is { IsCompleted: false }) return _routingRefresh;
+        if (Environment.TickCount64 - _lastRoutingRefresh < 1500) return includeApps ? LoadApps() : Task.CompletedTask;
+        return _routingRefresh = RefreshRoutingChoicesCore(includeApps);
     }
-
-    private async void Routing_DropDownOpened(object sender, object args)
+    private async Task RefreshRoutingChoicesCore(bool includeApps)
     {
-        if (sender is not ComboBox combo) return;
-        if (_freshDropdown == combo) { _freshDropdown = null; QueueTypography(); return; }
-        // Close synchronously in the opening callback, before the next rendered
-        // frame. Only reopen after the native enumeration revision advances.
-        combo.IsDropDownOpen = false;
-        if (!_setupEngineReady || _command || _quitting) return;
-        int request = ++_dropdownRequest;
+        _lastRoutingRefresh = Environment.TickCount64;
         try
         {
-            if (_dropdownRefresh == null || _dropdownRefresh.IsCompleted) _dropdownRefresh = _engine.RefreshDevices();
+            _dropdownRefresh = _engine.RefreshDevices();
             var state = await _dropdownRefresh;
-            if (_quitting) return;
+            if (_quitting || _command) return;
             _state = state; _initialized = state.Initialized != 0; _setupScanned = state.Busy == 0;
-            UpdateEndpoints(state); SetEnabled(true);
+            UpdateEndpoints(state);
+            RenderEngineRow();
             if (SetupPanel != null) UpdateSetupState();
-            if (combo == AppChoice || combo == OutputSourceAppChoice) await LoadApps();
-            if (request != _dropdownRequest || !_visible || !combo.IsLoaded || combo.XamlRoot != Root.XamlRoot || combo == OutputSourceAppChoice && !_outputFlyoutOpen) return;
-            // Reopen after the old popup's close/layout work has unwound.
-            // This also lets the full-width advanced selectors finish measuring
-            // their refreshed items before WinUI positions the popup.
-            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            // An app request arriving during device enumeration must not be lost.
+            while (_routingAppsRequested && !_quitting)
             {
-                if (request != _dropdownRequest || _quitting || !_visible || !combo.IsLoaded || !combo.IsEnabled || combo.XamlRoot != Root.XamlRoot || combo == OutputSourceAppChoice && !_outputFlyoutOpen) return;
-                _freshDropdown = combo;
-                combo.IsDropDownOpen = true;
-            });
+                _routingAppsRequested = false;
+                await LoadApps();
+            }
         }
-        catch (Exception error) { _freshDropdown = null; Error(error.Message); }
+        catch (Exception error) { if (!_quitting) Error(error.Message); }
     }
 }

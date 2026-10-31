@@ -1,4 +1,4 @@
-# WASAPI backend contract
+﻿# WASAPI backend contract
 
 ## Current behavior — Step 8 jitter correction
 
@@ -10,7 +10,7 @@ Each native owner thread waits on its own 4 ms one-shot high-resolution timer an
 
 Snapshots include capture device-position gaps/missing frames, packet timestamp and read intervals, render write intervals, empty-padding observations, actual capacity and startup reserve. These describe the application/driver transport and do not establish acoustic dropout count or end-to-end delay. The render-clock deficit estimate returned zero during a visibly starved baseline on this driver, so it is not an authoritative continuity measurement. Desktop diagnostics store only metadata beside the settings file, once per second on the controller thread; they do not record audio.
 
-The Audio DSP/model are unchanged. The larger reserve explicitly trades some delay for continuity. Listening retest and measured end-to-end delay remain separate from numerical waveform parity and bounded transport checks. Step 8 evidence documents the before/after results; Step 9 is still separately gated.
+The Sukut DSP/model are unchanged. The larger reserve explicitly trades some delay for continuity. Listening retest and measured end-to-end delay remain separate from numerical waveform parity and bounded transport checks. Step 8 evidence documents the before/after results; Step 9 is still separately gated.
 
 ## Historical implementation and Step 6/7 validation
 
@@ -30,7 +30,7 @@ Standalone adapter clients may request rates such as 44.1 kHz to validate Window
 
 GetStreamLatency returned zero for the tested driver clients. That is only the API's reported value; it does not establish zero latency. The allocated 48 kHz stream buffer was 1,056 frames (22 ms). Actual virtual/physical buffering, DSP and end-to-end delay must be measured during later integration. [Client initialization](https://learn.microsoft.com/en-us/windows/win32/api/audioclient/nf-audioclient-iaudioclient-initialize).
 
-The verifier sends its nonzero fixture only to the virtual cable. Its physical HyperX test uses zeros. No Audio model is loaded and no other application's route changes. These tests establish backend operation and conversion, not live AI replacement or listening quality. See `docs/ROUTING.md` for the prepared route and restoration contract.
+The verifier sends its nonzero fixture only to the virtual cable. Its physical HyperX test uses zeros. No Sukut model is loaded and no other application's route changes. These tests establish backend operation and conversion, not live AI replacement or listening quality. See `docs/ROUTING.md` for the prepared route and restoration contract.
 
 Step 7 registers native I/O threads with the existing MMCSS Audio task and reverts on their owning threads when sessions close. Registration errors are exposed; no system profile/service setting is changed. [Microsoft registration API](https://learn.microsoft.com/en-us/windows/win32/api/avrt/nf-avrt-avsetmmthreadcharacteristicsw). Step 7 detected HyperX disconnected before startup and used Realtek only after explicit user selection; active-stream hotplug/suspend/service failure remain unrun.
 

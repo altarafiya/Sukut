@@ -12,18 +12,25 @@
      <SolidColorBrush x:Key="GainMutedBrush" Color="#F2A7AB"/>
      <SolidColorBrush x:Key="GainReducedBrush" Color="#E7C48E"/>
      <SolidColorBrush x:Key="ModeOffBrush" Color="#ACBBD5"/><SolidColorBrush x:Key="ModeOffWash" Color="#252B36"/>
-     <SolidColorBrush x:Key="ModeHalalBrush" Color="#8BE0B0"/><SolidColorBrush x:Key="ModeHalalWash" Color="#213229"/>
+     <SolidColorBrush x:Key="ModeHalalBrush" Color="#AAA5FF"/><SolidColorBrush x:Key="ModeHalalWash" Color="#292640"/>
      <SolidColorBrush x:Key="ModeOptimizedBrush" Color="#E7C48E"/><SolidColorBrush x:Key="ModeOptimizedWash" Color="#352E22"/>
      <SolidColorBrush x:Key="ModeStrictBrush" Color="#F2A7AB"/><SolidColorBrush x:Key="ModeStrictWash" Color="#38272D"/>
+     <!-- Phone palette (Android UiPalette, dark): accent, its container and readable text on both. -->
+     <SolidColorBrush x:Key="SukutAccentBrush" Color="#80BFEA"/><SolidColorBrush x:Key="SukutOnAccentBrush" Color="#000000"/>
+     <SolidColorBrush x:Key="SukutAccentContainerBrush" Color="#303D45"/>
+     <SolidColorBrush x:Key="SukutWarningBrush" Color="#E3C184"/><SolidColorBrush x:Key="SukutWarningContainerBrush" Color="#3B3324"/>
     </ResourceDictionary>
     <ResourceDictionary x:Key="Light">
      <SolidColorBrush x:Key="GainRaisedBrush" Color="#17613C"/>
      <SolidColorBrush x:Key="GainMutedBrush" Color="#A02C3B"/>
      <SolidColorBrush x:Key="GainReducedBrush" Color="#795315"/>
      <SolidColorBrush x:Key="ModeOffBrush" Color="#4F607D"/><SolidColorBrush x:Key="ModeOffWash" Color="#F0F3F9"/>
-     <SolidColorBrush x:Key="ModeHalalBrush" Color="#17613C"/><SolidColorBrush x:Key="ModeHalalWash" Color="#ECF7EF"/>
+     <SolidColorBrush x:Key="ModeHalalBrush" Color="#5B52C7"/><SolidColorBrush x:Key="ModeHalalWash" Color="#F0EDFF"/>
      <SolidColorBrush x:Key="ModeOptimizedBrush" Color="#795315"/><SolidColorBrush x:Key="ModeOptimizedWash" Color="#FFF4E0"/>
      <SolidColorBrush x:Key="ModeStrictBrush" Color="#A02C3B"/><SolidColorBrush x:Key="ModeStrictWash" Color="#FFF0F1"/>
+     <SolidColorBrush x:Key="SukutAccentBrush" Color="#17659B"/><SolidColorBrush x:Key="SukutOnAccentBrush" Color="#FFFFFF"/>
+     <SolidColorBrush x:Key="SukutAccentContainerBrush" Color="#DEE6EB"/>
+     <SolidColorBrush x:Key="SukutWarningBrush" Color="#805B20"/><SolidColorBrush x:Key="SukutWarningContainerBrush" Color="#F4ECD9"/>
     </ResourceDictionary>
     <ResourceDictionary x:Key="HighContrast">
      <SolidColorBrush x:Key="GainRaisedBrush" Color="{ThemeResource SystemColorWindowTextColor}"/>
@@ -33,6 +40,9 @@
      <SolidColorBrush x:Key="ModeHalalBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="ModeHalalWash" Color="{ThemeResource SystemColorWindowColor}"/>
      <SolidColorBrush x:Key="ModeOptimizedBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="ModeOptimizedWash" Color="{ThemeResource SystemColorWindowColor}"/>
      <SolidColorBrush x:Key="ModeStrictBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="ModeStrictWash" Color="{ThemeResource SystemColorWindowColor}"/>
+     <SolidColorBrush x:Key="SukutAccentBrush" Color="{ThemeResource SystemColorHighlightColor}"/><SolidColorBrush x:Key="SukutOnAccentBrush" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+     <SolidColorBrush x:Key="SukutAccentContainerBrush" Color="{ThemeResource SystemColorWindowColor}"/>
+     <SolidColorBrush x:Key="SukutWarningBrush" Color="{ThemeResource SystemColorWindowTextColor}"/><SolidColorBrush x:Key="SukutWarningContainerBrush" Color="{ThemeResource SystemColorWindowColor}"/>
     </ResourceDictionary>
    </ResourceDictionary.ThemeDictionaries>
    <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///Assets/ReadexPro.ttf#Readex Pro</FontFamily>
@@ -51,15 +61,48 @@
     <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
     <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/><Setter Property="BorderThickness" Value="1"/>
    </Style>
-   <Style x:Key="CompactRowButton" TargetType="Button">
+   <!-- Phone-style rows: full-width rounded cards with Fluent hover/press states. -->
+   <Style x:Key="CompactRowButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="MinHeight" Value="64" />
-    <Setter Property="Padding" Value="12,10" />
-    <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+    <Setter Property="MinHeight" Value="58" />
+    <Setter Property="Padding" Value="14,8" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+    <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+   </Style>
+   <!-- Compact Fluent toolbar and back buttons. -->
+   <Style x:Key="ToolbarIconButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+    <Setter Property="Width" Value="32" /><Setter Property="Height" Value="32" />
+    <Setter Property="Padding" Value="0" /><Setter Property="CornerRadius" Value="4" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" /><Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+    <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+   </Style>
+   <Style x:Key="SurfaceCard" TargetType="Border">
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+    <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/><Setter Property="BorderThickness" Value="1"/>
+   </Style>
+   <Style x:Key="SectionLabel" TargetType="TextBlock">
+    <Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="4,2,4,0"/>
+    <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+   </Style>
+   <Style x:Key="AccentText" TargetType="TextBlock"><Setter Property="Foreground" Value="{ThemeResource SukutAccentBrush}"/></Style>
+   <Style x:Key="PowerCommandButton" TargetType="Button">
+    <Setter Property="UseSystemFocusVisuals" Value="True"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+     <Border x:Name="PowerSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+      <VisualStateManager.VisualStateGroups><VisualStateGroup x:Name="CommonStates">
+       <VisualState x:Name="Normal"/><VisualState x:Name="PointerOver"/>
+       <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="PowerSurface.Opacity" Value="0.8"/></VisualState.Setters></VisualState>
+       <VisualState x:Name="Disabled"><VisualState.Setters><Setter Target="PowerSurface.Opacity" Value="0.4"/></VisualState.Setters></VisualState>
+      </VisualStateGroup></VisualStateManager.VisualStateGroups>
+      <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+     </Border>
+    </ControlTemplate></Setter.Value></Setter>
    </Style>
    <Style x:Key="ModeCard" TargetType="RadioButton">
     <Setter Property="UseSystemFocusVisuals" Value="True" />
@@ -79,27 +122,36 @@
       <ControlTemplate TargetType="RadioButton">
        <Grid x:Name="ModeRoot">
         <VisualStateManager.VisualStateGroups>
+         <!-- Short, eased cross-fades between states (no idle animation). -->
          <VisualStateGroup x:Name="CommonStates">
+          <VisualStateGroup.Transitions>
+           <VisualTransition GeneratedDuration="0:0:0.12"><VisualTransition.GeneratedEasingFunction><CubicEase EasingMode="EaseOut"/></VisualTransition.GeneratedEasingFunction></VisualTransition>
+          </VisualStateGroup.Transitions>
           <VisualState x:Name="Normal" />
-          <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="HoverTint.Opacity" Value="0.14" /></VisualState.Setters></VisualState>
-          <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="HoverTint.Opacity" Value="0.24" /></VisualState.Setters></VisualState>
+          <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="HoverTint.Opacity" Value="0.05" /><Setter Target="ModeContent.Opacity" Value="1" /></VisualState.Setters></VisualState>
+          <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="HoverTint.Opacity" Value="0.09" /><Setter Target="ModeContent.Opacity" Value="0.85" /></VisualState.Setters></VisualState>
           <VisualState x:Name="Disabled"><VisualState.Setters>
            <Setter Target="ModeRoot.Opacity" Value="0.4" />
           </VisualState.Setters></VisualState>
          </VisualStateGroup>
          <VisualStateGroup x:Name="CheckStates">
+          <VisualStateGroup.Transitions>
+           <VisualTransition GeneratedDuration="0:0:0.18"><VisualTransition.GeneratedEasingFunction><CubicEase EasingMode="EaseOut"/></VisualTransition.GeneratedEasingFunction></VisualTransition>
+          </VisualStateGroup.Transitions>
           <VisualState x:Name="Unchecked" />
           <VisualState x:Name="Indeterminate" />
           <VisualState x:Name="Checked"><VisualState.Setters>
            <Setter Target="ColoredCard.Opacity" Value="1" />
            <Setter Target="ModeContent.Opacity" Value="1" />
+           <Setter Target="ModeContent.Foreground" Value="{ThemeResource SukutAccentBrush}" />
           </VisualState.Setters></VisualState>
          </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
+        <!-- A compact selected surface uses the accent container and a thin accent edge. -->
         <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="{TemplateBinding CornerRadius}"/>
-        <Border x:Name="ColoredCard" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="2" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0.16"/>
-        <Border x:Name="HoverTint" Background="{TemplateBinding BorderBrush}" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0" IsHitTestVisible="False"/>
-        <ContentPresenter x:Name="ModeContent" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Stretch" Margin="{TemplateBinding Padding}" Opacity="0.58"/>
+        <Border x:Name="ColoredCard" Background="{ThemeResource SukutAccentContainerBrush}" BorderBrush="{ThemeResource SukutAccentBrush}" BorderThickness="1" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"/>
+        <Border x:Name="HoverTint" Background="{ThemeResource TextFillColorPrimaryBrush}" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0" IsHitTestVisible="False"/>
+        <ContentPresenter x:Name="ModeContent" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{ThemeResource TextFillColorPrimaryBrush}" HorizontalAlignment="Stretch" Margin="{TemplateBinding Padding}" Opacity="0.92"/>
        </Grid>
       </ControlTemplate>
      </Setter.Value>

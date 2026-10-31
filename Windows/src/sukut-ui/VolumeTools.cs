@@ -3,45 +3,33 @@ using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Windows.System;
 
 namespace Sukut;
 
 public sealed partial class ShellView
 {
-    private string VolumeInstructions => L(
-        "Open VB-CABLE as administrator. Under Options, leave Enable Windows Volume Control unchecked. It is normally off after a fresh installation. Use your normal Windows volume keys.",
-        "افتح VB-CABLE كمسؤول. من Options اترك Enable Windows Volume Control دون علامة صح. يكون معطّلًا عادةً بعد التثبيت الجديد. استخدم أزرار صوت ويندوز المعتادة.");
-    private void RenderCableVolumeTip()
-    {
-        if (CableVolumeTip == null) return;
-        bool show = _preferences.SourcePid == 0 && !_preferences.VolumeGuideDismissed && !_preferences.CableVolumeDisabledConfirmed;
-        CableVolumeTip.Title = L("Check volume control", "تأكّد من التحكم بالصوت");
-        CableVolumeTip.Message = VolumeInstructions;
-        CableVolumeTipButton.Content = L("Open VB-CABLE as administrator", "فتح VB-CABLE كمسؤول");
-        CableVolumeTip.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        CableVolumeTip.IsOpen = show;
-    }
-    private void CableVolumeTip_Closed(InfoBar sender, InfoBarClosedEventArgs args)
-    {
-        if (args.Reason != InfoBarCloseReason.CloseButton) return;
-        _preferences.VolumeGuideDismissed = true; Save(); sender.Visibility = Visibility.Collapsed;
-    }
-
     private void RenderVolumeTools()
     {
         if (SettingsPanel == null) return;
-        CablePanelLabel.Text = L("VB-CABLE · Administrator", "VB-CABLE · مسؤول");
+        CablePanelLabel.Text = "VB-CABLE";
         AutomationProperties.SetName(CablePanelButton, L("Open VB-CABLE control panel as administrator", "فتح لوحة تحكم VB-CABLE كمسؤول"));
         EffectsHelpHeader.Text = L("Headphone effects / Dolby", "مؤثرات السماعات / Dolby");
         AutomationProperties.SetName(EffectsHelp, EffectsHelpHeader.Text);
-        EffectsHelpText.Text = L(
-            "For Dolby, choose one Source app under Advanced so Windows keeps your headphones selected. Then enable Dolby Atmos for Headphones in Windows Sound → Spatial sound. Processing stays stereo; effects depend on the driver and Dolby Access.",
-            "لاستخدام Dolby، اختر تطبيقًا واحدًا من «التطبيق المصدر» ضمن «متقدم» لإبقاء سماعاتك مختارة في ويندوز. ثم فعّل Dolby Atmos for Headphones من إعدادات الصوت ← الصوت المكاني. يبقى الصوت المعالج ستيريو، ويعتمد دعم المؤثرات على برنامج التشغيل وDolby Access.");
-        SoundSettingsLabel.Text = L("Open Windows Sound", "فتح إعدادات صوت ويندوز");
-        ChooseSourceAppLabel.Text = L("Choose a source app", "اختيار التطبيق المصدر");
+        RenderHeadphoneEffects(EffectsHelpText);
+        SoundSettingsLabel.Text = L("Windows Sound", "صوت ويندوز");
         AutomationProperties.SetName(SoundSettingsButton, SoundSettingsLabel.Text);
-        AutomationProperties.SetName(ChooseSourceAppButton, ChooseSourceAppLabel.Text);
+    }
+
+    private void RenderHeadphoneEffects(TextBlock text)
+    {
+        text.Inlines.Clear();
+        text.Inlines.Add(new Run {Text=L("For headphone effects, choose one ","لمؤثرات السماعات، اختر ")});
+        text.Inlines.Add(new Run {Text=L("Source app","تطبيقًا مصدرًا واحدًا"),Foreground=PhoneBrush("ModeHalalText")});
+        text.Inlines.Add(new Run {Text=L(" in Audio output. Then enable "," في مخرج الصوت. ثم فعّل ")});
+        text.Inlines.Add(new Run {Text=L("Spatial sound","الصوت المكاني"),Foreground=PhoneBrush("ModeOptimizedText")});
+        text.Inlines.Add(new Run {Text=L(" in Windows Sound."," في إعدادات صوت ويندوز.")});
     }
 
     private void OpenCablePanel_Click(object sender, RoutedEventArgs args)

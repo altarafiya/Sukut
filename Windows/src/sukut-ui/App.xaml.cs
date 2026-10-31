@@ -14,8 +14,7 @@ public partial class App : Application
         InitializeComponent();
         UnhandledException += (_, args) =>
         {
-            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "sukut-crash.log"), DateTimeOffset.Now + " UNHANDLED " + DiagnosticStage + " " + args.Message + " " + args.Exception + Environment.NewLine + Environment.StackTrace + Environment.NewLine); }
-            catch { }
+            AppLocations.WriteCrash("UNHANDLED " + DiagnosticStage + " " + args.Message + " " + args.Exception + Environment.NewLine + Environment.StackTrace);
         };
     }
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern uint RegisterWindowMessage(string name);
@@ -33,6 +32,8 @@ public partial class App : Application
         }
         try
         {
+            if (AppLocations.IsPackaged && !System.Runtime.Intrinsics.X86.Avx.IsSupported)
+                throw new PlatformNotSupportedException("Sukut requires an x64 processor with AVX support.\nيتطلب سُكوت معالجًا بمعمارية x64 يدعم AVX.");
             _window = new MainWindow();
             // A handled WinUI close means hide-to-tray, not process shutdown.
             _window.Closed += (_, eventArgs) => { if (!eventArgs.Handled) ReleaseInstance(); };
@@ -40,7 +41,7 @@ public partial class App : Application
         }
         catch (Exception error)
         {
-            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "sukut-crash.log"), DateTimeOffset.Now + " " + error + Environment.NewLine); } catch { }
+            AppLocations.WriteCrash(error.ToString());
             MessageBox(IntPtr.Zero, error.Message, "سُكوت · Sukut", 0x10);
             ReleaseInstance(); Exit();
         }

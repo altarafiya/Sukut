@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -130,6 +130,17 @@ public sealed class EngineState
     public long ControllerAgeMs { get; set; }
     public double ProcessingMeanMs { get; set; }
     public double ProcessingMaxMs { get; set; }
+    // Standby: nothing is playing, so the AI rests until sound returns.
+    public int Standby { get; set; }
+    public string Kernels { get; set; } = "";
+    // Mode the host is applying (also changed from the tray flyout); -1 if unknown.
+    public int Mode { get; set; } = -1;
+    public int HostCommand { get; set; }
+    public long HostSettingsVersion { get; set; }
+    public string HostOutput { get; set; } = "";
+    public int HostBuffering { get; set; }
+    public uint HostSourcePid { get; set; }
+    public int? HostOptimizedBackgroundDb { get; set; }
     public List<Endpoint> Endpoints { get; set; } = [];
 }
 
@@ -147,186 +158,21 @@ internal sealed class EndpointSnapshotCache
     }
 }
 
-public sealed class Engine : IAsyncDisposable
+// A newer host revision is an applied routing change, not just a fresh poll.
+// Duplicate polls must leave subsequent local (Off-mode) edits intact.
+internal sealed class HostSettingsRevision
 {
-    private IntPtr _context;
-    private string _root = "";
-    private readonly BlockingCollection<Action> _jobs = new();
-    private readonly Thread _nativeThread;
-
-    private readonly NativeReplyBuffer _reply = new();
-    private readonly EndpointSnapshotCache _endpointCache = new();
-
-    public Engine()
+    internal long Version { get; private set; }
+    internal bool TryAdopt(EngineState state, UiPreferences preferences)
     {
-        _nativeThread = new Thread(() =>
-        {
-            foreach (var job in _jobs.GetConsumingEnumerable())
-            {
-                job();
-            }
-        })
-        {
-            IsBackground = true,
-            Name = "Sukut native controller"
-        };
-        _nativeThread.SetApartmentState(ApartmentState.STA);
-        _nativeThread.Start();
-    }
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-    private static extern IntPtr Sukut_Create(string root);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int Sukut_Read(IntPtr h, byte[] output, int capacity);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int Sukut_ReadSince(IntPtr h, long endpointsVersion, byte[] output, int capacity);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int Sukut_Apps(byte[] output, int capacity);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int Sukut_Error(byte[] output, int capacity);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-    private static extern int Sukut_SelectPreset(IntPtr h, int mode, string source, string capture, string output, uint pid,
-        float voiceDb, float musicDb, float backgroundDb);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void Sukut_Refresh(IntPtr h);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int Sukut_SetBuffering(IntPtr h, int level);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int Sukut_SetAmplification(IntPtr h, int db);
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int Sukut_SetCablePassthroughConfirmed(IntPtr h, int confirmed);
-
-    [DllImport("SukutEngine.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void Sukut_Destroy(IntPtr h);
-
-    private string Text(Func<byte[], int, int> call) => Encoding.UTF8.GetString(_reply.Read(call, Sukut_Error));
-
-    private Task<T> Work<T>(Func<T> action)
-    {
-        var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _jobs.Add(() =>
-        {
-            try
-            {
-                completion.SetResult(action());
-            }
-            catch (Exception e)
-            {
-                completion.SetException(e);
-            }
-        });
-        return completion.Task;
-    }
-
-    private void WritePresetConfig(AudioModePreset activePreset)
-    {
-        if (string.IsNullOrEmpty(_root)) return;
-        try
-        {
-            var runtimeDir = Path.Combine(_root, "runtime");
-            Directory.CreateDirectory(runtimeDir);
-            var presetFile = Path.Combine(runtimeDir, "sukut-presets.json");
-            var payload = PresetConfig.For(activePreset);
-            File.WriteAllText(presetFile, JsonSerializer.Serialize(payload, SukutJsonContext.Default.PresetConfig));
-        }
-        catch
-        {
-            // Ignore non-critical file write errors so audio routing continues uninterrupted
-        }
-    }
-
-    public Task Initialize(string root) => Work(() =>
-    {
-        _root = root;
-        WritePresetConfig(AudioModePreset.ForMode(0));
-        _context = Sukut_Create(root);
-        if (_context == IntPtr.Zero)
-            throw new InvalidOperationException(Text(Sukut_Error));
+        if (state.HostCommand != 0 || state.HostSettingsVersion <= Version) return false;
+        Version = state.HostSettingsVersion;
+        if (!string.IsNullOrEmpty(state.HostOutput)) preferences.Output = state.HostOutput;
+        preferences.Buffering = Math.Clamp(state.HostBuffering, 0, 2);
+        preferences.SourcePid = state.HostSourcePid;
+        if (state.HostOptimizedBackgroundDb is int background) preferences.OptimizedBackgroundDb = Math.Clamp(background, -20, 10);
+        preferences.HostSettingsVersion = Version;
         return true;
-    });
-
-    private EngineState ReadState() => _endpointCache.Adopt(JsonSerializer.Deserialize(
-        _reply.Read((b, n) => Sukut_ReadSince(_context, _endpointCache.Version, b, n), Sukut_Error), SukutJsonContext.Default.EngineState)!);
-    public Task<EngineState> Read() => Work(ReadState);
-
-    public Task<EngineState> RefreshDevices() => Work(() =>
-    {
-        var before = ReadState();
-        Sukut_Refresh(_context);
-        var until = Environment.TickCount64 + 3000;
-        do
-        {
-            var state = ReadState();
-            if (state.EndpointsVersion > before.EndpointsVersion) return state;
-            if (state.Error != before.Error && !string.IsNullOrWhiteSpace(state.Error)) throw new InvalidOperationException(state.Error);
-            Thread.Sleep(20);
-        } while (Environment.TickCount64 < until);
-        throw new InvalidOperationException("Audio device refresh timed out. Try opening the list again.");
-    });
-
-    public Task<List<SourceApp>> Apps() => Work(() =>
-        JsonSerializer.Deserialize(_reply.Read(Sukut_Apps, Sukut_Error), SukutJsonContext.Default.ListSourceApp)!);
-
-    public Task Select(int mode, string source, string capture, string output, uint pid, int buffering = 0, bool cablePassthroughConfirmed = false, int optimizedBackgroundDb = 0, bool restart = false) => Work(() =>
-    {
-        if (Sukut_SetCablePassthroughConfirmed(_context, cablePassthroughConfirmed ? 1 : 0) == 0)
-            throw new InvalidOperationException(Text(Sukut_Error));
-        if (Sukut_SetBuffering(_context, buffering) == 0) throw new InvalidOperationException(Text(Sukut_Error));
-        var preset = AudioModePreset.ForMode(mode, optimizedBackgroundDb);
-        // Same-preset selection changes its mix; Restart explicitly recreates clients.
-        if (restart && mode != 0 && Sukut_SelectPreset(_context, 0, source, capture, output, pid, 0, 0, 0) == 0)
-            throw new InvalidOperationException(Text(Sukut_Error));
-#if DEBUG
-        if (Environment.GetEnvironmentVariable("SUKUT_TRACE_NATIVE") == "1")
-        {
-            string F(float value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            File.AppendAllText(Path.Combine(_root, "runtime", "sukut-native-arguments.tsv"),
-                $"{mode}\t{source}\t{capture}\t{output}\t{pid}\t{F(preset.VoiceDb)}\t{F(preset.MuteMusic ? -100f : preset.MusicDb)}\t{F(preset.MuteBackground ? -100f : preset.BackgroundDb)}{Environment.NewLine}");
-        }
-#endif
-        // Publish routing, mode and all stem gains together, before audio starts.
-        if (Sukut_SelectPreset(_context, mode, source, capture, output, pid, preset.VoiceDb,
-            preset.MuteMusic ? -100.0f : preset.MusicDb,
-            preset.MuteBackground ? -100.0f : preset.BackgroundDb) == 0)
-            throw new InvalidOperationException(Text(Sukut_Error));
-        WritePresetConfig(preset);
-        return true;
-    });
-
-    public Task Refresh() => Work(() =>
-    {
-        Sukut_Refresh(_context);
-        return true;
-    });
-
-    public Task SetAmplification(int db) => Work(() =>
-    {
-        if (Sukut_SetAmplification(_context, db) == 0) throw new InvalidOperationException(Text(Sukut_Error));
-        return true;
-    });
-
-    public async ValueTask DisposeAsync()
-    {
-        await Work(() =>
-        {
-            if (_context != IntPtr.Zero)
-            {
-                Sukut_Destroy(_context);
-                _context = IntPtr.Zero;
-            }
-            return true;
-        });
-        _jobs.CompleteAdding();
-        await Task.Run(() => _nativeThread.Join());
-        _jobs.Dispose();
     }
 }
 

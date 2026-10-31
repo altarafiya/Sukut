@@ -1,6 +1,6 @@
 param(
     [string]$Jdk='C:\Program Files\Microsoft\jdk-17.0.20.8-hotspot',
-    [string]$SigningProperties=(Join-Path $env:USERPROFILE 'Documents\Sukut-Private-Signing\Android\release-signing.properties')
+    [string]$SigningProperties=(Join-Path (Split-Path -Parent $PSScriptRoot) 'Sukutkey\release-signing.properties')
 )
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot

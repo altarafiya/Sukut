@@ -32,6 +32,7 @@ class LiveSession final {
   void SelectRoute(AudioRoute route); // only while stopped; never follows defaults
   void SetMode(ProcessingMode mode) { cleaner_->SetMode(mode); }
   void Configure(RealtimeMix mix, bool silence_recovery = false) { cleaner_->Configure(mix, silence_recovery); }
+  void EnableEfficiency(bool enabled) { cleaner_->EnableEfficiency(enabled); }
   LiveSnapshot Snapshot(bool include_timing = true);
  private:
   AudioRoute route_;

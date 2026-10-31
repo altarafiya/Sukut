@@ -6,13 +6,16 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * Research-only wrapper around the carved streaming audio separation TFLite graph.
+ * Wrapper around Sukut's streaming audio separation TFLite model.
  *
- * This class intentionally lives in the engine source set. It exposes only the
- * neural graph contract; Audio's native spectral pre/post processing is reconstructed
- * separately before this can become an AudioCleaner.
+ * This class lives in the engine source set and exposes only the neural graph
+ * contract; spectral pre/post processing is in [StreamingDsp].
  */
-internal class SeparationModel(modelData: ByteBuffer, cpuThreads: Int = 1) : AutoCloseable {
+internal class SeparationModel(
+    modelData: ByteBuffer,
+    cpuThreads: Int = 1,
+    val xnnpack: Boolean = false,
+) : AutoCloseable {
     companion object {
         const val SPECTRAL_FLOATS = 1024
         const val STATE_FLOATS = 6 * 52 * 48
@@ -22,7 +25,7 @@ internal class SeparationModel(modelData: ByteBuffer, cpuThreads: Int = 1) : Aut
     }
 
     private val modelBuffer: ByteBuffer = modelData.slice().order(ByteOrder.nativeOrder()).also {
-        require(it.isDirect) { "Audio model must use a direct or mapped buffer" }
+        require(it.isDirect) { "Sukut model must use a direct or mapped buffer" }
     }
 
     private val options = Interpreter.Options().apply {
@@ -32,7 +35,9 @@ internal class SeparationModel(modelData: ByteBuffer, cpuThreads: Int = 1) : Aut
         require(cpuThreads in 1..2)
         setNumThreads(cpuThreads)
         setUseNNAPI(false)
-        setUseXNNPACK(false)
+        // XNNPACK is the optimized ARM CPU path bundled in the runtime. It is
+        // only kept live after EngineSelection proves parity and a speed gain.
+        setUseXNNPACK(xnnpack)
     }
 
     private val interpreter = Interpreter(modelBuffer, options)
@@ -51,8 +56,8 @@ internal class SeparationModel(modelData: ByteBuffer, cpuThreads: Int = 1) : Aut
     )
 
     init {
-        require(interpreter.inputTensorCount == 3) { "Unexpected Audio model input count" }
-        require(interpreter.outputTensorCount == OUTPUT_COUNT) { "Unexpected Audio model output count" }
+        require(interpreter.inputTensorCount == 3) { "Unexpected Sukut model input count" }
+        require(interpreter.outputTensorCount == OUTPUT_COUNT) { "Unexpected Sukut model output count" }
         require(interpreter.getInputTensor(0).shape().contentEquals(intArrayOf(1, 1, 1024)))
         require(interpreter.getInputTensor(1).shape().contentEquals(intArrayOf(1, 1, 1024)))
         require(interpreter.getInputTensor(2).shape().contentEquals(intArrayOf(1, 6, 52, 48)))
@@ -65,7 +70,7 @@ internal class SeparationModel(modelData: ByteBuffer, cpuThreads: Int = 1) : Aut
         zero(nextState)
     }
 
-    /** Runs one neural invocation and copies only the two stereo heads used by Audio v2. */
+    /** Runs one neural invocation and copies only the voice and music stereo heads. */
     fun processInto(
         left: FloatArray,
         right: FloatArray,

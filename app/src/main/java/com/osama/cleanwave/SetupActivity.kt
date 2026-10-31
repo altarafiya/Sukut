@@ -3,188 +3,172 @@ package com.osama.cleanwave
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
-import android.view.WindowInsets
-import android.widget.ImageView
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher
-import android.os.Build
-import rikka.shizuku.Shizuku
 
-/** An Android-specific guide: Shizuku and media volume, never desktop VB-CABLE. */
+/** USB activation and sound setup. */
 class SetupActivity : Activity() {
     private lateinit var ui: MobileUi
     private lateinit var pages: FrameLayout
+    private lateinit var navigationHost: FrameLayout
+    private lateinit var stepCounter: TextView
+    private val progressBars=mutableListOf<View>()
     private var page = 0
     private var appearance = ""
     private var connectionStatus: TextView? = null
     private var nextButton: View? = null
-    private var permissionButton: View? = null
-    private var debuggingButton: View? = null
-    private var backCallback: OnBackInvokedCallback? = null
-    private val received = Shizuku.OnBinderReceivedListener { refreshConnection() }
-    private val dead = Shizuku.OnBinderDeadListener { refreshConnection() }
-    private val permission = Shizuku.OnRequestPermissionResultListener { _, _ -> refreshConnection() }
+    private lateinit var activation: LocalActivationFlow
+    private var notificationAction: View? = null
+    private val received = WorkerConnection.OnChanged { refreshConnection() }
+    private val dead = WorkerConnection.OnChanged { refreshConnection() }
     override fun attachBaseContext(base: Context) { super.attachBaseContext(UiPrefs.wrapLocale(base)) }
     override fun onCreate(state: Bundle?) {
         setTheme(if (UiPrefs.isDark(this)) R.style.Theme_CleanWave_Dark else R.style.Theme_CleanWave_Light)
         super.onCreate(state)
+        AppNavigation.configurePage(this)
         page = (state?.getInt("page") ?: intent.getIntExtra("page", 0)).coerceIn(0, 3)
         appearance = UiPrefs.signature(this)
         ui = MobileUi(this); ui.styleBars()
-        pages = FrameLayout(this)
-        pages.setBackgroundColor(ui.background)
-        setContentView(pages)
-        render()
-        if (Build.VERSION.SDK_INT >= 33) backCallback = OnBackInvokedCallback { back() }.also {
-            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, it)
+        activation = LocalActivationFlow(this, state, { refreshConnection() }, { refreshConnection() })
+        val screen=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL; setBackgroundColor(ui.background)
+            setOnApplyWindowInsetsListener { view,insets ->
+                val bars=MobileUi.systemBars(insets)
+                view.setPadding(bars[0],bars[1],bars[2],bars[3]+ui.dp(8)); insets
+            }
         }
-        Shizuku.addBinderReceivedListenerSticky(received); Shizuku.addBinderDeadListener(dead)
-        Shizuku.addRequestPermissionResultListener(permission)
+        val heading=AdaptiveColumn(this,ui.dp(680)).apply {
+            tag="setup_progress_header"; orientation=LinearLayout.VERTICAL
+            setPadding(ui.dp(20),ui.dp(16),ui.dp(20),ui.dp(12))
+            stepCounter=ui.text("",13f,true,ui.secondary).apply {
+                tag="setup_step_counter"; accessibilityLiveRegion=View.ACCESSIBILITY_LIVE_REGION_POLITE
+            }; addView(stepCounter)
+            addView(LinearLayout(this@SetupActivity).apply {
+                importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                repeat(4) { index ->
+                    val bar=View(this@SetupActivity).apply { background=ui.rounded(ui.dividerColor,2) }
+                    progressBars.add(bar)
+                    addView(bar,LinearLayout.LayoutParams(0,ui.dp(4),1f).apply { if(index>0)marginStart=ui.dp(6) })
+                }
+            },LinearLayout.LayoutParams(-1,-2).apply { topMargin=ui.dp(10) })
+        }
+        screen.addView(FrameLayout(this).apply { addView(heading,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER_HORIZONTAL)) })
+        pages=FrameLayout(this).apply { tag="setup_pages"; setBackgroundColor(ui.background) }
+        screen.addView(pages,LinearLayout.LayoutParams(-1,0,1f))
+        navigationHost=FrameLayout(this).apply { tag="setup_navigation"; setBackgroundColor(ui.background) }
+        screen.addView(navigationHost,LinearLayout.LayoutParams(-1,-2))
+        setContentView(screen)
+        render()
+        AppNavigation.handleBack(this) { back() }
+        WorkerConnection.addListener(received); WorkerConnection.addListener(dead)
+        
     }
-    override fun onSaveInstanceState(state: Bundle) { state.putInt("page", page); super.onSaveInstanceState(state) }
+    @Deprecated("Android 12 and earlier; newer versions use AppNavigation.handleBack")
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() = back()
+    override fun onSaveInstanceState(state: Bundle) { state.putInt("page", page); activation.save(state); super.onSaveInstanceState(state) }
     override fun onResume() {
         super.onResume()
         if (appearance != UiPrefs.signature(this)) { recreate(); return }
+        activation.resume()
         refreshConnection()
     }
-    override fun onDestroy() {
-        if (Build.VERSION.SDK_INT >= 33) backCallback?.let { onBackInvokedDispatcher.unregisterOnBackInvokedCallback(it) }
-        Shizuku.removeBinderReceivedListener(received); Shizuku.removeBinderDeadListener(dead)
-        Shizuku.removeRequestPermissionResultListener(permission); super.onDestroy()
+    override fun onPause() { activation.pause(); super.onPause() }
+    override fun onRequestPermissionsResult(code: Int, permissions: Array<out String>, results: IntArray) {
+        super.onRequestPermissionsResult(code, permissions, results); activation.permissionsResult(code, results)
     }
-    @Suppress("DEPRECATION") override fun onBackPressed() = back()
-    private fun back() { if (page > 0) { page--; render(-1) } else finish() }
+    override fun onDestroy() {
+        WorkerConnection.removeListener(received); WorkerConnection.removeListener(dead)
+        activation.destroy(); super.onDestroy()
+    }
+    private fun back() { if(page==1)activation.cancel(); if (page > 0) { page--; render(-1) } else AppNavigation.closeSetup(this) }
+
     private fun render(direction: Int = 0) {
-        connectionStatus = null; nextButton = null; permissionButton = null; debuggingButton = null
-        val screen = LinearLayout(this).apply {
+        connectionStatus = null; nextButton = null; notificationAction = null
+        stepCounter.text=getString(R.string.setup_step,page+1,4)
+        progressBars.forEachIndexed { index,bar -> bar.background.setTint(if(index<=page)ui.accent else ui.dividerColor) }
+        val root = AdaptiveColumn(this, ui.dp(680)).apply {
             orientation = LinearLayout.VERTICAL
-            setOnApplyWindowInsetsListener { view, insets ->
-                if (Build.VERSION.SDK_INT >= 30) {
-                    val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
-                    view.setPadding(bars.left, bars.top, bars.right, bars.bottom + ui.dp(12))
-                } else {
-                    @Suppress("DEPRECATION")
-                    view.setPadding(insets.systemWindowInsetLeft, insets.systemWindowInsetTop,
-                        insets.systemWindowInsetRight, insets.systemWindowInsetBottom + ui.dp(12))
-                }
-                insets
-            }
+            setPadding(ui.dp(20), ui.dp(12), ui.dp(20), ui.dp(16))
         }
-        val root = AdaptiveColumn(this, ui.dp(760)).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(ui.dp(22), ui.dp(12), ui.dp(22), ui.dp(16))
+
+        val title = intArrayOf(R.string.setup_welcome, R.string.setup_worker_title, R.string.setup_sound_title, R.string.setup_ready_title)[page]
+        val body = intArrayOf(R.string.setup_welcome_body, R.string.setup_worker_body, R.string.setup_sound_body, R.string.setup_ready_body)[page]
+        if (page == 0) {
+            root.addView(ui.brandIcon(72), LinearLayout.LayoutParams(ui.dp(72), ui.dp(72)).apply { bottomMargin = ui.dp(20) })
         }
-        root.addView(ui.text(getString(R.string.setup_step, page + 1, 4), 13f, color = ui.secondary))
-        root.addView(ui.space(16))
-        val card = ui.card(22)
-        val title = intArrayOf(R.string.setup_welcome, R.string.setup_shizuku_title, R.string.setup_sound_title, R.string.setup_ready_title)[page]
-        val body = intArrayOf(R.string.setup_welcome_body, R.string.setup_shizuku_body, R.string.setup_sound_body, R.string.setup_ready_body)[page]
-        val icon = intArrayOf(R.drawable.ic_music_filter, R.drawable.ic_system_theme, R.drawable.ic_sliders, R.drawable.ic_check_circle)[page]
-        val hero = ImageView(this).apply {
-            setImageResource(if (page == 0) R.drawable.sukut_mark else icon)
-            if (page != 0) imageTintList = android.content.res.ColorStateList.valueOf(ui.accent)
-        }
-        val heroSize = ui.dp(if (page == 0) 88 else 42)
-        card.addView(hero, LinearLayout.LayoutParams(heroSize, heroSize))
-        card.addView(ui.space(14)); card.addView(ui.text(TextAccents.color(this, getString(title)), 24f, true).apply {
+        root.addView(ui.text(getString(title), 30f, true).apply {
             isAccessibilityHeading = true; includeFontPadding = true
-            textDirection = if (resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL) View.TEXT_DIRECTION_RTL else View.TEXT_DIRECTION_LTR
-            textAlignment = View.TEXT_ALIGNMENT_GRAVITY
-            gravity = (if (resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL) Gravity.RIGHT else Gravity.LEFT) or Gravity.TOP
-            setPaddingRelative(ui.dp(6), ui.dp(4), ui.dp(6), ui.dp(4))
         }, LinearLayout.LayoutParams(-1, -2))
-        if (page != 2) { card.addView(ui.space(10)); card.addView(ui.text(TextAccents.color(this, getString(body)), 15f, color = ui.secondary)) }
+        root.addView(ui.text(TextAccents.color(this, getString(body)), 16f, color = ui.secondary).apply {
+            setPadding(0, ui.dp(8), 0, ui.dp(24)); setLineSpacing(ui.dp(3).toFloat(), 1f)
+        })
         when (page) {
-            0 -> {
-                card.addView(ui.space(24)); card.addView(ui.text(R.string.setup_language, 15f, true))
-                card.addView(ui.space(10))
-                card.addView(ui.button(R.string.english, R.drawable.ic_language) { UiPrefs.setLanguage(this, "en"); recreate() })
-                card.addView(ui.space(8))
-                card.addView(ui.button(R.string.arabic, R.drawable.ic_language) { UiPrefs.setLanguage(this, "ar"); recreate() })
-            }
-            1 -> {
-                card.addView(ui.space(16))
-                connectionStatus = ui.text("", 14f, true, ui.warning).also { card.addView(it) }
-                ShizukuGuide.add(this, card)
-                card.addView(ui.space(8))
-                permissionButton = ui.button(R.string.setup_permission, R.drawable.ic_check_circle) {
-                    if (runCatching { Shizuku.pingBinder() }.getOrDefault(false)) {
-                        runCatching { Shizuku.requestPermission(201) }
-                    } else AudioTools.openShizuku(this)
-                }
-                card.addView(permissionButton)
-                debuggingButton = null
-                card.addView(ui.space(14)); card.addView(ui.text(TextAccents.color(this, getString(R.string.setup_shizuku_hint)), 13f, color = ui.secondary))
-            }
-            2 -> {
-                card.addView(ui.space(12)); card.addView(ui.text(TextAccents.color(this, getString(R.string.performance_help)), 13f, color = ui.secondary))
-                card.addView(ui.space(12)); card.addView(EnginePerformance.choices(this))
-            }
+            0 -> root.addView(ui.card(16).apply {
+                addView(ui.text(R.string.setup_language, 15f, true))
+                val languages = arrayOf(UiPrefs.LANGUAGE_SYSTEM, UiPrefs.LANGUAGE_ENGLISH, UiPrefs.LANGUAGE_ARABIC)
+                addView(SegmentedChoice(this@SetupActivity,
+                    listOf(getString(R.string.system_default), getString(R.string.english_native), getString(R.string.arabic_native)),
+                    languages.indexOf(UiPrefs.language(this@SetupActivity)).coerceAtLeast(0)) { which ->
+                    UiPrefs.setLanguage(this@SetupActivity, languages[which]); recreate()
+                }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(10) })
+            })
+            1 -> root.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                connectionStatus = ui.text("", 15f, true, ui.warning).also { addView(it) }
+                notificationAction = activation.notificationButton(ui).also { addView(it) }
+                addView(ui.space(12))
+                WorkerGuide.add(this@SetupActivity, this, { activation.begin(LocalActivationService.PAIR, true) }, { activation.cancel() })
+            })
+            2 -> root.addView(ui.card(12).apply {
+                addView(ui.text(R.string.performance_help, 14f, color = ui.secondary).apply { setPaddingRelative(ui.dp(6), ui.dp(4), ui.dp(6), ui.dp(12)) })
+                addView(EnginePerformance.choices(this@SetupActivity))
+            })
             3 -> {
-                AudioModes.modes.forEach { mode ->
-                    card.addView(ui.space(18))
-                    card.addView(LinearLayout(this).apply {
-                        gravity = Gravity.CENTER_VERTICAL
-                        addView(ImageView(this@SetupActivity).apply {
-                            setImageResource(mode.icon); imageTintList = android.content.res.ColorStateList.valueOf(mode.color)
-                        }, LinearLayout.LayoutParams(ui.dp(24), ui.dp(24)).apply { marginEnd = ui.dp(10) })
-                        addView(ui.text(mode.label, 16f, true, mode.color), LinearLayout.LayoutParams(0, -2, 1f))
-                    })
-                    card.addView(ui.text(TextAccents.color(this, getString(mode.description)), 14f, color = ui.secondary).apply { setPadding(0, ui.dp(5), 0, 0) })
-                }
-                card.addView(ui.space(16)); card.addView(ui.text(R.string.setup_model_note, 12f, color = ui.secondary))
-                card.addView(ui.space(22))
-                card.addView(ui.text("ادعوا لخالي بالرَّحمة، ولزوجته بالشِّفاء،\nولجميع المسلمين.", 17f, color = ui.warning).apply {
+                root.addView(AudioHelp.modeCards(this))
+                root.addView(ui.text(R.string.setup_model_note, 13f, color = ui.secondary).apply { setPaddingRelative(ui.dp(8), ui.dp(12), ui.dp(8), 0) })
+                root.addView(ui.text("ادعوا لخالي بالرَّحمة، ولزوجته بالشِّفاء،\nولجميع المسلمين.", 17f, color = ui.palette.highlight).apply {
                     textDirection = View.TEXT_DIRECTION_RTL
                     textAlignment = View.TEXT_ALIGNMENT_CENTER
                     gravity = Gravity.CENTER
                     includeFontPadding = true
-                    setPaddingRelative(ui.dp(8), ui.dp(10), ui.dp(8), ui.dp(10))
+                    setPaddingRelative(ui.dp(8), ui.dp(28), ui.dp(8), ui.dp(10))
                 }, LinearLayout.LayoutParams(-1, -2))
             }
         }
-        root.addView(card); root.addView(ui.space(16))
-        screen.addView(ui.scroll(root), LinearLayout.LayoutParams(-1, 0, 1f))
-        val navigation = AdaptiveColumn(this, ui.dp(760)).apply {
+        val navigation = AdaptiveColumn(this, ui.dp(680)).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(ui.dp(22), ui.dp(12), ui.dp(22), ui.dp(12))
-            if (page > 0) addView(ui.button(R.string.back) { back() }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = ui.dp(8) })
-            nextButton = ui.button(if (page == 3) R.string.finish_setup else R.string.next) {
+            setPadding(ui.dp(20), ui.dp(10), ui.dp(20), ui.dp(10))
+            if (page > 0) addView(ui.button(R.string.back, 0, MobileUi.Tone.PLAIN) { back() },
+                LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = ui.dp(10) })
+            nextButton = ui.button(if (page == 3) R.string.finish_setup else R.string.next, 0, MobileUi.Tone.FILLED) {
                 if (page == 3) {
                     UiPrefs.finishSetup(this@SetupActivity)
                     startActivity(Intent(this@SetupActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-                    finish()
-                } else { page++; render(1) }
+                    AppNavigation.closeSetup(this@SetupActivity)
+                } else { if(page==1)activation.cancel(); page++; render(1) }
             }
-            addView(nextButton, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(nextButton, LinearLayout.LayoutParams(0, -2, if (page > 0) 1.4f else 1f))
         }
-        screen.addView(FrameLayout(this).apply {
-            addView(navigation, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL))
-        }, LinearLayout.LayoutParams(-1, -2))
-        SukutTypography.apply(screen)
-        StartupMotion.slidePage(pages, screen, direction)
-        // New animated pages must receive insets too, not only the first page.
-        pages.rootWindowInsets?.let { screen.dispatchApplyWindowInsets(it) }
-        screen.requestApplyInsets()
+        navigationHost.removeAllViews()
+        navigationHost.addView(navigation,FrameLayout.LayoutParams(-1,-2,Gravity.CENTER_HORIZONTAL))
+        StartupMotion.slidePage(pages,ui.scroll(root),direction)
         refreshConnection()
     }
+
     private fun refreshConnection() {
         if (page != 1) return
-        val available = ShizukuBackend.availabilityState()
-        val ready = available == ShizukuBackend.Companion.Availability.READY_SHELL || available == ShizukuBackend.Companion.Availability.READY_ROOT || available == ShizukuBackend.Companion.Availability.READY_OTHER
-        connectionStatus?.text = getString(if (ready) R.string.shizuku_ready_short else if (available == ShizukuBackend.Companion.Availability.PERMISSION_NEEDED) R.string.shizuku_permission_needed else R.string.setup_shizuku_required)
-        connectionStatus?.setTextColor(if (ready) Color.rgb(65, 184, 127) else ui.warning)
+        val ready = WorkerConnection.ready
+        val message=if(activation.notificationsBlocked) R.string.local_notifications_needed else if(ready) R.string.worker_ready_short
+            else LocalActivationState.message.takeIf { it!=0 } ?: R.string.setup_worker_required
+        connectionStatus?.text = getString(message)
+        notificationAction?.visibility = if(activation.notificationsBlocked) View.VISIBLE else View.GONE
+        connectionStatus?.setTextColor(if (ready) ui.readyColor else ui.warning)
         nextButton?.isEnabled = ready; nextButton?.alpha = if (ready) 1f else .45f
-        permissionButton?.visibility = if (ready) View.GONE else View.VISIBLE
-        debuggingButton?.visibility = if (ready) View.GONE else View.VISIBLE
     }
 }
