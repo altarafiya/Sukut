@@ -1,31 +1,78 @@
 <p align="center">
-  <img src="docs/artwork/logo.png" width="104" alt="Sukut logo">
+  <img src="./Linux/data/icons/hicolor/256x256/apps/io.github.altarafiya.Sukut.png" width="96" height="96" alt="Sukut app icon">
 </p>
 
 <h1 align="center">Sukut · سُكوت</h1>
-<p align="center"><strong>Enjoy the internet. Without the music.</strong><br>استمتع بالإنترنت، بلا موسيقى.</p>
 
 <p align="center">
-  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Windows 0.4.2" src="https://img.shields.io/badge/Windows-0.4.2-8A6944?style=flat-square"></a>
-  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Android 0.4.2" src="https://img.shields.io/badge/Android-0.4.2-4E8878?style=flat-square"></a>
-  <a href="https://github.com/altarafiya/Sukut/releases/latest"><img alt="Linux beta" src="https://img.shields.io/badge/Linux-Beta-6B7FA8?style=flat-square"></a>
+  <strong>Enjoy the internet. Without the music.</strong><br>
+  <span lang="ar" dir="rtl">استمتع بالإنترنت، بلا موسيقى.</span>
 </p>
 
-![Sukut — quieter music, clearer speech](docs/artwork/hero.png)
+<p align="center">
+  <a href="#download"><strong>Download</strong></a> ·
+  <a href="#features">Features</a> ·
+  <a href="#four-audio-modes">Audio modes</a> ·
+  <a href="#get-started">Setup</a>
+</p>
 
-Sukut filters music from audio playing in your apps. Choose a mode, keep watching,
-and hear the speech you came for. Audio processing happens on your device.
+![Sukut filters app audio on your device, muting music while keeping speech and other sounds audible.](docs/artwork/hero.png)
 
-سُكوت يرشّح الموسيقى من صوت تطبيقاتك. اختر وضعًا، وتابع ما تشاهده بكلام أوضح.
-تجري معالجة الصوت على جهازك.
+Sukut filters music from app audio in real time, so you can keep watching and hear the speech you came for.
+Available for Windows, Android and Linux (beta).
+
+<p lang="ar" dir="rtl">يُرشّح سُكوت الموسيقى من صوت التطبيقات في الوقت الفعلي، لتتابع المشاهدة وتسمع الكلام بوضوح أكبر. يتوفر على ويندوز وأندرويد ولينكس (تجريبي).</p>
+
+## Features
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/artwork/icons/filter.svg" width="36" height="36" alt=""><br>
+      <strong>Real-time music filtering</strong><br>
+      Mute music as your apps play and keep speech and other sounds audible in Music Filter mode.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/artwork/icons/controls.svg" width="36" height="36" alt=""><br>
+      <strong>Lightweight controls</strong><br>
+      Keep Sukut in the desktop tray or switch modes from Android’s notification or Quick Settings.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/artwork/icons/playback.svg" width="36" height="36" alt=""><br>
+      <strong>Tunable playback performance</strong><br>
+      Use a shorter buffer for less delay or a longer buffer to help smooth out interruptions.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/artwork/icons/device.svg" width="36" height="36" alt=""><br>
+      <strong>On-device processing</strong><br>
+      Sukut processes playback locally. Your audio stays on your device.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/artwork/icons/modes.svg" width="36" height="36" alt=""><br>
+      <strong>Adjustable background sound</strong><br>
+      Use the background slider in Optimized mode or choose Strict to focus on speech.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/artwork/icons/routing.svg" width="36" height="36" alt=""><br>
+      <strong>App and output selection</strong><br>
+      On Windows and Linux, choose which app to filter and where to play the audio.
+    </td>
+  </tr>
+</table>
+
+The interface supports English and Arabic, with light, dark and system themes.
 
 ## Download
 
 | Platform | Download | Requirements |
 | --- | --- | --- |
-| Windows | **[Sukut 0.4.2 for Windows (ZIP)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.2-Windows-x64.zip)** | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
-| Android | **[Sukut 0.4.2 for Android (APK)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.2-Android-arm64.apk)** | Android 10+, ARM64 |
-| Linux (beta) | **[Sukut 0.4.0 beta 6 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.0-beta.6-Linux-amd64.deb)** | x64, PipeWire. Built on PikaOS 4; a Debian 13 build will follow |
+| <img src="docs/artwork/icons/windows.svg" width="24" height="24" alt=""> **Windows** | **[Sukut 0.4.2 for Windows (ZIP)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.2-Windows-x64.zip)** | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
+| <img src="docs/artwork/icons/android.svg" width="24" height="24" alt=""> **Android** | **[Sukut 0.4.2 for Android (APK)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.2-Android-arm64.apk)** | Android 10+, ARM64 |
+| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (beta)** | **[Sukut 0.4.0 beta 6 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2/Sukut-0.4.0-beta.6-Linux-amd64.deb)** | x64, PipeWire. Built on PikaOS 4; a Debian 13 build will follow |
 
 [All releases and checksums →](https://github.com/altarafiya/Sukut/releases)
 
@@ -38,8 +85,7 @@ and hear the speech you came for. Audio processing happens on your device.
 | **Optimized** | Music muted, with a background slider to suit what you are watching. |
 | **Strict** | Music and background muted, focusing on speech. |
 
-Results depend on the recording: mixed sounds can overlap. Strict can also remove
-sound effects. More buffering can help with short interruptions, but adds delay.
+Results vary when sounds overlap in a recording. Strict can also remove sound effects.
 
 ## Get started
 
@@ -73,14 +119,6 @@ the other, uninstall the one you have first.
 The source includes Linux **0.4.0 beta 7**. It switches to newly connected headphones and
 returns to the previous output when they disconnect. If you use EasyEffects, follow the
 [setup steps](Linux/README.md#sukut-with-easyeffects), also available under Audio output in beta 7.
-
-## Made for everyday listening
-
-- English and Arabic, with light, dark and system themes.
-- Source-app selection, Bluetooth output switching and phone setup on Windows and Linux.
-- Android tablet layouts, notification controls and a Quick Settings tile.
-- Adjustable background sound, amplification and buffering.
-- Local processing, with no cloud audio upload.
 
 ## Updates and support
 
