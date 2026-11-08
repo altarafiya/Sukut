@@ -73,6 +73,7 @@ The interface supports English and Arabic, with light, dark and system themes.
 | <img src="docs/artwork/icons/windows.svg" width="24" height="24" alt=""> **Windows** | **[Sukut 0.4.2 for Windows (ZIP)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.2-Windows-x64.zip)** | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
 | <img src="docs/artwork/icons/android.svg" width="24" height="24" alt=""> **Android** | **[Sukut 0.4.2 for Android (APK)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.2-Android-arm64.apk)** | Android 10+, ARM64 |
 | <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (beta)** | **[Sukut 0.4.0 beta 7 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.0-beta.7-Linux-amd64.deb)** | x64, PipeWire. Built on PikaOS 4; a Debian 13 build will follow |
+| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Flatpak, beta)** | **[Sukut 0.4.0 beta 8 (.flatpak)](https://github.com/altarafiya/Sukut/releases/download/v0.4.0-beta.8/Sukut-0.4.0-beta.8-Linux-x86_64.flatpak)** | x64, Flatpak and PipeWire. Works across Linux distributions |
 
 [All releases and checksums →](https://github.com/altarafiya/Sukut/releases)
 
@@ -111,7 +112,8 @@ the other, uninstall the one you have first.
 
 **Linux (beta)**
 
-1. Open the `.deb` with your software installer, or run
+1. On most distributions, install the Flatpak with `flatpak install --user ./Sukut-0.4.0-beta.8-Linux-x86_64.flatpak`.
+   On PikaOS 4 you can use the `.deb` instead: open it with your software installer, or run
    `sudo apt install ./Sukut-0.4.0-beta.7-Linux-amd64.deb`.
 2. Open Sukut from your apps and follow the welcome guide.
 3. The Phone page installs and activates the Android app over USB, all from the window.

@@ -1,5 +1,7 @@
 #include "window/PhoneTools.h"
 
+#include "audio/Sandbox.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
@@ -196,6 +198,7 @@ std::optional<PhoneDevice> PhoneTools::Select(const std::vector<PhoneDevice>& de
 
 std::string PhoneTools::NotReady(const PhoneDevice& device) {
   if (device.state == "unauthorized") return "Allow USB debugging on the phone, then try again.";
+  if (device.state == "no permissions" && InSandbox()) return "USB access is closed to Sukut on this computer. On Android 11 or newer, open Sukut on the phone and activate it with Wireless debugging.";  // the sandbox can't install a USB rule
   if (device.state == "no permissions") return "Sukut can't access the phone yet. Choose Allow access.";
   return "The phone is offline. Reconnect the USB cable.";
 }

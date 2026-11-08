@@ -1,5 +1,7 @@
 #include "host/HostEngine.h"
 
+#include "audio/Sandbox.h"
+
 #include <future>
 #include <utility>
 
@@ -112,7 +114,7 @@ bool HostEngine::Apply(int mode, const HostSettings& settings, bool by_user, std
     Update([](EngineState& s) { const auto revision = s.revision; s = EngineState{}; s.revision = revision; });
     return true;
   }
-  if (settings.source_pid != 0 && !std::filesystem::exists("/proc/" + std::to_string(settings.source_pid))) {
+  if (settings.source_pid != 0 && !InSandbox() && !std::filesystem::exists("/proc/" + std::to_string(settings.source_pid))) {
     // The chosen app closed before Sukut could start on it: the closed-app rule.
     if (session_) { session_->Stop(); session_.reset(); }
     applied_mode_ = 0;

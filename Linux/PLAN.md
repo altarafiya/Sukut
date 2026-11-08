@@ -217,6 +217,17 @@ The window shows "Using EasyEffects" under Audio output while Easy Effects Sink 
 
 PulseAudio-only systems: Debian 13 GNOME uses PipeWire by default. The setup guide checks for PipeWire and WirePlumber and explains clearly if either is missing.
 
+### 5.8 Flatpak (Flathub)
+
+Files: `Linux/flatpak/`, `scripts/build-flatpak-bundle.sh`, `scripts/test-flatpak.sh`. Code paths are chosen at run time by `/.flatpak-info` (`src/audio/Sandbox.h`); a normal install is unchanged.
+
+- **Prebuilt bundle.** Flathub builds from public sources, but the sealing header is private. The bundle is built inside the same GNOME SDK and published with the GitHub release; the manifest installs it.
+- **Routing.** `xdg-run/pipewire-0`, and the client connects with `media.category=Manager`: WirePlumber gives a sandboxed client the metadata permission only then, a moment after connecting, so `Connect` retries until a write is allowed.
+- **Source app.** A sandbox can't see other processes, so "is the app still running" comes from PipeWire's clients. An app that disconnects from PipeWire counts as closed.
+- **Host.** Lock and socket are in `$XDG_RUNTIME_DIR/app/<id>/sukut`, the only part shared by every launch. Tray name is under the app id. Priority goes through the Realtime portal; if it refuses, processing runs at normal priority.
+- **Phone page.** adb comes from Google's platform-tools as extra-data, with `--device=all` and `--persist=.android`. The sandbox can't install a USB rule, so Allow access is hidden and a phone adb can't open is pointed to Wireless debugging (Android 11+).
+- **Hidden in the sandbox:** Start with system (needs the Background portal) and the Sound settings shortcut.
+
 ## 6. Host: `sukut-host`
 
 - Ports the logic of `Windows/src/sukut-host/main.cpp`:

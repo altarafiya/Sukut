@@ -1,0 +1,18 @@
+#!/bin/sh
+# adb for the Flatpak: Google's platform-tools, fetched from Google on first use
+# and checked, because a single-file .flatpak can't carry an install-time download.
+set -eu
+URL=https://dl.google.com/android/repository/platform-tools_r36.0.0-linux.zip
+SHA=0ead642c943ffe79701fccca8f5f1c69c4ce4f43df2eefee553f6ccb27cbfbe8
+DIR="${XDG_DATA_HOME:?}/adb"
+if [ ! -x "$DIR/platform-tools/adb" ]; then
+    TMP=$(mktemp -d "${XDG_CACHE_HOME:?}/adb.XXXXXX")
+    trap 'rm -rf "$TMP"' EXIT
+    curl -fsSL --max-time 120 -o "$TMP/p.zip" "$URL"
+    echo "$SHA  $TMP/p.zip" | sha256sum -c --status
+    unzip -q "$TMP/p.zip" -d "$TMP/x"
+    mkdir -p "$DIR"
+    rm -rf "$DIR/platform-tools"
+    mv "$TMP/x/platform-tools" "$DIR/platform-tools"
+fi
+exec "$DIR/platform-tools/adb" "$@"

@@ -1,0 +1,37 @@
+# Flatpak manifest for the GitHub download (not for Flathub: see
+# Linux/START_NEW_CHAT_LINUX.md). Sukut's sealed model loader is not public, so this installs
+# the prebuilt bundle made by Linux/scripts/build-flatpak-bundle.sh inside the
+# same GNOME SDK, published with the GitHub release.
+app-id: io.github.altarafiya.Sukut
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: sukut
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  # Sukut's audio path: its own virtual output, capture, playback and routing.
+  - --filesystem=xdg-run/pipewire-0
+  # The Phone page: adb reaches the phone over USB.
+  - --device=all
+  - --persist=.android
+  # Fetches Google's adb from Google on first use (flatpak/sukut-adb).
+  - --share=network
+  - --env=SUKUT_ADB=/app/bin/sukut-adb
+  # Tray icon and the "Audio output switched" notification.
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+modules:
+  - name: sukut
+    buildsystem: simple
+    build-commands:
+      - cp -a bin libexec share ${FLATPAK_DEST}/
+      - install -Dm755 sukut-adb ${FLATPAK_DEST}/bin/sukut-adb
+    sources:
+      - type: archive
+        url: https://github.com/altarafiya/Sukut/releases/download/v0.4.0-beta.8/Sukut-0.4.0-beta.8-Flatpak-x86_64.tar.xz
+        sha256: f8f7734af671bd5c5353dfd144c347d80bd2fb79483782f62049820e6cc350a5
+        strip-components: 0
+      - type: file
+        path: sukut-adb

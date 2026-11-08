@@ -1,5 +1,7 @@
 #include "audio/PipeWireBridge.h"
 
+#include "audio/Sandbox.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
@@ -151,7 +153,7 @@ PipeWireBridge::~PipeWireBridge() { Stop(); Disconnect(); }
 
 // ----- connection -----------------------------------------------------------
 
-bool PipeWireBridge::Connect(std::string& error) {
+bool PipeWireBridge::Connect(std::string& error, bool need_write) {
   pw_init(nullptr, nullptr);
   loop_ = pw_thread_loop_new("sukut-pipewire", nullptr);
   if (loop_ == nullptr) { error = "cannot create the PipeWire loop"; return false; }
@@ -163,7 +165,9 @@ bool PipeWireBridge::Connect(std::string& error) {
   context_ = pw_context_new(pw_thread_loop_get_loop(loop_), pw_properties_new("module.rt", "false", nullptr), 0);
   if (context_ == nullptr || pw_thread_loop_start(loop_) < 0) { error = "cannot start the PipeWire loop"; return false; }
   LoopLock lock(loop_);
-  core_ = pw_context_connect(context_, nullptr, 0);
+  // In Flatpak, only a client that says it is a manager gets the metadata
+  // permission that routing needs (WirePlumber's find-flatpak-access).
+  core_ = pw_context_connect(context_, InSandbox() ? pw_properties_new(PW_KEY_MEDIA_CATEGORY, "Manager", nullptr) : nullptr, 0);
   if (core_ == nullptr) { error = "cannot connect to PipeWire; is it running?"; return false; }
   pw_core_add_listener(core_, &hooks_->core, &kCoreEvents, this);
   registry_ = pw_core_get_registry(core_, PW_VERSION_REGISTRY, 0);
@@ -171,6 +175,20 @@ bool PipeWireBridge::Connect(std::string& error) {
   // First roundtrip lists the globals; the second delivers the metadata values.
   if (!Roundtrip() || !Roundtrip()) { error = "PipeWire did not answer"; return false; }
   if (metadata_ == nullptr) { error = "WirePlumber's \"default\" metadata is missing; is WirePlumber running?"; return false; }
+  // WirePlumber grants a sandboxed manager its permissions a moment after it
+  // connects. Clearing an unused key is refused until then.
+  if (InSandbox() && need_write) {
+    bool granted = false;
+    for (int attempt = 0; attempt < 50 && !granted; ++attempt) {
+      stream_error_.clear();
+      pw_metadata_set_property(metadata_, PW_ID_CORE, "sukut.access", nullptr, nullptr);
+      if (!Roundtrip()) break;
+      granted = stream_error_.empty();
+      if (!granted) { pw_thread_loop_unlock(loop_); ::usleep(100000); pw_thread_loop_lock(loop_); }
+    }
+    stream_error_.clear();
+    if (!granted) { error = "PipeWire did not allow Sukut to change audio routing"; return false; }
+  }
   return true;
 }
 
@@ -752,8 +770,15 @@ void PipeWireBridge::RestorePin(const PinnedStream& pin) {
 // Windows rule: closing the chosen app ends the session; never start filtering
 // other apps on its behalf. Its last stream may go a moment before the process,
 // so this is checked again every second (CheckSource).
+// A sandbox can't see other apps' processes; PipeWire's own clients still say
+// whether the app is connected.
+bool PipeWireBridge::SourceRunning(std::uint32_t pid) const {
+  if (!InSandbox()) return ProcessExists(pid);
+  return std::any_of(clients_.begin(), clients_.end(), [pid](const auto& client) { return client.second == pid; });
+}
+
 void PipeWireBridge::NoteSourceGone() {
-  if (source_pid_ == 0 || !routed_ || source_closed_ || !targets_.empty() || ProcessExists(source_pid_)) return;
+  if (source_pid_ == 0 || !routed_ || source_closed_ || !targets_.empty() || SourceRunning(source_pid_)) return;
   source_closed_ = true;
   Event("SOURCE_CLOSED");
 }
@@ -879,7 +904,7 @@ bool PipeWireBridge::Start(const Options& options, std::string& error) {
   if (const auto left = ReadJournal()) { UndoJournalLocked(*left); RemoveJournal(); }
 
   source_pid_ = options.source_pid;
-  if (source_pid_ != 0 && (!ProcessExists(source_pid_) || source_pid_ == static_cast<std::uint32_t>(::getpid()))) {
+  if (source_pid_ != 0 && (!SourceRunning(source_pid_) || source_pid_ == static_cast<std::uint32_t>(::getpid()))) {
     error = "source app " + std::to_string(source_pid_) + " is not running";
     return false;
   }
@@ -961,7 +986,7 @@ BridgeStats PipeWireBridge::Stats() const {
 
 bool PipeWireBridge::ReadCatalog(Catalog& catalog, std::string& error) {
   PipeWireBridge bridge;
-  if (!bridge.Connect(error)) { bridge.Disconnect(); return false; }
+  if (!bridge.Connect(error, false)) { bridge.Disconnect(); return false; }
   {
     LoopLock lock(bridge.loop_);
     const auto own = static_cast<std::uint32_t>(::getpid());
@@ -969,7 +994,7 @@ bool PipeWireBridge::ReadCatalog(Catalog& catalog, std::string& error) {
     for (const auto& [id, node] : bridge.nodes_) {
       if (bridge.IsOutput(node.name)) {
         catalog.outputs.push_back({node.name, node.description.empty() ? node.name : node.description});
-      } else if (node.media_class == "Stream/Output/Audio") {
+      } else if (node.media_class == "Stream/Output/Audio" && node.name != kPlaybackName) {
         const std::uint32_t pid = bridge.ProcessOf(node);
         const bool listed = std::any_of(catalog.apps.begin(), catalog.apps.end(), [pid](const auto& a) { return a.pid == pid; });
         if (pid != 0 && pid != own && !listed) catalog.apps.push_back({pid, node.app.empty() ? node.name : node.app});

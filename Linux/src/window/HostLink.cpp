@@ -1,5 +1,7 @@
 #include "window/HostLink.h"
 
+#include "audio/Sandbox.h"
+
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -57,9 +59,7 @@ struct Posted {
 }  // namespace
 
 std::filesystem::path HostLink::SocketPath() {
-  const char* runtime = std::getenv("XDG_RUNTIME_DIR");
-  const std::filesystem::path base = runtime && *runtime ? runtime : std::filesystem::temp_directory_path();
-  return base / "sukut" / "host.socket";
+  return SukutRuntimeDir() / "host.socket";
 }
 
 HostLink::~HostLink() {

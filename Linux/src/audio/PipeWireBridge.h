@@ -159,7 +159,7 @@ class PipeWireBridge {
   using Clock = std::chrono::steady_clock;
   struct Pin { std::string type, value; };
 
-  bool Connect(std::string& error);
+  bool Connect(std::string& error, bool need_write = true);
   void Disconnect();
   bool Roundtrip();
   bool WaitForNode(const std::string& name, int attempts);
@@ -169,6 +169,7 @@ class PipeWireBridge {
   [[nodiscard]] std::string ResolveOutput(const std::string& requested) const;
   [[nodiscard]] std::string NextOutput(const std::string& excluded) const;
   [[nodiscard]] bool IsSourceStream(const Node& node) const;
+  [[nodiscard]] bool SourceRunning(std::uint32_t pid) const;
   [[nodiscard]] bool IsAppStream(std::uint32_t id, const Node& node) const;
   [[nodiscard]] bool OwnsSink(std::uint32_t client) const;
   [[nodiscard]] std::uint32_t ProcessOf(const Node& node) const;

@@ -1,5 +1,8 @@
 #include "host/Desktop.h"
 
+#include "audio/Sandbox.h"
+#include <unistd.h>
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -13,7 +16,29 @@ namespace {
 constexpr const char* kAppId = "io.github.altarafiya.Sukut";
 guint32 g_last_notice = 0;  // main thread only
 
+// In Flatpak the portal stands in for RealtimeKit (the sandbox has no system bus).
+bool PortalHighPriority(long thread_id, int nice) {
+  GError* error = nullptr;
+  GDBusConnection* bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &error);
+  if (bus == nullptr) { if (error) g_error_free(error); return false; }
+  GVariant* reply = g_dbus_connection_call_sync(
+      bus, "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop", "org.freedesktop.portal.Realtime",
+      "MakeThreadHighPriorityWithPID", g_variant_new("(tti)", static_cast<guint64>(::getpid()), static_cast<guint64>(thread_id), nice),
+      nullptr, G_DBUS_CALL_FLAGS_NONE, 1000, nullptr, &error);
+  g_object_unref(bus);
+  if (reply == nullptr) {
+    std::cerr << "sukut-host: the Realtime portal refused nice " << nice << ": " << (error ? error->message : "no reply")
+              << "; processing continues at normal priority" << std::endl;
+    if (error) g_error_free(error);
+    return false;
+  }
+  g_variant_unref(reply);
+  std::cerr << "sukut-host: the Realtime portal set the processing thread to nice " << nice << std::endl;
+  return true;
+}
+
 bool RealtimeKitHighPriority(long thread_id, int nice) {
+  if (InSandbox()) return PortalHighPriority(thread_id, nice);
   // One system-bus connection for the process; the call runs once per engine start.
   static GDBusConnection* const system = [] {
     GError* error = nullptr;

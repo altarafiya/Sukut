@@ -7,6 +7,7 @@
 
 #include <malloc.h>
 
+#include "audio/Sandbox.h"
 #include "window/Style.h"
 #include "window/Widgets.h"
 
@@ -560,6 +561,7 @@ GtkWidget* SukutWindow::BuildSettings() {
     });
   }, this);
   adw_preferences_group_add(ADW_PREFERENCES_GROUP(general), autostart_row_);
+  gtk_widget_set_visible(autostart_row_, !InSandbox());  // writes to the autostart folder, outside the sandbox
 
   // Audio: amplification.
   GtkWidget* audio = group(L("Audio", "الصوت"));
@@ -602,6 +604,7 @@ GtkWidget* SukutWindow::BuildSettings() {
   gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(sound), TRUE);
   Connect(sound, "activated", +[](AdwActionRow*, gpointer self) { static_cast<SukutWindow*>(self)->OpenSoundSettings(); }, this);
   adw_preferences_group_add(ADW_PREFERENCES_GROUP(shortcuts), sound);
+  gtk_widget_set_visible(sound, !InSandbox());  // the desktop's settings app can't be started from the sandbox
   GtkWidget* setup = adw_action_row_new();
   adw_preferences_row_set_title(ADW_PREFERENCES_ROW(setup), L("Setup guide", "دليل الإعداد"));
   icon(setup, "help-browser-symbolic");

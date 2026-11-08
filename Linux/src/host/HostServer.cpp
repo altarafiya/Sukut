@@ -1,5 +1,7 @@
 #include "host/HostServer.h"
 
+#include "audio/Sandbox.h"
+
 #include <algorithm>
 #include <cerrno>
 #include <cstdlib>
@@ -41,9 +43,7 @@ std::vector<std::string> SplitFields(const std::string& text) {
 }
 
 std::filesystem::path HostServer::DefaultPath() {
-  const char* runtime = std::getenv("XDG_RUNTIME_DIR");
-  const std::filesystem::path base = runtime && *runtime ? runtime : std::filesystem::temp_directory_path();
-  return base / "sukut" / "host.socket";
+  return SukutRuntimeDir() / "host.socket";
 }
 
 HostServer::HostServer(std::filesystem::path socket_path, Handler handler, WindowChanged window_changed)

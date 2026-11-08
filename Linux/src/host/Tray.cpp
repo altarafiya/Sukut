@@ -76,7 +76,10 @@ const char* T(bool arabic, const char* english, const char* arabic_text) { retur
 
 Tray::Tray(Actions actions, std::string icon_theme_path)
     : actions_(std::move(actions)), icon_theme_path_(std::move(icon_theme_path)) {
-  bus_name_ = "org.kde.StatusNotifierItem-" + std::to_string(::getpid()) + "-1";
+  // Flatpak lets an app own names under its own id only.
+  const char* app_id = std::getenv("FLATPAK_ID");
+  bus_name_ = app_id && *app_id ? std::string(app_id) + ".StatusNotifierItem"
+                                : "org.kde.StatusNotifierItem-" + std::to_string(::getpid()) + "-1";
 }
 
 Tray::~Tray() {

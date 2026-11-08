@@ -1,5 +1,7 @@
 #include "window/Style.h"
 
+#include "audio/Sandbox.h"
+
 #include <cstdlib>
 #include <string>
 #include <system_error>
@@ -101,7 +103,7 @@ std::filesystem::path DataDir() {
   std::error_code code;
   const auto staged = std::filesystem::read_symlink("/proc/self/exe", code).parent_path() / ".." / "share" / "sukut";
   if (std::filesystem::exists(staged / "fonts")) return staged.lexically_normal();
-  return "/usr/share/sukut";
+  return InstallPrefix() / "share/sukut";
 }
 
 void LoadFonts() {

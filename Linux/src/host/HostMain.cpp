@@ -47,6 +47,7 @@
 #include <glib-unix.h>
 
 #include "audio/PipeWireBridge.h"
+#include "audio/Sandbox.h"
 #include "host/Desktop.h"
 #include "host/HostEngine.h"
 #include "host/HostServer.h"
@@ -79,7 +80,7 @@ void FillDefaults(Options& o) {
     const char* env = std::getenv("SUKUT_ENGINE_DIR");
     o.engine = env && *env ? std::filesystem::path(env)
                : std::filesystem::exists(staged / "engine") ? staged / "engine"
-                                                             : std::filesystem::path("/usr/share/sukut/engine");
+                                                             : sukut::InstallPrefix() / "share/sukut/engine";
   }
   if (o.icon_theme_path.empty() && std::filesystem::exists(staged / "icons")) o.icon_theme_path = (staged / "icons").lexically_normal().string();
   if (o.window_command.empty()) o.window_command = std::filesystem::exists(ExeDir() / "sukut") ? (ExeDir() / "sukut").string() : "sukut";

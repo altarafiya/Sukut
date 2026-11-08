@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+#include "audio/Sandbox.h"
 #include "window/Capture.h"
 #include "window/HostLink.h"
 #include "window/PhoneTools.h"
@@ -24,13 +25,14 @@
 
 namespace {
 
+using namespace sukut;
 using namespace sukut::window;
 
 // sukut-host beside this program in a build folder, else the installed one.
 std::string HostCommand() {
   std::error_code code;
   const auto here = std::filesystem::read_symlink("/proc/self/exe", code).parent_path();
-  for (const auto& candidate : {here / "sukut-host", std::filesystem::path("/usr/libexec/sukut/sukut-host")}) {
+  for (const auto& candidate : {here / "sukut-host", InstallPrefix() / "libexec/sukut/sukut-host"}) {
     if (!std::filesystem::exists(candidate)) continue;
     gchar* quoted = g_shell_quote(candidate.c_str());
     std::string command = quoted;

@@ -6,6 +6,7 @@
 #include <thread>
 #include <utility>
 
+#include "audio/Sandbox.h"
 #include "window/Style.h"
 #include "window/Widgets.h"
 #include "window/Window.h"
@@ -456,7 +457,7 @@ void SukutWindow::RenderPhoneCard() {
   else if (phone_devices_.size() > 1) connection = L("Choose your phone below", "اختر هاتفك أدناه");
   else connection = L("Connect your phone by USB", "وصّل هاتفك عبر USB");
   gtk_label_set_text(GTK_LABEL(phone_connection_), connection.c_str());
-  gtk_widget_set_visible(phone_allow_, !connected && std::any_of(phone_devices_.begin(), phone_devices_.end(),
+  gtk_widget_set_visible(phone_allow_, !InSandbox() && !connected && std::any_of(phone_devices_.begin(), phone_devices_.end(),
                                                                  [](const auto& d) { return d.state == "no permissions"; }));
   SetClass(phone_icon_, "ready-text", connected);
   SetClass(phone_icon_, "mode-off", !connected);
@@ -617,6 +618,7 @@ std::string SukutWindow::PhoneText(const std::string& english) const {
       {"Allow USB debugging on the phone, then try again.", "وافق على تصحيح USB في الهاتف، ثم أعد المحاولة."},
       {"The phone is offline. Reconnect the USB cable.", "الهاتف غير متصل. أعد توصيل كابل USB."},
       {"Install Sukut beta.12 or later before activation.", "ثبّت سُكوت beta.12 أو أحدث قبل التفعيل."},
+      {"USB access is closed to Sukut on this computer. On Android 11 or newer, open Sukut on the phone and activate it with Wireless debugging.", "الوصول عبر USB مغلق أمام سُكوت على هذا الحاسوب. في أندرويد 11 أو أحدث، افتح سُكوت على الهاتف وفعّله عبر تصحيح الأخطاء اللاسلكي."},
       {"Sukut can't access the phone yet. Choose Allow access.", "لا يستطيع سُكوت الوصول إلى الهاتف بعد. اختر «السماح بالوصول»."},
       {"USB access allowed. Unplug the phone and plug it in again.", "سُمح بالوصول عبر USB. افصل الهاتف ثم وصّله من جديد."},
       {"USB access allowed. Unplug the phone and plug it in again. If it still isn't listed, sign out and sign in again.",

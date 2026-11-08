@@ -1,5 +1,12 @@
 # What’s new
 
+## Linux 0.4.0 beta 8 (Flatpak)
+
+- First Flatpak build of Sukut for Linux, as one file that installs across distributions.
+- The first time the Phone page needs it, Sukut downloads Google's adb and checks it.
+- Start with system isn't available in the Flatpak yet.
+- On computers where USB can't be opened from the sandbox, the Phone page points to Wireless debugging (Android 11+).
+
 ## Linux 0.4.0 beta 7 (Windows 0.4.2 and Android 0.4.2 unchanged)
 
 **Linux (beta)**
