@@ -2,7 +2,7 @@
 //   sukut                    open the window (starting sukut-host for the tray if needed)
 //   sukut --tray             start Sukut in the tray only (the autostart entry)
 //   sukut --restore-audio    undo audio routing left by a crash
-//   sukut --capture DIR [--capture-set main|contrast|keyboard]   screenshots and keyboard check, no host
+//   sukut --capture DIR [--capture-set main|contrast|keyboard|phone|easyeffects]   screenshots and keyboard check, no host
 //   sukut --phone devices|inspect|status|install|update|setup|open|activate|deactivate|allow-usb [--serial S]
 //                            the Phone page's actions from a terminal (support and tests)
 // The window is a single-instance GtkApplication: launching it again raises

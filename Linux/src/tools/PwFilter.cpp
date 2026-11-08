@@ -1,10 +1,12 @@
 // Stage 3 tool: live filtering through Sukut's engine on PipeWire.
 //   sukut_pw_filter --engine DIR [--mode 1|2|3] [--buffering 0|1|2] [--background DB]
-//                   [--amplify DB] [--output NODE] [--app PID] [--seconds N] [--no-route]
-//                   [--diagnostics] [--tap DIR]
+//                   [--amplify DB] [--output NODE] [--fallback] [--app PID] [--seconds N]
+//                   [--no-route] [--diagnostics] [--tap DIR]
 //   sukut_pw_filter --restore      undo routing left by a crash
 // One line per event: STARTED, STATS (every second), routing events
-// (OUTPUT_CHANGED, OUTPUT_LOST, SOURCE_TARGETED, SOURCE_CLOSED), STOPPED, TIMING.
+// (OUTPUT_CHANGED, OUTPUT_LOST, SOURCE_TARGETED, SOURCE_CLOSED, FEEDBACK_LOOP,
+// STREAM_REDIRECTED, STREAM_PINNED, EASYEFFECTS_PROCESS_ALL), STOPPED, TIMING.
+// --fallback: a missing --output plays on the default until it appears, as the host does.
 // With --app, the session ends when that app closes (exit code 3), as on Windows.
 #include <atomic>
 #include <chrono>
@@ -57,6 +59,7 @@ int main(int argc, char** argv) {
     else if (arg == "--background" && value) settings.optimized_background_db = std::atoi(argv[++i]);
     else if (arg == "--amplify" && value) settings.amplification_db = std::atoi(argv[++i]);
     else if (arg == "--output" && value) settings.output = argv[++i];
+    else if (arg == "--fallback") settings.fallback_output = true;
     else if (arg == "--app" && value) settings.source_pid = static_cast<std::uint32_t>(std::strtoul(argv[++i], nullptr, 10));
     else if (arg == "--seconds" && value) seconds = std::atoi(argv[++i]);
     else if (arg == "--no-route") settings.route = false;
@@ -64,7 +67,7 @@ int main(int argc, char** argv) {
     else if (arg == "--tap" && value) { tap_dir = argv[++i]; settings.tap = true; }
     else {
       std::cerr << "usage: sukut_pw_filter --engine DIR [--mode N] [--buffering N] [--background DB] [--amplify DB]"
-                   " [--output NODE] [--app PID] [--seconds N] [--no-route] [--diagnostics] [--tap DIR] | --restore\n";
+                   " [--output NODE] [--fallback] [--app PID] [--seconds N] [--no-route] [--diagnostics] [--tap DIR] | --restore\n";
       return 2;
     }
   }

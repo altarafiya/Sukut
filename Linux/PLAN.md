@@ -176,6 +176,14 @@ Output and app lists leave out Sukut's own nodes, which prevents feedback.
   Ignore Sukut's own metadata writes (by sequence number) so this can't loop.
 - **Output removed** (headphones unplugged). Follow WirePlumber's next default real sink, as the Windows host does.
 - **Bluetooth.** PipeWire Bluetooth sinks are ordinary sinks. Test A2DP latency and keep the same buffering advice as Windows.
+- *As built for Windows 0.4.2's output handling (5 November 2026, 0.4.0~beta.7):*
+  - Sukut keeps the outputs the user wanted this session, most recent last: the one it started on, one picked in the sound settings, a newly connected device.
+  - **New device.** A physical output whose device object appeared while Sukut runs (Bluetooth connecting, USB plugged in; not HDMI or DisplayPort) is used at once and becomes the output restored on Off. A new output of a device that was already there is a profile or port change and is not followed. Outputs with a `device.id` but no device object fall back to their name (not re-created within 5 s). The host shows Windows' notice, "Audio output switched · Sukut now uses …".
+  - **Removed, then back.** Sukut plays on the most recent wanted output still present (else WirePlumber's choice) and goes back when a more recent one returns.
+  - **Missing at Start.** The host starts on the default and goes to the chosen output when it appears (headphones off, EasyEffects not running yet). The saved choice is kept.
+  - **Chosen while Off.** The host records the system's choice (`default.configured.audio.sink`) when Sukut stops or the user picks an output in Sukut. A different system choice at the next Start means the user changed it while Sukut was off, and Sukut starts there.
+  - **Off** gives the default to the output Sukut played for (Windows: Stop restores the selected output), only while the default is still `sukut_sink`.
+  - Picking, in the sound settings, the output Sukut already plays on keeps `sukut_sink` the default (before, that let apps bypass Sukut).
 
 ### 5.3 Volume
 
@@ -196,7 +204,16 @@ The model must see full-level input, as on Windows with VB-CABLE's volume contro
 - The journal (`$XDG_STATE_HOME/sukut/routing.json`) is applied on the next host start and on Exit. It restores the configured default **only if it still names `sukut_sink`**, so a newer user choice is never undone. This is the same ownership rule as Windows.
 - A manual repair command exists: `sukut --restore-audio`.
 
-### 5.6 Not supported
+### 5.6 Effects apps (EasyEffects)
+
+The order that works is apps → `sukut_sink` → Sukut → `easyeffects_sink` → EasyEffects → speakers: Sukut's output is Easy Effects Sink, EasyEffects does not process all output streams and plays to a fixed device, not the default. Sukut has no EasyEffects-only code path; it guards against the two ways that order breaks, for any effects app or loopback:
+
+- **Feedback loop.** If Sukut's playback reaches `sukut_sink` again (EasyEffects following the default output, which is `sukut_sink` while Sukut runs), Sukut moves to another output at once and the window shows a notice with the steps. Links are followed through the graph; a virtual sink on the way also leads to every node of its client, because an effects app or loopback passes audio between its own nodes without links. The registry shows only some node properties (`device.id` and `client.id`, not `node.link-group`).
+- **Pinned apps.** EasyEffects' "Process all output streams" pins every app to `easyeffects_sink` with `target.object` metadata, and WirePlumber remembers those pins after it is turned off. With all system audio, such an app would play unfiltered while Sukut says nothing is playing. Sukut points pinned app streams at `sukut_sink` too, journals the original pins and puts them back on Off or after a crash. A stream pinned again by someone else is left alone and reported (EasyEffects by name).
+
+The window shows "Using EasyEffects" under Audio output while Easy Effects Sink exists; it opens the steps. Tests: `scripts/test-stage9-routing.sh` (a pw-loopback stands in for EasyEffects).
+
+### 5.7 Not supported
 
 PulseAudio-only systems: Debian 13 GNOME uses PipeWire by default. The setup guide checks for PipeWire and WirePlumber and explains clearly if either is missing.
 

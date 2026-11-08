@@ -2,7 +2,27 @@
 
 The plan is in [PLAN.md](PLAN.md): Debian 13 first, with stages and owner gates.
 
-## Where it stands (29 October 2026)
+Current version: **0.4.0~beta.7**. Stage 9, validation on real hardware, is in progress on PikaOS 4 (KDE). The package is built there and needs its newer system libraries; a Debian 13 build will follow.
+
+## Sukut with EasyEffects
+
+EasyEffects can stay on while Sukut filters. The sound must go: apps → Sukut → EasyEffects → speakers.
+
+1. In EasyEffects, open **Preferences** and turn off **Process all output streams**.
+2. In EasyEffects' **PipeWire** page, turn off **Use default output** and choose your speakers (or headphones) as its output device.
+3. In the system's sound settings, choose **Easy Effects Sink** as the output.
+4. In Sukut, choose **Easy Effects Sink** under **Audio output**.
+
+The window shows the same steps under Audio output (**Using EasyEffects**) whenever EasyEffects is running.
+
+What Sukut does by itself:
+
+- If EasyEffects follows the default output (step 2 not done), Sukut's sound would loop through EasyEffects back into Sukut. Sukut stops that at once, plays to another output, notifies, and shows **How to fix**.
+- Apps pinned to Easy Effects Sink (by **Process all output streams**, or remembered by WirePlumber afterwards) are sent through Sukut while it runs and get their pin back on Off. If EasyEffects keeps pinning them again, Sukut leaves them and shows **How to fix**.
+- Headphones connected while Sukut runs are used at once; when they disconnect, Sukut goes back to Easy Effects Sink.
+- If EasyEffects isn't running yet when Sukut starts, Sukut starts on the default output and moves to Easy Effects Sink when it appears.
+
+## Stages
 
 | Stage | State |
 |---|---|
@@ -15,19 +35,7 @@ The plan is in [PLAN.md](PLAN.md): Debian 13 first, with stages and owner gates.
 | 6: the window | **Done in WSL, accepted by the owner on 29 October.** The GNOME-native window (owner's decision): sidebar, Audio with the Playback card, Settings with About, the help dialog and first-run setup, in English and Arabic, light, dark and high contrast. 30 screenshots and 4 keyboard checks pass on a headless display, and 10 of 10 checks of the real window with the real host. Orca and real-desktop checks need hardware. See [evidence/stage6-2026-10-29/SUMMARY.md](evidence/stage6-2026-10-29/SUMMARY.md) |
 | 7: phone tools | **Done in WSL, accepted by the owner on 29 October.** The Phone page (Full setup in 5 steps, Activate, Install or update, USB help, the connection card) and the same flows as Windows, using Debian's `adb` and the same signed APK and activation script. 24 of 24 checks pass against a stand-in phone, plus 13 screenshots and the keyboard check. The live check on your phone moves to stage 9 on real Debian. See [evidence/stage7-2026-10-29/SUMMARY.md](evidence/stage7-2026-10-29/SUMMARY.md) |
 | 8: Debian package | **Done in WSL, accepted by the owner on 30 October.** `Linux/dist/sukut_0.4.0~beta.1-1_amd64.deb` (10.8 MB), built offline and hardened with no debug data. lintian has no errors or warnings, and the desktop file and AppStream listing are valid. Install, the installed window and engine, upgrade, remove and purge all pass. See [evidence/stage8-2026-10-29/SUMMARY.md](evidence/stage8-2026-10-29/SUMMARY.md) |
-| 9–10 | Not started. **To continue on the Debian machine, start a new chat with [START_NEW_CHAT_LINUX.md](START_NEW_CHAT_LINUX.md)** |
-
-### Open problem: the phone tools on a real phone (31 October)
-
-The owner reports that Android activation does not work on real Linux. Their requirement: **every Android feature must work from the window; the user must never need the terminal.**
-
-Known gaps:
-
-- `adb devices` can report a phone as `no permissions` (USB access not yet granted). `PhoneTools::ParseDevices` ignores that state, so the page says to connect the phone.
-- The USB help page shows a terminal command (`usermod -aG plugdev`).
-- `adb` is only Recommended, not a hard dependency.
-
-The fix plan is in [START_NEW_CHAT_LINUX.md](START_NEW_CHAT_LINUX.md) section 2.
+| 9 | In progress on PikaOS 4. 10 is not started |
 
 ### Changes to the shared engine for Linux
 

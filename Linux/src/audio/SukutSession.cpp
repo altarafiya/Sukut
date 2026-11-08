@@ -32,6 +32,7 @@ bool SukutSession::Start(const SessionSettings& settings, std::string& error) {
     // capture buffer, render buffer and render prefill.
     PipeWireBridge::Options options;
     options.output = settings.output;
+    options.fallback_output = settings.fallback_output;
     options.source_pid = settings.source_pid;
     options.route = false;  // only once the engine is ready
     options.engine = true;

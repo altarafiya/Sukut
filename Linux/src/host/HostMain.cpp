@@ -10,7 +10,8 @@
 //   hello                                    a window connected; the tray offers only Open and Exit
 //   read                                     engine state and settings (JSON)
 //   apps                                     real outputs and playing apps (JSON)
-//   select MODE OUTPUT PID BUFFERING BG_DB   apply a mode (0 = Off) with that route and save it
+//   select MODE OUTPUT PID BUFFERING BG_DB   apply a mode (0 = Off) with that route and save it; from Off,
+//                                            the output follows a system choice made while Off (PrepareStart)
 //   amp DB                                   amplification, 0 to 12 dB
 //   settings KEY=VALUE...                    Language, Theme, CloseToTray, SetupCompleted, StartWithSystem,
 //                                            and while Off: PreferredMode, Output, SourcePid, Buffering,
@@ -30,6 +31,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -122,6 +124,12 @@ bool ProcessExists(std::uint32_t pid) { return std::filesystem::exists("/proc/" 
 
 std::string Flag(bool value) { return value ? "true" : "false"; }
 
+// The output chosen in the system's sound settings: WirePlumber's configured
+// default (kept while that device is missing), else the device in use now.
+std::string SystemChoice(const PipeWireBridge::Catalog& c) {
+  return !c.configured_output.empty() ? c.configured_output : c.default_output;
+}
+
 std::string CatalogJson(const PipeWireBridge::Catalog& c) {
   std::ostringstream j;
   j << "{\"outputs\":[";
@@ -152,12 +160,16 @@ class Host {
   void Refresh();
   void Select(int mode);
   void Reapply();
+  void PrepareStart();
+  void NotifyOutput(const std::string& description);
+  void NotifyNotice(const std::string& notice);
   void OpenWindow();
   void BeginExit();
   void TrimIfOff();
   // Any thread.
   void Change(const std::function<void(HostSettings&)>& change, bool routing);
   HostSettings Settings() const;
+  void RecordSystemChoice();
 
   Options options_;
   HostEngine engine_;
@@ -174,6 +186,10 @@ class Host {
   int windows_ = 0;
   std::string token_;
   std::uint64_t shown_revision_ = ~0ULL;
+  int last_mode_ = 0;
+  std::string notified_output_;
+  std::chrono::steady_clock::time_point notified_at_{};
+  std::set<std::string> notified_notices_;  // once per session
 
   std::atomic<bool> tray_available_{false}, exiting_{false};
 };
@@ -263,7 +279,11 @@ Tray::Actions Host::TrayActions() {
   a.power = [this](bool on) { Select(on ? Settings().preferred_mode : 0); };
   a.select_mode = [this](int mode) { Select(mode); };
   a.set_buffering = [this](int level) { Change([level](HostSettings& s) { s.buffering = level; }, true); Reapply(); };
-  a.set_output = [this](const std::string& name) { Change([&name](HostSettings& s) { s.output = name; }, true); Reapply(); };
+  a.set_output = [this](const std::string& name) {
+    Change([&name](HostSettings& s) { s.output = name; }, true);
+    RecordSystemChoice();  // while Off: an explicit choice made against today's system output
+    Reapply();
+  };
   a.set_source = [this](std::uint32_t pid) { Change([pid](HostSettings& s) { s.source_pid = pid; }, true); Reapply(); };
   a.refresh = [this] { ReadCatalog(); Refresh(); TrimIfOff(); };
   a.activation_token = [this](const std::string& token) { token_ = token; };
@@ -306,15 +326,88 @@ void Host::Refresh() {
 void Host::Supervise() {
   if (exiting_) return;
   for (const auto& fact : engine_.Supervise()) {
-    // Sukut followed a new default output, or the chosen app closed: keep that.
+    // Sukut followed an output the user wants, or the chosen app closed: keep that.
     if (fact.rfind("output=", 0) == 0) Change([&fact](HostSettings& s) { s.output = fact.substr(7); }, true);
     else if (fact == "source_closed") Change([](HostSettings& s) { s.source_pid = 0; }, true);
+    else if (fact.rfind("connected=", 0) == 0) NotifyOutput(fact.substr(10));
+    else if (fact.rfind("notice=", 0) == 0) NotifyNotice(fact.substr(7));
   }
+  const int mode = engine_.State().mode;
+  if (last_mode_ != 0 && mode == 0) {
+    // Stopped: Sukut gave the default output back. A different system choice at
+    // the next Start means the user changed it while Sukut was Off.
+    notified_notices_.clear();
+    RecordSystemChoice();
+  }
+  last_mode_ = mode;
   if (engine_.State().revision != shown_revision_) Refresh();
+}
+
+// Windows 0.4.2: Sukut's output follows the system's choice made while it was
+// Off (headphones picked in the sound settings, or connected and made the default
+// by the desktop). An output chosen in Sukut since then is kept. Settings from
+// before 0.4.0~beta.7 have no record and follow the system once.
+void Host::PrepareStart() {
+  if (engine_.State().mode != 0) return;
+  PipeWireBridge::Catalog catalog;
+  if (!ReadCatalog(&catalog)) return;
+  const std::string system = SystemChoice(catalog);
+  if (system.empty()) return;
+  Change([&](HostSettings& s) {
+    if (system != s.output_default && system != s.output) {
+      Log("the system output changed while Off: starting on " + system);
+      s.output = system;
+    }
+    s.output_default = system;
+  }, true);
+}
+
+// While Off: the system output that Sukut's saved choice now stands against.
+void Host::RecordSystemChoice() {
+  if (engine_.State().mode != 0) return;
+  PipeWireBridge::Catalog catalog;
+  if (!ReadCatalog(&catalog)) return;
+  const std::string system = SystemChoice(catalog);
+  if (!system.empty() && system != Settings().output_default) Change([&](HostSettings& s) { s.output_default = system; }, false);
+}
+
+// The Windows notice for an automatic switch to a newly connected output; the
+// same output again within 5 s is not announced twice.
+void Host::NotifyOutput(const std::string& description) {
+  const auto now = std::chrono::steady_clock::now();
+  if (description == notified_output_ && now - notified_at_ < std::chrono::seconds(5)) return;
+  notified_output_ = description;
+  notified_at_ = now;
+  const bool ar = Settings().Arabic();
+  Notify(bus_, T(ar, "Audio output switched", "تم تبديل مخرج الصوت"), std::string(T(ar, "Sukut now uses ", "يستخدم سُكوت الآن ")) + description);
+  Log("switched to a newly connected output: " + description);
+}
+
+// Problems filtering survives (EngineState::notice), told once per session; the
+// window shows the steps to fix them.
+void Host::NotifyNotice(const std::string& notice) {
+  const auto colon = notice.find(':');
+  const std::string code = notice.substr(0, colon), detail = colon == std::string::npos ? "" : notice.substr(colon + 1);
+  Log("notice: " + notice);
+  if (!notified_notices_.insert(code).second) return;
+  const bool ar = Settings().Arabic();
+  if (code == "feedback_loop")
+    Notify(bus_, T(ar, "Sukut stopped an audio loop", "أوقف سُكوت حلقة صوتية"),
+           detail + T(ar, " sent Sukut's sound back into Sukut, so Sukut now plays to another output. Open Sukut to see how to fix it.",
+                 " يعيد صوت سُكوت إلى سُكوت، لذا يشغّل سُكوت الصوت الآن على مخرج آخر. افتح سُكوت لمعرفة طريقة الإصلاح."));
+  else if (code == "easyeffects_process_all")
+    Notify(bus_, T(ar, "EasyEffects takes apps before Sukut", "يأخذ EasyEffects التطبيقات قبل سُكوت"),
+           T(ar, "Turn off “Process all output streams” in EasyEffects. Open Sukut for the steps.",
+             "أوقف خيار «Process all output streams» في EasyEffects. افتح سُكوت لمعرفة الخطوات."));
+  else if (code == "stream_pinned")
+    Notify(bus_, T(ar, "An app skips Sukut", "تطبيق يتجاوز سُكوت"),
+           detail + T(ar, " is set to play on a specific output, so Sukut can't filter it. Open Sukut for the steps.",
+                      " مضبوط على مخرج صوت محدد، لذا لا يستطيع سُكوت ترشيحه. افتح سُكوت لمعرفة الخطوات."));
 }
 
 void Host::Select(int mode) {
   if (exiting_) return;
+  if (mode > 0) PrepareStart();
   if (mode > 0) Change([mode](HostSettings& s) { s.preferred_mode = mode; }, true);
   engine_.SelectAsync(mode, Settings(), [this](bool ok, std::string error) {
     if (!ok) Log("cannot start: " + error);
@@ -401,7 +494,7 @@ std::string Host::ReadJson() {
   j << "{\"host\":1,\"mode\":" << e.mode << ",\"state\":" << e.state << ",\"busy\":" << Flag(e.busy)
     << ",\"standby\":" << Flag(e.standby) << ",\"reconnecting\":" << Flag(e.reconnecting) << ",\"output\":\""
     << JsonEscape(e.output) << "\",\"activeSourcePid\":" << e.source_pid << ",\"activeBuffering\":" << e.buffering
-    << ",\"attention\":\"" << JsonEscape(e.attention) << "\",\"underruns\":" << e.underruns
+    << ",\"attention\":\"" << JsonEscape(e.attention) << "\",\"notice\":\"" << JsonEscape(e.notice) << "\",\"underruns\":" << e.underruns
     << ",\"fallbacks\":" << e.fallbacks << ",\"prioritySet\":" << Flag(e.priority_set) << ",\"revision\":" << e.revision
     << ",\"status\":\"" << JsonEscape(StatusText(e, s.Arabic())) << "\",\"trayAvailable\":" << Flag(tray_available_)
     << ",\"settingsVersion\":" << s.host_settings_version << ",\"language\":\"" << JsonEscape(s.language)
@@ -430,6 +523,8 @@ std::string Host::Handle(const std::vector<std::string>& f) {
   }
   if (verb == "select") {
     const int mode = std::clamp(static_cast<int>(number(1)), 0, 3);
+    const bool starting = mode > 0 && engine_.State().mode == 0;
+    const std::string before = Settings().output;
     Change([&](HostSettings& s) {
       if (f.size() >= 6) {
         s.output = arg(2);
@@ -439,6 +534,10 @@ std::string Host::Handle(const std::vector<std::string>& f) {
       }
       if (mode > 0) s.preferred_mode = mode;
     }, true);
+    if (starting) {
+      if (f.size() >= 6 && arg(2) != before) RecordSystemChoice();  // chosen in the window just now
+      PrepareStart();
+    }
     std::string error;
     const bool success = engine_.Select(mode, Settings(), error);
     Later([this] { Refresh(); });
@@ -461,7 +560,7 @@ std::string Host::Handle(const std::vector<std::string>& f) {
       else if (key == "CloseToTray") Change([on](HostSettings& s) { s.close_to_tray = on; }, false);
       else if (key == "SetupCompleted") Change([on](HostSettings& s) { s.setup_completed = on; }, false);
       else if (key == "PreferredMode") Change([&](HostSettings& s) { s.preferred_mode = std::clamp(std::atoi(value.c_str()), 1, 3); }, true);
-      else if (key == "Output") Change([&](HostSettings& s) { s.output = value; }, true);
+      else if (key == "Output") { Change([&](HostSettings& s) { s.output = value; }, true); RecordSystemChoice(); }
       else if (key == "SourcePid") Change([&](HostSettings& s) { s.source_pid = static_cast<std::uint32_t>(std::strtoul(value.c_str(), nullptr, 10)); }, true);
       else if (key == "Buffering") Change([&](HostSettings& s) { s.buffering = std::clamp(std::atoi(value.c_str()), 0, 2); }, true);
       else if (key == "OptimizedBackgroundDb")

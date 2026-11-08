@@ -33,6 +33,10 @@ struct EngineState {
   std::uint32_t source_pid = 0;  // the app the running session filters; 0 = all system audio
   int buffering = -1;          // the running session's buffering; -1 while off
   std::string attention;       // "source_closed", or the engine's error (state 2)
+  // A problem that filtering survives, explained in the window (code:detail):
+  // "feedback_loop:<output>" (an effects app played Sukut's output back into it),
+  // "easyeffects_process_all:<app>" or "stream_pinned:<app>" (an app pinned past Sukut).
+  std::string notice;
   std::uint64_t underruns = 0, fallbacks = 0;
   bool priority_set = false;
   std::uint64_t revision = 0;  // increases on every change the tray or window should show
@@ -53,8 +57,10 @@ class HostEngine {
   [[nodiscard]] EngineState State() const;
 
   // Called about once a second by the host. Queues a health check and returns
-  // routing facts found since the last call, which the host saves:
-  // "output=<node>" (Sukut followed an output) and "source_closed".
+  // routing facts found since the last call: "output=<node>" (Sukut followed an
+  // output the user wants; saved), "connected=<description>" (a newly connected
+  // output; notified), "notice=<code>:<detail>" (see EngineState::notice) and
+  // "source_closed".
   std::vector<std::string> Supervise();
   void Shutdown();  // stop and give the audio back; waits
 

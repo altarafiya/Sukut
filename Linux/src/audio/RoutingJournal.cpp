@@ -54,6 +54,32 @@ std::vector<std::uint32_t> NumberList(const std::string& json, const std::string
   return values;
 }
 
+// The objects of a JSON array of flat objects: {"pins":[{...},{...}]}.
+std::vector<std::string> ObjectList(const std::string& json, const std::string& key) {
+  std::vector<std::string> objects;
+  auto i = ValueStart(json, key);
+  if (i == std::string::npos || json[i] != '[') return objects;
+  bool in_string = false;
+  std::size_t start = std::string::npos;
+  for (++i; i < json.size(); ++i) {
+    const char c = json[i];
+    if (in_string) {
+      if (c == '\\') ++i;
+      else if (c == '"') in_string = false;
+    } else if (c == '"') {
+      in_string = true;
+    } else if (c == '{') {
+      start = i;
+    } else if (c == '}' && start != std::string::npos) {
+      objects.push_back(json.substr(start, i - start + 1));
+      start = std::string::npos;
+    } else if (c == ']') {
+      break;
+    }
+  }
+  return objects;
+}
+
 }  // namespace
 
 std::filesystem::path JournalPath() {
@@ -70,10 +96,16 @@ bool WriteJournal(const RoutingJournal& journal, std::string& error) {
   const auto temporary = path.string() + ".tmp";
   {
     std::ofstream out(temporary, std::ios::trunc);
-    out << "{\"version\":2,\"sink\":\"sukut_sink\",\"previous_sink\":\"" << Escape(journal.previous_sink)
+    out << "{\"version\":3,\"sink\":\"sukut_sink\",\"previous_sink\":\"" << Escape(journal.previous_sink)
         << "\",\"default_switched\":" << (journal.default_switched ? 1 : 0)
         << ",\"source_pid\":" << journal.source_pid << ",\"targets\":[";
     for (std::size_t i = 0; i < journal.targets.size(); ++i) out << (i ? "," : "") << journal.targets[i];
+    out << "],\"pins\":[";
+    for (std::size_t i = 0; i < journal.pins.size(); ++i) {
+      const auto& p = journal.pins[i];
+      out << (i ? "," : "") << "{\"node\":" << p.node << ",\"app\":\"" << Escape(p.app) << "\",\"key\":\"" << Escape(p.key)
+          << "\",\"type\":\"" << Escape(p.type) << "\",\"value\":\"" << Escape(p.value) << "\"}";
+    }
     out << "]}\n";
     if (!out) { error = "cannot write " + temporary; return false; }
   }
@@ -96,6 +128,16 @@ std::optional<RoutingJournal> ReadJournal() {
   journal.default_switched = json.find("\"default_switched\"") == std::string::npos || NumberField(json, "default_switched") != 0;
   journal.source_pid = static_cast<std::uint32_t>(NumberField(json, "source_pid"));
   journal.targets = NumberList(json, "targets");
+  // Version 3: pinned streams redirected for all system audio.
+  for (const auto& object : ObjectList(json, "pins")) {
+    PinnedStream pin;
+    pin.node = static_cast<std::uint32_t>(NumberField(object, "node"));
+    pin.app = StringField(object, "app").value_or("");
+    pin.key = StringField(object, "key").value_or("");
+    pin.type = StringField(object, "type").value_or("");
+    pin.value = StringField(object, "value").value_or("");
+    if (pin.node != 0 && !pin.key.empty()) journal.pins.push_back(pin);
+  }
   return journal;
 }
 

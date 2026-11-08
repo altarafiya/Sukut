@@ -18,6 +18,7 @@ struct HostState {
   int state = 0;  // 0 off, 1 running, 2 attention
   bool busy = false, standby = false, reconnecting = false, priority_set = false, tray_available = false;
   std::string output, attention;
+  std::string notice;  // a problem filtering survives: "feedback_loop:<output>", "easyeffects_process_all:<app>", "stream_pinned:<app>"
   std::uint32_t active_source_pid = 0;
   int active_buffering = -1;
   std::uint64_t underruns = 0, fallbacks = 0, revision = 0;
@@ -41,6 +42,7 @@ struct HostState {
     s.tray_available = j.Bool("trayAvailable");
     s.output = j.Str("output");
     s.attention = j.Str("attention");
+    s.notice = j.Str("notice");
     s.active_source_pid = static_cast<std::uint32_t>(j.Int("activeSourcePid"));
     s.active_buffering = static_cast<int>(j.Int("activeBuffering"));
     s.underruns = static_cast<std::uint64_t>(j.Int("underruns"));

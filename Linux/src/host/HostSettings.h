@@ -12,6 +12,11 @@ struct HostSettings {
   std::string language = "en";  // "en" or "ar"
   std::string theme = "system";
   std::string output;           // real output node.name; empty = the current default
+  // The output chosen in the system's sound settings when `output` was last
+  // chosen or Sukut last stopped. If the system's choice differs at the next
+  // Start, the user changed it while Sukut was Off, and Sukut follows it
+  // (Windows 0.4.2). Empty in settings from before 0.4.0~beta.7.
+  std::string output_default;
   std::uint32_t source_pid = 0; // one app; 0 = all system audio
   int preferred_mode = 1;       // the mode Power turns on
   int buffering = 1;

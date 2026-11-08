@@ -11,7 +11,7 @@ Don't confuse a published binary with a source-build prerequisite.
 - Android **0.4.2 / code 56**, package `com.altarafiyah.sukut`, internal namespace
   `com.osama.cleanwave`; Kotlin/Java, framework Views only, ARM64. Sukut runs its own
   ADB-activated audio worker (Wireless debugging on Android 11+, or USB from a PC).
-- Linux **0.4.0~beta.6**: GTK 4/libadwaita window (`sukut`), `sukut-host` with the engine,
+- Linux **0.4.0~beta.7**: GTK 4/libadwaita window (`sukut`), `sukut-host` with the engine,
   PipeWire routing, tray and phone tools; Debian packaging in `Linux/debian`.
   Stage 9 (real-hardware validation) is in progress. See `Linux/README.md` and `Linux/PLAN.md`.
 

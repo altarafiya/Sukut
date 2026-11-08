@@ -74,6 +74,7 @@ HostSettings HostSettings::Load() {
   if (auto v = String(json, "Language"); v && (*v == "en" || *v == "ar")) s.language = *v;
   if (auto v = String(json, "Theme")) s.theme = *v;
   if (auto v = String(json, "Output")) s.output = *v;
+  if (auto v = String(json, "OutputDefault")) s.output_default = *v;
   if (auto v = Number(json, "SourcePid"); v && *v >= 0) s.source_pid = static_cast<std::uint32_t>(*v);
   if (auto v = Number(json, "PreferredMode")) s.preferred_mode = std::clamp(static_cast<int>(*v), 1, 3);
   if (auto v = Number(json, "Buffering")) s.buffering = std::clamp(static_cast<int>(*v), 0, 2);
@@ -98,6 +99,7 @@ bool HostSettings::Save(std::string& error) const {
         << "  \"Language\": \"" << JsonEscape(language) << "\",\n"
         << "  \"Theme\": \"" << JsonEscape(theme) << "\",\n"
         << "  \"Output\": \"" << JsonEscape(output) << "\",\n"
+        << "  \"OutputDefault\": \"" << JsonEscape(output_default) << "\",\n"
         << "  \"SourcePid\": " << source_pid << ",\n"
         << "  \"PreferredMode\": " << preferred_mode << ",\n"
         << "  \"HostSettingsVersion\": " << host_settings_version << ",\n"

@@ -1,0 +1,17 @@
+#!/bin/sh
+# Stand-in for man-db's man-recode on PikaOS, whose fastmandb ignores --suffix.
+# dh_installman runs "man-recode --to-code UTF-8 --suffix .dh-new FILE..." and
+# expects FILE.dh-new beside each page. Sukut's pages are already UTF-8.
+# Put this folder first on PATH for build-deb.sh only; Debian 13 doesn't need it.
+suffix=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --suffix) suffix="$2"; shift 2 ;;
+    --suffix=*) suffix="${1#--suffix=}"; shift ;;
+    --to-code|-t) shift 2 ;;
+    --to-code=*|--quiet|-q) shift ;;
+    *) break ;;
+  esac
+done
+[ -n "$suffix" ] || { echo "man-recode stand-in: --suffix required" >&2; exit 2; }
+for f in "$@"; do cp "$f" "$f$suffix" || exit 1; done

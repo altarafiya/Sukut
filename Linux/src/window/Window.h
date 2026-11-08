@@ -47,6 +47,7 @@ class SukutWindow {
   void ShowSidebar();
   void OpenHelp();
   void CloseHelp();
+  void OpenEasyEffectsHelp();  // the steps for EasyEffects (Using EasyEffects, a notice's How to fix)
   void ShowSetup(int step);
   void HideSetup();
   void ScrollSettings(bool to_end);
@@ -112,6 +113,7 @@ class SukutWindow {
   [[nodiscard]] bool Ar() const { return state_.Arabic(); }
   [[nodiscard]] const char* L(const char* en, const char* ar) const { return T(Ar(), en, ar); }
   [[nodiscard]] std::string ErrorText(const std::string& raw) const;
+  [[nodiscard]] std::string NoticeText(const std::string& notice) const;
   [[nodiscard]] std::string ModeName(int mode) const;
   [[nodiscard]] std::string OutputShown() const;
 
@@ -124,6 +126,7 @@ class SukutWindow {
   bool have_state_ = false, built_arabic_ = false, built_ = false;
   int selected_mode_ = 1;
   bool command_ = false, polling_ = false, applying_ = false;
+  bool banner_notice_ = false;  // the banner explains a notice; its button opens the steps
   std::string error_;
   Page page_ = Page::Audio;
   int setup_step_ = -1;
@@ -159,6 +162,7 @@ class SukutWindow {
   GtkWidget* outputs_list_ = nullptr;
   GtkWidget* apps_list_ = nullptr;
   GtkWidget* refresh_button_ = nullptr;
+  GtkWidget* easyeffects_button_ = nullptr;
   GtkWidget* buffering_group_ = nullptr;
   GtkWidget* help_ = nullptr;
   GtkWidget* settings_page_ = nullptr;

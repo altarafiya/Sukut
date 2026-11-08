@@ -1,5 +1,20 @@
 # What’s new
 
+## Linux 0.4.0 beta 7 (Windows 0.4.2 and Android 0.4.2 unchanged)
+
+**Linux (beta)**
+
+- New headphones (Bluetooth or USB) are used as soon as they connect, with a notification.
+  When they disconnect, Sukut goes back to the previous output.
+- If your chosen output is missing when you press Start, Sukut plays on the default output
+  and moves to it when it appears.
+- If you change the output in your sound settings while Sukut is off, the next Start uses it.
+- Picking the current output in your sound settings no longer lets apps skip Sukut.
+- EasyEffects: Sukut stops an audio loop at once and shows how to fix it. Apps pinned to
+  Easy Effects Sink now go through Sukut and get their pin back when it stops.
+  **Using EasyEffects** under Audio output shows the setup steps.
+- Built on PikaOS 4; a Debian 13 package will follow.
+
 ## Windows 0.4.2 · Android 0.4.2 · Linux 0.4.0 beta 6
 
 **Windows**

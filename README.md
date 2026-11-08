@@ -70,6 +70,10 @@ the other, uninstall the one you have first.
 2. Open Sukut from your apps and follow the welcome guide.
 3. The Phone page installs and activates the Android app over USB, all from the window.
 
+The source includes Linux **0.4.0 beta 7**. It switches to newly connected headphones and
+returns to the previous output when they disconnect. If you use EasyEffects, follow the
+[setup steps](Linux/README.md#sukut-with-easyeffects), also available under Audio output in beta 7.
+
 ## Made for everyday listening
 
 - English and Arabic, with light, dark and system themes.

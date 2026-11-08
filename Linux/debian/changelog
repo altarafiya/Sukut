@@ -1,3 +1,22 @@
+sukut (0.4.0~beta.7-1) trixie; urgency=medium
+
+  * Outputs, as Windows 0.4.2: a newly connected Bluetooth or USB output
+    (not HDMI) is used at once, with a notification, and Off gives it the
+    default; when it disconnects, Sukut goes back to the previous choice.
+  * A chosen output that is missing at Start (headphones off, EasyEffects not
+    running yet) no longer fails: Sukut plays on the default and moves to it
+    when it appears.
+  * An output chosen in the sound settings while Sukut was off is used at the
+    next Start; an output chosen in Sukut is kept.
+  * Picking, in the sound settings, the output Sukut already plays on no
+    longer lets apps bypass Sukut.
+  * EasyEffects: a feedback loop (EasyEffects following the default output
+    while Sukut plays into it) is stopped at once; apps pinned to Easy Effects
+    Sink go through Sukut and get their pins back on Off. The window explains
+    each problem and shows the steps ("Using EasyEffects", "How to fix").
+
+ -- الطرفية <altarafiyah@gmail.com>  Thu, 05 Nov 2026 20:17:07 +0800
+
 sukut (0.4.0~beta.6-1) trixie; urgency=medium
 
   * Tray: the Off icon follows the panel's text colour (white on a dark

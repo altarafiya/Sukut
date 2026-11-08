@@ -327,6 +327,31 @@ std::vector<Scene> MainScenes() {
   };
 }
 
+// EasyEffects running (its sink is an output) and the notices filtering survives.
+std::vector<Scene> EasyEffectsScenes() {
+  const auto with_easyeffects = [](HostState state, std::function<void(SukutWindow&)> then = {}) {
+    return [state, then](SukutWindow& w) {
+      Catalog c = Devices();
+      c.outputs.push_back({"easyeffects_sink", "Easy Effects Sink"});
+      w.Apply(c);
+      w.Apply(state);
+      if (then) then(w);
+    };
+  };
+  const auto notice = [](HostState s, const std::string& text) { s.notice = text; return s; };
+  const auto help = [](SukutWindow& w) { w.OpenEasyEffectsHelp(); };
+  return {
+      {"60-audio-en-dark-easyeffects", 1040, 720, with_easyeffects(Base("en", "dark")), {}},
+      {"61-audio-en-dark-loop-notice", 1040, 720, with_easyeffects(notice(On(Base("en", "dark"), 1), "feedback_loop:Easy Effects Sink")), {}},
+      {"62-audio-ar-light-process-all-notice", 1040, 720,
+       with_easyeffects(notice(On(Base("ar", "light"), 2), "easyeffects_process_all:Firefox")), {}},
+      {"63-audio-en-minimum-pinned-notice", 420, 480, with_easyeffects(notice(On(Base("en", "dark"), 1), "stream_pinned:Firefox")), {}},
+      {"64-easyeffects-help-en-dark", 1040, 720, with_easyeffects(Base("en", "dark"), help), {}},
+      {"65-easyeffects-help-ar-light", 1040, 720, with_easyeffects(Base("ar", "light"), help), {}},
+      {"66-easyeffects-help-en-minimum", 420, 480, with_easyeffects(Base("en", "dark"), help), {}},
+  };
+}
+
 using Task = SukutWindow::PhoneTask;
 using Severity = SukutWindow::Severity;
 
@@ -402,8 +427,9 @@ int RunCapture(AdwApplication* app, const std::string& directory, const std::str
   std::filesystem::create_directories(directory);
   const bool contrast = set == "contrast";
   auto runner = std::make_shared<Runner>(app, directory,
-                                         contrast ? ContrastScenes() : set == "keyboard" ? std::vector<Scene>{} : set == "phone" ? PhoneScenes() : MainScenes(),
-                                         !contrast && set != "phone");
+                                         contrast ? ContrastScenes() : set == "keyboard" ? std::vector<Scene>{} : set == "phone" ? PhoneScenes()
+                                         : set == "easyeffects" ? EasyEffectsScenes() : MainScenes(),
+                                         !contrast && set != "phone" && set != "easyeffects");
   g_signal_connect_data(app, "activate", G_CALLBACK(+[](GApplication* a, gpointer data) {
     InstallStyle();
     // Still frames: dialogs open at once and the credit holds its first colours.

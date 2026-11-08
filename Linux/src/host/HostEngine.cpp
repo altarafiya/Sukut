@@ -9,6 +9,24 @@ namespace sukut::host {
 
 using Clock = std::chrono::steady_clock;
 
+namespace {
+
+// "key=value" in a routing event line (PipeWireBridge::TakeEvents), up to the next space.
+std::string Field(const std::string& event, const std::string& key) {
+  const auto at = event.find(" " + key + "=");
+  if (at == std::string::npos) return {};
+  const auto start = at + key.size() + 2;
+  return event.substr(start, event.find(' ', start) - start);
+}
+
+// The last field of an event line, which may contain spaces (a description, an app name).
+std::string Rest(const std::string& event, const std::string& key) {
+  const auto at = event.find(" " + key + "=");
+  return at == std::string::npos ? std::string() : event.substr(at + key.size() + 2);
+}
+
+}  // namespace
+
 HostEngine::HostEngine(std::filesystem::path engine_dir) : engine_dir_(std::move(engine_dir)) {
   worker_ = std::thread([this] { Run(); });
 }
@@ -133,6 +151,7 @@ bool HostEngine::Apply(int mode, const HostSettings& settings, bool by_user, std
   start.optimized_background_db = settings.optimized_background_db;
   start.amplification_db = settings.amplification_db;
   start.output = settings.output;
+  start.fallback_output = true;  // headphones off or EasyEffects not running yet: play on the default until it returns
   start.source_pid = settings.source_pid;
   if (!session->Start(start, error)) {
     applied_mode_ = 0;
@@ -146,7 +165,7 @@ bool HostEngine::Apply(int mode, const HostSettings& settings, bool by_user, std
   applied_ = settings;
   applied_mode_ = mode;
   Update([mode, &output, &settings](EngineState& s) {
-    s.mode = mode; s.state = 1; s.busy = false; s.reconnecting = false; s.attention.clear(); s.output = output;
+    s.mode = mode; s.state = 1; s.busy = false; s.reconnecting = false; s.attention.clear(); s.notice.clear(); s.output = output;
     s.source_pid = settings.source_pid; s.buffering = settings.buffering;
   });
   return true;
@@ -198,13 +217,28 @@ void HostEngine::Tick() {
       });
       break;
     }
-    if (event.rfind("OUTPUT_CHANGED to=", 0) == 0) {
-      const auto name = event.substr(18, event.find(' ', 18) - 18);
-      applied_.output = name;
-      facts.push_back("output=" + name);
+    if (event.rfind("OUTPUT_CHANGED ", 0) == 0) {
+      const auto name = Field(event, "to"), reason = Field(event, "reason");
       Update([&name](EngineState& s) { s.output = name; });
+      // Saved as the chosen output: a choice in the sound settings, a newly
+      // connected device, or a wanted output that came back. A stand-in while
+      // the chosen one is missing (removed, missing, appeared, loop) is not.
+      if (reason == "default" || reason == "connected" || reason == "returned") {
+        applied_.output = name;
+        facts.push_back("output=" + name);
+      }
+      if (reason == "connected") facts.push_back("connected=" + Rest(event, "description"));
     } else if (event == "OUTPUT_LOST") {
       Update([](EngineState& s) { s.output.clear(); });
+    } else {
+      std::string notice;
+      if (event.rfind("FEEDBACK_LOOP ", 0) == 0) notice = "feedback_loop:" + Rest(event, "description");
+      else if (event.rfind("EASYEFFECTS_PROCESS_ALL ", 0) == 0) notice = "easyeffects_process_all:" + Rest(event, "app");
+      else if (event.rfind("STREAM_PINNED ", 0) == 0) notice = "stream_pinned:" + Rest(event, "app");
+      if (!notice.empty()) {
+        facts.push_back("notice=" + notice);
+        Update([&notice](EngineState& s) { s.notice = notice; });
+      }
     }
   }
   if (session_) {

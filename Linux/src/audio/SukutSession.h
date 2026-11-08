@@ -23,6 +23,7 @@ struct SessionSettings {
   int optimized_background_db = 0;   // -20..+10, Optimized only
   int amplification_db = 0;          // 0..12
   std::string output;                // real output node.name; empty = current default
+  bool fallback_output = false;      // a missing output: play on the default until it appears (the host)
   std::uint32_t source_pid = 0;      // one app (process id); 0 = all system audio
   bool route = true;                 // route audio through Sukut once the engine is ready
   bool diagnostics = false;          // per-hop timing percentiles

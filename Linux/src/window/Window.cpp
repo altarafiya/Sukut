@@ -199,6 +199,7 @@ void SukutWindow::Build() {
   banner_ = adw_banner_new("");
   Connect(banner_, "button-clicked", +[](AdwBanner*, gpointer self) {
     auto* s = static_cast<SukutWindow*>(self);
+    if (s->banner_notice_) { s->OpenEasyEffectsHelp(); return; }
     s->error_.clear();
     s->Select(s->selected_mode_);
   }, this);
@@ -472,6 +473,13 @@ GtkWidget* SukutWindow::BuildPlayback() {
   Connect(refresh_button_, "clicked", +[](GtkButton*, gpointer self) { static_cast<SukutWindow*>(self)->RefreshCatalog(); }, this);
   gtk_box_append(GTK_BOX(output), Section(L("Audio output", "مخرج الصوت"), "audio-headphones-symbolic", refresh_button_));
   gtk_box_append(GTK_BOX(output), BuildOutputList(&outputs_list_));
+  // Shown while EasyEffects runs: the steps to have both (apps -> Sukut -> EasyEffects -> speakers).
+  easyeffects_button_ = gtk_button_new_with_label(L("Using EasyEffects", "استخدام EasyEffects"));
+  AddClasses(easyeffects_button_, {"flat", "caption"});
+  gtk_widget_set_halign(easyeffects_button_, GTK_ALIGN_START);
+  gtk_widget_set_visible(easyeffects_button_, FALSE);
+  Connect(easyeffects_button_, "clicked", +[](GtkButton*, gpointer self) { static_cast<SukutWindow*>(self)->OpenEasyEffectsHelp(); }, this);
+  gtk_box_append(GTK_BOX(output), easyeffects_button_);
   gtk_box_append(GTK_BOX(card), output);
   gtk_box_append(GTK_BOX(card), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
 
@@ -812,6 +820,65 @@ std::string SukutWindow::ErrorText(const std::string& raw) const {
   return Ar() ? std::string("توقف الصوت عن الاستجابة. أعد تشغيل الصوت. (") + raw + ")" : raw;
 }
 
+// Problems filtering survives (the host's EngineState::notice).
+std::string SukutWindow::NoticeText(const std::string& notice) const {
+  const auto colon = notice.find(':');
+  const std::string code = notice.substr(0, colon), detail = colon == std::string::npos ? "" : notice.substr(colon + 1);
+  if (code == "feedback_loop")
+    return detail + L(" sent Sukut's sound back into Sukut, so Sukut now plays to another output.",
+                      " يعيد صوت سُكوت إلى سُكوت، لذا يشغّل سُكوت الصوت الآن على مخرج آخر.");
+  if (code == "easyeffects_process_all")
+    return std::string(L("EasyEffects processes all output streams, so ", "يعالج EasyEffects كل مسارات الإخراج، لذا يتجاوز ")) + detail +
+           L(" skips Sukut.", " سُكوت.");
+  if (code == "stream_pinned")
+    return detail + L(" is set to play on a specific output, so it skips Sukut.", " مضبوط على مخرج صوت محدد، لذا يتجاوز سُكوت.");
+  return {};
+}
+
+// The order that works: apps -> Sukut -> EasyEffects -> speakers. EasyEffects
+// must not take apps itself, and must not follow the default output (Sukut's
+// sink while Sukut runs), or the sound loops.
+void SukutWindow::OpenEasyEffectsHelp() {
+  AdwDialog* dialog = adw_alert_dialog_new(
+      L("Sukut with EasyEffects", "سُكوت مع EasyEffects"),
+      L("To hear EasyEffects while Sukut filters, the sound goes: apps → Sukut → EasyEffects → speakers.",
+        "لتسمع EasyEffects أثناء ترشيح سُكوت، يمر الصوت هكذا: التطبيقات ← سُكوت ← EasyEffects ← السماعات."));
+  // The steps, aligned to the reading direction (the alert's body is centred).
+  GtkWidget* steps = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+  for (const char* text : {
+           L("1. In EasyEffects, open Preferences and turn off “Process all output streams”.",
+             "1. في EasyEffects، افتح التفضيلات (Preferences) وأوقف خيار «Process all output streams»."),
+           L("2. In EasyEffects’ PipeWire page, turn off “Use default output” and choose your speakers or headphones as its output device.",
+             "2. في صفحة PipeWire في EasyEffects، أوقف «Use default output» واختر مكبر الصوت أو سماعات الرأس جهازًا لإخراجه."),
+           L("3. In your system’s sound settings, choose “Easy Effects Sink” as the output.",
+             "3. في إعدادات الصوت في نظامك، اختر «Easy Effects Sink» مخرجًا للصوت."),
+           L("4. In Sukut, choose “Easy Effects Sink” under Audio output.", "4. في سُكوت، اختر «Easy Effects Sink» تحت مخرج الصوت."),
+       }) {
+    GtkWidget* label = gtk_label_new(text);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0F);
+    gtk_box_append(GTK_BOX(steps), label);
+  }
+  for (const char* text : {
+           L("Headphones you connect while Sukut is on are used at once; when they disconnect, Sukut goes back to Easy Effects Sink.",
+             "سماعات الرأس التي توصلها وسُكوت يعمل تُستخدم فورًا، وعند فصلها يعود سُكوت إلى Easy Effects Sink."),
+           L("If an app still skips Sukut, it was moved to a specific output in the sound settings. Move it back to the default output there.",
+             "إن ظلّ تطبيق يتجاوز سُكوت، فقد نُقل إلى مخرج محدد في إعدادات الصوت. أعده هناك إلى المخرج الافتراضي."),
+       }) {
+    GtkWidget* label = gtk_label_new(text);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0F);
+    gtk_widget_add_css_class(label, "dim-label");
+    gtk_widget_set_margin_top(label, 6);
+    gtk_box_append(GTK_BOX(steps), label);
+  }
+  adw_alert_dialog_set_extra_child(ADW_ALERT_DIALOG(dialog), steps);
+  adw_alert_dialog_add_response(ADW_ALERT_DIALOG(dialog), "close", L("Close", "إغلاق"));
+  adw_alert_dialog_set_default_response(ADW_ALERT_DIALOG(dialog), "close");
+  adw_alert_dialog_set_close_response(ADW_ALERT_DIALOG(dialog), "close");
+  adw_dialog_present(dialog, window_);
+}
+
 std::string SukutWindow::OutputShown() const {
   if (!state_.output.empty()) return state_.output;
   if (!state_.chosen_output.empty()) return state_.chosen_output;
@@ -850,13 +917,18 @@ void SukutWindow::Render() {
   RenderSettings();
   RenderSetup();
   RenderPhoneCard();
-  // Problems: the source app closed, or the engine needs attention.
+  // Problems: the source app closed, the engine needs attention, or a notice
+  // filtering survives (an audio loop, an app pinned past Sukut).
   std::string banner;
   bool restart = false;
+  banner_notice_ = false;
   if (!error_.empty()) { banner = ErrorText(error_); restart = error_ != "source app closed"; }
   else if (state_.state == 2) { banner = ErrorText(state_.attention); restart = state_.attention != "source_closed"; }
+  else if (state_.mode != 0 && !state_.notice.empty()) { banner = NoticeText(state_.notice); banner_notice_ = !banner.empty(); }
   adw_banner_set_title(ADW_BANNER(banner_), banner.c_str());
-  adw_banner_set_button_label(ADW_BANNER(banner_), restart ? L("Restart audio", "إعادة تشغيل الصوت") : nullptr);
+  adw_banner_set_button_label(ADW_BANNER(banner_), banner_notice_ ? L("How to fix", "طريقة الإصلاح")
+                                                   : restart       ? L("Restart audio", "إعادة تشغيل الصوت")
+                                                                   : nullptr);
   adw_banner_set_revealed(ADW_BANNER(banner_), !banner.empty());
   const bool usable = !command_ && !state_.busy;
   for (GtkWidget* w : {power_button_, modes_list_, background_scale_, outputs_list_, apps_list_, refresh_button_, buffering_group_, amp_scale_})
@@ -917,6 +989,9 @@ void SukutWindow::RenderOutputs(GtkWidget* list) {
   std::string signature = shown + "|" + (Ar() ? "ar" : "en");
   for (const auto& o : catalog_.outputs) signature += "|" + o.name + "=" + o.description;
   const char* previous = static_cast<const char*>(g_object_get_data(G_OBJECT(list), "signature"));
+  if (list == outputs_list_ && easyeffects_button_)
+    gtk_widget_set_visible(easyeffects_button_, std::any_of(catalog_.outputs.begin(), catalog_.outputs.end(),
+                                                            [](const auto& o) { return o.name == "easyeffects_sink"; }));
   if (previous && signature == previous) return;
   g_object_set_data_full(G_OBJECT(list), "signature", g_strdup(signature.c_str()), g_free);
   Clear(list);
