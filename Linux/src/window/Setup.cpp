@@ -129,6 +129,14 @@ GtkWidget* SukutWindow::BuildSetup() {
     s->Send({"refresh"}, [s](bool, const std::string&) { s->RefreshCatalog(); s->Poll(); });
   }), this);
   gtk_box_append(GTK_BOX(check), again);
+  // Snap only: the permissions a snap can't give itself.
+  setup_snap_card_ = Card();
+  gtk_box_append(GTK_BOX(setup_snap_card_), Line("dialog-warning-symbolic", "mode-2",
+      L("Sukut needs your permission. Open Terminal, paste this command and press Enter, then come back. You only need to do this once.",
+        "يحتاج سُكوت إلى إذنك. افتح الطرفية، والصق هذا الأمر، واضغط Enter، ثم عُد إلى هنا. تحتاج إلى ذلك مرة واحدة فقط.")));
+  gtk_box_append(GTK_BOX(setup_snap_card_), SnapCommandBox(&setup_snap_command_));
+  gtk_widget_set_visible(setup_snap_card_, FALSE);
+  gtk_box_append(GTK_BOX(check), setup_snap_card_);
 
   // 3. Output and buffering.
   GtkWidget* output = StepPage(setup_stack_, 2);
@@ -229,11 +237,14 @@ void SukutWindow::RenderSetup() {
   gtk_button_set_label(GTK_BUTTON(setup_next_), setup_step_ == kSteps - 1 ? L("Open Sukut", "فتح سُكوت") : L("Next", "التالي"));
   gtk_drop_down_set_selected(GTK_DROP_DOWN(setup_language_), Ar() ? 1 : 0);
 
-  const bool audio = catalog_.read;
+  gtk_widget_set_visible(setup_snap_card_, !snap_command_.empty());
+  gtk_label_set_text(GTK_LABEL(setup_snap_command_), snap_command_.c_str());
+  const bool audio = catalog_.read && !snap_audio_missing_;
   SetClass(setup_audio_dot_, "ready", audio);
   SetClass(setup_audio_dot_, "missing", !audio);
   gtk_label_set_text(GTK_LABEL(setup_audio_text_),
-      audio ? L("PipeWire and WirePlumber are running.", "يعمل PipeWire وWirePlumber.")
+      snap_audio_missing_ ? L("Sukut needs your permission to use audio.", "يحتاج سُكوت إلى إذنك لاستخدام الصوت.")
+      : audio ? L("PipeWire and WirePlumber are running.", "يعمل PipeWire وWirePlumber.")
             : L("PipeWire is not answering. Install pipewire and wireplumber, then sign in again.",
                 "لا يستجيب PipeWire. ثبّت pipewire وwireplumber ثم سجّل الدخول من جديد."));
   SetClass(setup_tray_dot_, "ready", state_.tray_available);

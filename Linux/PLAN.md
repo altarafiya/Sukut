@@ -228,6 +228,8 @@ Files: `Linux/flatpak/`, `scripts/build-flatpak-bundle.sh`, `scripts/test-flatpa
 - **Phone page.** adb comes from Google's platform-tools as extra-data, with `--device=all` and `--persist=.android`. The sandbox can't install a USB rule, so Allow access is hidden and a phone adb can't open is pointed to Wireless debugging (Android 11+).
 - **Hidden in the sandbox:** Start with system (needs the Background portal) and the Sound settings shortcut.
 
+**Snap.** `Linux/snap/` (base core26, GNOME extension, strict). `/.flatpak-info` or `$SNAP` selects the same sandbox paths. `sukut-launch` points PipeWire at the real runtime folder and the GNOME platform's plugins. Needs the `pipewire`, `audio-record` and `raw-usb` connections, which aren't automatic: the store must approve auto-connection or users connect them by hand. Strict confinement can't be tested on a PC without AppArmor; use an Ubuntu VM.
+
 ## 6. Host: `sukut-host`
 
 - Ports the logic of `Windows/src/sukut-host/main.cpp`:

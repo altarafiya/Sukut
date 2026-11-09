@@ -48,6 +48,8 @@ class SukutWindow {
   void OpenHelp();
   void CloseHelp();
   void OpenEasyEffectsHelp();  // the steps for EasyEffects (Using EasyEffects, a notice's How to fix)
+  void OpenSnapAccessHelp();   // the one command that connects a snap's permissions
+  void SetSnapAccessForTest(const std::string& command, bool audio_missing) { snap_command_ = command; snap_audio_missing_ = audio_missing; Render(); }
   void ShowSetup(int step);
   void HideSetup();
   void ScrollSettings(bool to_end);
@@ -107,6 +109,8 @@ class SukutWindow {
   void SetTheme(const std::string& theme);
   void Toast(const std::string& text);
   void OpenSoundSettings();
+  void RefreshSnapAccess();
+  GtkWidget* SnapCommandBox(GtkWidget** label_out);
   void CopyDiagnostics();
   std::string AppIcon(const std::string& name);
 
@@ -127,6 +131,9 @@ class SukutWindow {
   int selected_mode_ = 1;
   bool command_ = false, polling_ = false, applying_ = false;
   bool banner_notice_ = false;  // the banner explains a notice; its button opens the steps
+  // Snap only: the command that connects the missing permissions ("" = none missing).
+  std::string snap_command_;
+  bool snap_audio_missing_ = false, banner_snap_ = false;
   std::string error_;
   Page page_ = Page::Audio;
   int setup_step_ = -1;
@@ -186,6 +193,8 @@ class SukutWindow {
   GtkWidget* setup_buffering_ = nullptr;
   GtkWidget* setup_tray_hint_ = nullptr;
   GtkWidget* setup_language_ = nullptr;
+  GtkWidget* setup_snap_card_ = nullptr;
+  GtkWidget* setup_snap_command_ = nullptr;
 
   // Phone.
   std::shared_ptr<PhoneTools> phone_tools_;

@@ -1,7 +1,7 @@
 #pragma once
 
-// Running inside Flatpak? (Linux/PLAN.md section 5.8.) Installed files are then
-// under /app, and the app sees only its own processes and its own runtime folder.
+// Running inside Flatpak or Snap? (Linux/PLAN.md section 5.8.) Installed files
+// are then under /app or $SNAP/usr, and other apps' processes can't be inspected.
 #include <cstdlib>
 #include <filesystem>
 #include <string>
@@ -11,12 +11,15 @@
 namespace sukut {
 
 inline bool InSandbox() {
-  static const bool sandboxed = ::access("/.flatpak-info", F_OK) == 0;
+  static const bool sandboxed = ::access("/.flatpak-info", F_OK) == 0 || std::getenv("SNAP") != nullptr;
   return sandboxed;
 }
 
-// Where the package's own files are: /usr, or /app in Flatpak.
-inline std::filesystem::path InstallPrefix() { return InSandbox() ? "/app" : "/usr"; }
+// Where the package's own files are: /usr, /app in Flatpak, $SNAP/usr in a snap.
+inline std::filesystem::path InstallPrefix() {
+  if (const char* snap = std::getenv("SNAP"); snap && *snap) return std::filesystem::path(snap) / "usr";
+  return InSandbox() ? "/app" : "/usr";
+}
 
 // Where the host's lock and socket live. Each Flatpak launch has its own
 // $XDG_RUNTIME_DIR, except its app/<id> folder, which all launches share.

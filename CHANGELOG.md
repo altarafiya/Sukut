@@ -1,5 +1,10 @@
 # What’s new
 
+## Linux 0.4.0 beta 10 (Snap)
+
+- Sukut is on the Snap Store, in the beta channel. It brings its own libraries, so it doesn't depend on your system's PipeWire version.
+- If the snap isn't allowed to use audio yet, setup and the main window show one command to copy.
+
 ## Linux 0.4.0 beta 8 (Flatpak)
 
 - First Flatpak build of Sukut for Linux, as one file that installs across distributions.

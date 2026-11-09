@@ -1,0 +1,12 @@
+#!/bin/sh
+# PipeWire's socket is in the real runtime folder, not the snap's own. Its
+# plugins come with the GNOME platform snap, or with this snap if it has none.
+ARCH=x86_64-linux-gnu
+LIBS="$SNAP/gnome-platform/usr/lib/$ARCH"
+[ -d "$LIBS/spa-0.2" ] || LIBS="$SNAP/usr/lib/$ARCH"
+export PIPEWIRE_RUNTIME_DIR="/run/user/$(id -u)"
+export PIPEWIRE_MODULE_DIR="$LIBS/pipewire-0.3"
+export SPA_PLUGIN_DIR="$LIBS/spa-0.2"
+export PIPEWIRE_CONFIG_DIR="$SNAP/usr/share/pipewire"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$SNAP/usr/lib/$ARCH/android"
+exec "$@"

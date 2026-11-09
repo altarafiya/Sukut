@@ -1,4 +1,5 @@
-"""Flatpak smoke test: the installed app in its sandbox, against this session's PipeWire.
+"""Sandbox smoke test: the installed Flatpak (or, with SUKUT_TEST_TARGET=snap, the snap)
+against this session's PipeWire.
 
   python3 -I flatpak_smoke_test.py <evidence-dir>
 
@@ -9,8 +10,9 @@ import json, os, pathlib, re, socket, subprocess, sys, time
 
 APP = "io.github.altarafiya.Sukut"
 EVIDENCE = pathlib.Path(sys.argv[1]); EVIDENCE.mkdir(parents=True, exist_ok=True)
-SOCKET = pathlib.Path(os.environ["XDG_RUNTIME_DIR"]) / "app" / APP / "sukut/host.socket"
-CONFIG = pathlib.Path.home() / ".var/app" / APP / "config/sukut/settings.json"
+SNAP = os.environ.get("SUKUT_TEST_TARGET") == "snap"
+SOCKET = pathlib.Path(os.environ["XDG_RUNTIME_DIR"]) / ("snap.sukut" if SNAP else "app/" + APP) / "sukut/host.socket"
+CONFIG = pathlib.Path.home() / ("snap/sukut/current/.config" if SNAP else ".var/app/" + APP + "/config") / "sukut/settings.json"
 LOG = EVIDENCE / "host.log"
 results, lines = [], []
 
@@ -45,15 +47,15 @@ def ask(*f, timeout=40):
 def state():
     r = ask("read"); return json.loads(r[1:]) if r.startswith("1") else {}
 def wait_state(p, s=25): return wait(lambda: (lambda x: x if x and p(x) else None)(state()), s)
-HOST = ["flatpak", "run", "--command=/app/libexec/sukut/sukut-host", APP]
+HOST = ["snap", "run", "--shell", "sukut", "-c", 'exec "$SNAP/usr/bin/sukut-launch" "$SNAP/usr/libexec/sukut/sukut-host" "$@"', "sh"] if SNAP else ["flatpak", "run", "--command=/app/libexec/sukut/sukut-host", APP]
 
 def app_node(pid):
     o = dump(); c = {x["id"] for x in o if x["type"].endswith("Client") and str(x["info"]["props"].get("pipewire.sec.pid")) == str(pid)}
     return next((x["id"] for x in o if x["type"].endswith("Node") and x["info"]["props"].get("media.class") == "Stream/Output/Audio" and x["info"]["props"].get("client.id") in c), None)
 
 def main():
-    v = run("flatpak", "run", "--command=/app/bin/sukut-adb", APP, "version", timeout=180)
-    check("adb_runs_in_sandbox", v.returncode == 0 and "Android Debug Bridge" in v.stdout, v.stdout.splitlines()[:1] or v.stderr[:120])
+    v = run("snap", "run", "--shell", "sukut", "-c", '"$SNAP/usr/bin/sukut-launch" adb version') if SNAP else run("flatpak", "run", "--command=/app/bin/sukut-adb", APP, "version", timeout=180)
+    check("adb_runs_in_sandbox", v.returncode == 0 and "Android Debug Bridge" in v.stdout, [l for l in v.stdout.splitlines() if "adb" in l.lower() or "Bridge" in l][:1] or v.stderr[-160:])
     sink("test_speakers", 3000); sink("test_headphones", 2900); set_default("test_speakers")
     CONFIG.parent.mkdir(parents=True, exist_ok=True)
     CONFIG.write_text(json.dumps({"Language": "en", "Theme": "system", "Output": "test_speakers", "OutputDefault": "test_speakers", "SourcePid": 0, "PreferredMode": 1, "HostSettingsVersion": 1, "Buffering": 1, "AmplificationDb": 0, "OptimizedBackgroundDb": 0, "SetupCompleted": True, "CloseToTray": True, "StartWithSystem": False}))
@@ -62,7 +64,8 @@ def main():
     second = subprocess.run(HOST + ["--tray"], capture_output=True, text=True, timeout=30)
     check("second_launch_uses_running_host", second.returncode == 0 and host.poll() is None, second.stderr[-120:])
     wait(lambda: "tray:" in LOG.read_text(), 6)
-    check("tray_registered", "tray: registered" in LOG.read_text(), [l for l in LOG.read_text().splitlines() if "tray" in l][:3])
+    if not SNAP:  # the test VM has no desktop panel
+      check("tray_registered", "tray: registered" in LOG.read_text(), [l for l in LOG.read_text().splitlines() if "tray" in l][:3])
     r = ask("select", 1, "test_speakers", 0, 1, 0); s = wait_state(lambda x: x["mode"] == 1 and not x["busy"])
     check("start_all_system_audio", r.startswith("1") and s, r[:160])
     check("default_is_sukut", wait(lambda: default() == "sukut_sink", 4), default())
@@ -80,7 +83,7 @@ def main():
     r = ask("select", 0, "test_headphones", 0, 1, 0); wait_state(lambda x: x["mode"] == 0 and not x["busy"])
     check("off_restores_default", wait(lambda: default() != "sukut_sink", 4) and nid("sukut_sink") is None, default())
     set_default("test_speakers")
-    tone = pathlib.Path.home() / "sukut-build/flatpak-test/tone.wav"
+    tone = pathlib.Path("/tmp/sukut-smoke-tone.wav")
     run("sh", "-c", f"python3 -I -c \"import wave,math;w=wave.open('{tone}','wb');w.setnchannels(2);w.setsampwidth(2);w.setframerate(48000);w.writeframes(b''.join(int(4000*math.sin(i/20)).to_bytes(2,'little',signed=True)*2 for i in range(48000*40)));w.close()\"")
     play = subprocess.Popen(["pw-play", "--target", "test_speakers", str(tone)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     a = wait(lambda: app_node(play.pid))

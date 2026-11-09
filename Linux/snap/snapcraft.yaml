@@ -1,0 +1,42 @@
+name: sukut
+title: Sukut
+icon: Linux/data/icons/hicolor/512x512/apps/io.github.altarafiya.Sukut.png
+summary: Internet without music
+description: |
+  Sukut removes music from what your computer plays, while keeping speech and
+  other sounds. Everything is processed on your device.
+
+  **After installing, open Sukut. If it asks for permission, it shows one command
+  to copy into Terminal.** Snap apps can't grant themselves access to your audio.
+version: 0.4.0-beta.10
+base: core26
+grade: devel
+confinement: strict
+platforms:
+  amd64:
+apps:
+  sukut:
+    command: usr/bin/sukut
+    command-chain: [usr/bin/sukut-launch]
+    desktop: usr/share/applications/io.github.altarafiya.Sukut.desktop
+    common-id: io.github.altarafiya.Sukut
+    extensions: [gnome]
+    plugs: [pipewire, audio-playback, audio-record, network, network-bind, raw-usb, unity7]
+parts:
+  sukut:
+    plugin: nil
+    # Built from a local tree holding the private sealing header and sealed model
+    # (Linux/scripts/build-snap.sh), so it can't be built from the public source.
+    source: .
+    build-packages: [cmake, ninja-build, g++, pkg-config, libpipewire-0.3-dev, libfontconfig-dev]
+    stage-packages: [adb, libpipewire-0.3-0t64, libspa-0.2-modules, libpipewire-0.3-modules, pipewire-bin]
+    override-build: |
+      cmake -S Linux -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBEXECDIR=libexec \
+        -DSUKUT_DEV_TOOLS=OFF -DSUKUT_DEPS_DIR="$HOME/sukut-deps" -DSUKUT_VERSION_LABEL=0.4.0-beta.10 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      cmake --build build --parallel "$CRAFT_PARALLEL_BUILD_COUNT"
+      DESTDIR="$CRAFT_PART_INSTALL" cmake --install build --component sukut
+      cd "$CRAFT_PART_INSTALL"
+      rm -rf usr/lib/udev usr/share/polkit-1 usr/libexec/sukut/sukut-usb-access
+      strip --strip-all usr/bin/sukut usr/libexec/sukut/sukut-host
+      install -Dm755 "$CRAFT_PART_SRC/Linux/snap/local/sukut-launch" usr/bin/sukut-launch
+      sed -i 's#^Icon=.*#Icon=${SNAP}/usr/share/icons/hicolor/256x256/apps/io.github.altarafiya.Sukut.png#' usr/share/applications/io.github.altarafiya.Sukut.desktop

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <malloc.h>
+#include <sys/wait.h>
 
 #include "audio/Sandbox.h"
 #include "window/Style.h"
@@ -145,7 +146,9 @@ SukutWindow::SukutWindow(AdwApplication* app, HostLink* link) : app_(app), link_
   gtk_widget_add_css_class(window_, "sukut");
   // The list of outputs and apps refreshes whenever the window becomes active.
   Connect(window_, "notify::is-active", +[](GObject* w, GParamSpec*, gpointer self) {
-    if (gtk_window_is_active(GTK_WINDOW(w))) static_cast<SukutWindow*>(self)->RefreshCatalog();
+    if (!gtk_window_is_active(GTK_WINDOW(w))) return;
+    static_cast<SukutWindow*>(self)->RefreshSnapAccess();
+    static_cast<SukutWindow*>(self)->RefreshCatalog();
   }, this);
   // Minimised: give memory back (audio runs in the host, so this never touches playback).
   Connect(window_, "realize", +[](GtkWidget* w, gpointer) {
@@ -159,6 +162,7 @@ SukutWindow::SukutWindow(AdwApplication* app, HostLink* link) : app_(app), link_
 
 void SukutWindow::Start() {
   if (!link_) return;
+  RefreshSnapAccess();
   Poll();
   RefreshCatalog();
   g_timeout_add(1000, [](gpointer self) -> gboolean { static_cast<SukutWindow*>(self)->Poll(); return G_SOURCE_CONTINUE; }, this);
@@ -200,6 +204,7 @@ void SukutWindow::Build() {
   banner_ = adw_banner_new("");
   Connect(banner_, "button-clicked", +[](AdwBanner*, gpointer self) {
     auto* s = static_cast<SukutWindow*>(self);
+    if (s->banner_snap_) { s->OpenSnapAccessHelp(); return; }
     if (s->banner_notice_) { s->OpenEasyEffectsHelp(); return; }
     s->error_.clear();
     s->Select(s->selected_mode_);
@@ -357,6 +362,8 @@ GtkWidget* SukutWindow::BuildAudio() {
   gtk_widget_set_valign(power_button_, GTK_ALIGN_CENTER);
   Connect(power_button_, "clicked", +[](GtkButton*, gpointer self) {
     auto* s = static_cast<SukutWindow*>(self);
+    if (s->state_.mode == 0) s->RefreshSnapAccess();
+    if (s->state_.mode == 0 && s->snap_audio_missing_) { s->OpenSnapAccessHelp(); return; }
     s->Select(s->state_.mode == 0 ? s->selected_mode_ : 0);
   }, this);
   gtk_box_append(GTK_BOX(card), power_button_);
@@ -882,6 +889,65 @@ void SukutWindow::OpenEasyEffectsHelp() {
   adw_dialog_present(dialog, window_);
 }
 
+// A snap can't grant itself these connections, so until the Snap Store connects
+// them automatically the user runs one command. snapctl exits 1 when not connected.
+void SukutWindow::RefreshSnapAccess() {
+  if (std::getenv("SNAP") == nullptr) return;
+  const bool had_audio_missing = snap_audio_missing_;
+  const std::string before = snap_command_;
+  std::string command;
+  bool audio_missing = false;
+  for (const char* plug : {"pipewire", "audio-record", "raw-usb"}) {
+    gint status = 0;
+    const std::string line = std::string("snapctl is-connected ") + plug;
+    if (!g_spawn_command_line_sync(line.c_str(), nullptr, nullptr, &status, nullptr)) continue;
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 1) continue;
+    command += (command.empty() ? "" : " && ") + std::string("sudo snap connect sukut:") + plug;
+    if (std::string(plug) != "raw-usb") audio_missing = true;
+  }
+  snap_command_ = command;
+  snap_audio_missing_ = audio_missing;
+  if (before == snap_command_) return;
+  if (had_audio_missing && !audio_missing && link_) Send({"refresh"}, [this](bool, const std::string&) { RefreshCatalog(); Poll(); });
+  Render();
+}
+
+// The command, selectable, with a Copy button.
+GtkWidget* SukutWindow::SnapCommandBox(GtkWidget** label_out) {
+  GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+  GtkWidget* label = gtk_label_new(snap_command_.c_str());
+  gtk_label_set_selectable(GTK_LABEL(label), TRUE);
+  gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+  gtk_label_set_wrap_mode(GTK_LABEL(label), PANGO_WRAP_WORD_CHAR);
+  gtk_label_set_xalign(GTK_LABEL(label), 0.0F);
+  gtk_widget_set_direction(label, GTK_TEXT_DIR_LTR);
+  gtk_widget_add_css_class(label, "monospace");
+  gtk_box_append(GTK_BOX(box), label);
+  GtkWidget* copy = gtk_button_new_with_label(L("Copy command", "نسخ الأمر"));
+  gtk_widget_add_css_class(copy, "suggested-action");
+  gtk_widget_set_halign(copy, GTK_ALIGN_START);
+  Connect(copy, "clicked", +[](GtkButton* b, gpointer self) {
+    auto* s = static_cast<SukutWindow*>(self);
+    gdk_clipboard_set_text(gtk_widget_get_clipboard(GTK_WIDGET(b)), s->snap_command_.c_str());
+    gtk_button_set_label(b, s->L("Copied", "تم النسخ"));
+  }, this);
+  gtk_box_append(GTK_BOX(box), copy);
+  if (label_out) *label_out = label;
+  return box;
+}
+
+void SukutWindow::OpenSnapAccessHelp() {
+  AdwDialog* dialog = adw_alert_dialog_new(
+      L("Allow Sukut to use your audio", "اسمح لسُكوت باستخدام الصوت"),
+      L("Snap apps can't give themselves this permission. Open Terminal, paste this command and press Enter. You only need to do this once.",
+        "لا تستطيع تطبيقات Snap منح نفسها هذا الإذن. افتح الطرفية، والصق هذا الأمر، ثم اضغط Enter. تحتاج إلى ذلك مرة واحدة فقط."));
+  adw_alert_dialog_set_extra_child(ADW_ALERT_DIALOG(dialog), SnapCommandBox(nullptr));
+  adw_alert_dialog_add_response(ADW_ALERT_DIALOG(dialog), "close", L("Close", "إغلاق"));
+  adw_alert_dialog_set_default_response(ADW_ALERT_DIALOG(dialog), "close");
+  adw_alert_dialog_set_close_response(ADW_ALERT_DIALOG(dialog), "close");
+  adw_dialog_present(dialog, window_);
+}
+
 std::string SukutWindow::OutputShown() const {
   if (!state_.output.empty()) return state_.output;
   if (!state_.chosen_output.empty()) return state_.chosen_output;
@@ -891,6 +957,7 @@ std::string SukutWindow::OutputShown() const {
 void SukutWindow::Apply(const HostState& state) {
   const bool first = !have_state_;
   const bool language_changed = state.language != state_.language;
+  const bool raise = !first && state.raise_requests != state_.raise_requests;
   state_ = state;
   have_state_ = true;
   if (state_.mode != 0) selected_mode_ = state_.mode;
@@ -900,6 +967,7 @@ void SukutWindow::Apply(const HostState& state) {
                                               : state_.theme == "dark" ? ADW_COLOR_SCHEME_FORCE_DARK
                                                                        : ADW_COLOR_SCHEME_DEFAULT);
   if (language_changed || built_arabic_ != Ar()) Build();
+  if (raise) Present();
   if (first && !state_.setup_completed && setup_step_ < 0) ShowSetup(0);
   Render();
 }
@@ -925,11 +993,14 @@ void SukutWindow::Render() {
   std::string banner;
   bool restart = false;
   banner_notice_ = false;
-  if (!error_.empty()) { banner = ErrorText(error_); restart = error_ != "source app closed"; }
+  banner_snap_ = snap_audio_missing_;
+  if (banner_snap_) banner = L("Sukut needs your permission to use audio.", "يحتاج سُكوت إلى إذنك لاستخدام الصوت.");
+  else if (!error_.empty()) { banner = ErrorText(error_); restart = error_ != "source app closed"; }
   else if (state_.state == 2) { banner = ErrorText(state_.attention); restart = state_.attention != "source_closed"; }
   else if (state_.mode != 0 && !state_.notice.empty()) { banner = NoticeText(state_.notice); banner_notice_ = !banner.empty(); }
   adw_banner_set_title(ADW_BANNER(banner_), banner.c_str());
-  adw_banner_set_button_label(ADW_BANNER(banner_), banner_notice_ ? L("How to fix", "طريقة الإصلاح")
+  adw_banner_set_button_label(ADW_BANNER(banner_), banner_snap_ ? L("Allow access", "السماح بالوصول")
+                                                   : banner_notice_ ? L("How to fix", "طريقة الإصلاح")
                                                    : restart       ? L("Restart audio", "إعادة تشغيل الصوت")
                                                                    : nullptr);
   adw_banner_set_revealed(ADW_BANNER(banner_), !banner.empty());
@@ -1118,7 +1189,7 @@ void SukutWindow::Poll() {
   if (!link_ || polling_) return;
   if (!gtk_widget_get_mapped(window_) && have_state_) return;
   if (GdkSurface* surface = gtk_native_get_surface(GTK_NATIVE(window_)))
-    if (have_state_ && (gdk_toplevel_get_state(GDK_TOPLEVEL(surface)) & GDK_TOPLEVEL_STATE_MINIMIZED)) return;
+    if (have_state_ && std::getenv("SNAP") == nullptr && (gdk_toplevel_get_state(GDK_TOPLEVEL(surface)) & GDK_TOPLEVEL_STATE_MINIMIZED)) return;
   polling_ = true;
   Send({"read"}, [this](bool ok, const std::string& payload) {
     polling_ = false;

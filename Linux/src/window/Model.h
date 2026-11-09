@@ -27,7 +27,7 @@ struct HostState {
   std::uint32_t source_pid = 0;
   int preferred_mode = 1, buffering = 1, amplification_db = 0, background_db = 0;
   bool setup_completed = true, close_to_tray = true, start_with_system = false;
-  std::uint64_t settings_version = 0;
+  std::uint64_t settings_version = 0, raise_requests = 0;
 
   [[nodiscard]] bool Arabic() const { return language == "ar"; }
 
@@ -61,6 +61,7 @@ struct HostState {
     s.close_to_tray = j.Bool("closeToTray");
     s.start_with_system = j.Bool("startWithSystem");
     s.settings_version = static_cast<std::uint64_t>(j.Int("settingsVersion"));
+    s.raise_requests = static_cast<std::uint64_t>(j.Int("raiseRequests"));
     return s;
   }
 };

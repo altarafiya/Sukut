@@ -352,6 +352,22 @@ std::vector<Scene> EasyEffectsScenes() {
   };
 }
 
+// A snap whose permissions aren't connected yet.
+std::vector<Scene> SnapScenes() {
+  const std::string command = "sudo snap connect sukut:pipewire && sudo snap connect sukut:audio-record && sudo snap connect sukut:raw-usb";
+  const auto missing = [command](SukutWindow& w) { w.SetSnapAccessForTest(command, true); };
+  const auto dialog = [missing](SukutWindow& w) { missing(w); w.OpenSnapAccessHelp(); };
+  const auto setup = [missing](SukutWindow& w) { missing(w); w.ShowSetup(1); };
+  return {
+      {"70-snap-banner-en-dark", 1040, 720, Show(Base("en", "dark"), missing), {}},
+      {"71-snap-dialog-en-dark", 1040, 720, Show(Base("en", "dark"), dialog), {}},
+      {"72-snap-dialog-ar-light", 1040, 720, Show(Base("ar", "light"), dialog), {}},
+      {"73-snap-setup-en-dark", 1040, 720, Show(Base("en", "dark"), setup), {}},
+      {"74-snap-setup-ar-light", 1040, 720, Show(Base("ar", "light"), setup), {}},
+      {"75-snap-dialog-en-minimum", 420, 480, Show(Base("en", "dark"), dialog), {}},
+  };
+}
+
 using Task = SukutWindow::PhoneTask;
 using Severity = SukutWindow::Severity;
 
@@ -428,8 +444,8 @@ int RunCapture(AdwApplication* app, const std::string& directory, const std::str
   const bool contrast = set == "contrast";
   auto runner = std::make_shared<Runner>(app, directory,
                                          contrast ? ContrastScenes() : set == "keyboard" ? std::vector<Scene>{} : set == "phone" ? PhoneScenes()
-                                         : set == "easyeffects" ? EasyEffectsScenes() : MainScenes(),
-                                         !contrast && set != "phone" && set != "easyeffects");
+                                         : set == "easyeffects" ? EasyEffectsScenes() : set == "snap" ? SnapScenes() : MainScenes(),
+                                         !contrast && set != "phone" && set != "easyeffects" && set != "snap");
   g_signal_connect_data(app, "activate", G_CALLBACK(+[](GApplication* a, gpointer data) {
     InstallStyle();
     // Still frames: dialogs open at once and the credit holds its first colours.

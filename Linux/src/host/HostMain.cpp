@@ -193,6 +193,7 @@ class Host {
   std::set<std::string> notified_notices_;  // once per session
 
   std::atomic<bool> tray_available_{false}, exiting_{false};
+  std::atomic<std::uint64_t> raise_requests_{0};  // snap: a second launch asks the window to come forward
 };
 
 HostSettings Host::Settings() const {
@@ -498,7 +499,7 @@ std::string Host::ReadJson() {
     << ",\"attention\":\"" << JsonEscape(e.attention) << "\",\"notice\":\"" << JsonEscape(e.notice) << "\",\"underruns\":" << e.underruns
     << ",\"fallbacks\":" << e.fallbacks << ",\"prioritySet\":" << Flag(e.priority_set) << ",\"revision\":" << e.revision
     << ",\"status\":\"" << JsonEscape(StatusText(e, s.Arabic())) << "\",\"trayAvailable\":" << Flag(tray_available_)
-    << ",\"settingsVersion\":" << s.host_settings_version << ",\"language\":\"" << JsonEscape(s.language)
+    << ",\"raiseRequests\":" << raise_requests_.load() << ",\"settingsVersion\":" << s.host_settings_version << ",\"language\":\"" << JsonEscape(s.language)
     << "\",\"theme\":\"" << JsonEscape(s.theme) << "\",\"chosenOutput\":\"" << JsonEscape(s.output)
     << "\",\"sourcePid\":" << s.source_pid << ",\"preferredMode\":" << s.preferred_mode << ",\"buffering\":" << s.buffering
     << ",\"amplificationDb\":" << s.amplification_db << ",\"optimizedBackgroundDb\":" << s.optimized_background_db
@@ -515,6 +516,7 @@ std::string Host::Handle(const std::vector<std::string>& f) {
   const auto fail = [](const std::string& error) { return "0" + error; };
   if (exiting_) return fail("Sukut is exiting");
   if (verb == "hello") return ok("{\"host\":1}");
+  if (verb == "raise") { ++raise_requests_; return ok(""); }
   if (verb == "read") return ok(ReadJson());
   if (verb == "apps" || verb == "refresh") {
     PipeWireBridge::Catalog catalog;

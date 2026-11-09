@@ -16,6 +16,13 @@
 
 #include <iostream>
 
+#include <cstdio>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
 #include "audio/Sandbox.h"
 #include "window/Capture.h"
 #include "window/HostLink.h"
@@ -87,6 +94,31 @@ int RunPhone(const std::string& command, const std::string& serial) {
   }
 }
 
+// In a snap, owning the app id on the session bus needs a manually reviewed
+// permission, so GtkApplication can't keep Sukut to one window. A lock does:
+// a second launch asks the open window, through the host, to come forward.
+bool SnapWindowAlreadyOpen() {
+  if (std::getenv("SNAP") == nullptr) return false;
+  const auto folder = SukutRuntimeDir();
+  std::error_code code;
+  std::filesystem::create_directories(folder, code);
+  static const int lock = ::open((folder / "window.lock").c_str(), O_RDWR | O_CREAT | O_CLOEXEC, 0600);
+  if (lock < 0 || ::flock(lock, LOCK_EX | LOCK_NB) == 0) return false;
+  const int s = ::socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0);
+  if (s >= 0) {
+    sockaddr_un address{};
+    address.sun_family = AF_UNIX;
+    std::snprintf(address.sun_path, sizeof(address.sun_path), "%s", HostLink::SocketPath().c_str());
+    if (::connect(s, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0) {
+      (void)!::send(s, "raise", 5, MSG_NOSIGNAL);
+      char reply[16];
+      (void)!::recv(s, reply, sizeof(reply), 0);
+    }
+    ::close(s);
+  }
+  return true;
+}
+
 void Activate(GApplication* application, gpointer data) {
   auto* app = static_cast<App*>(data);
   if (app->window) { app->window->Present(); return; }
@@ -150,7 +182,8 @@ int main(int argc, char** argv) {
     g_object_unref(app);
     return status;
   }
-  AdwApplication* app = adw_application_new("io.github.altarafiya.Sukut", G_APPLICATION_DEFAULT_FLAGS);
+  if (SnapWindowAlreadyOpen()) return 0;
+  AdwApplication* app = adw_application_new("io.github.altarafiya.Sukut", std::getenv("SNAP") ? G_APPLICATION_NON_UNIQUE : G_APPLICATION_DEFAULT_FLAGS);
   App state;
   g_signal_connect(app, "activate", G_CALLBACK(Activate), &state);
   char* plain[] = {argv[0], nullptr};
