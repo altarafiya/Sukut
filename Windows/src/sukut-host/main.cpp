@@ -5,6 +5,7 @@
 // window (SukutWindow.exe) is a separate process started on demand that
 // talks to this host over a per-session named pipe and exits completely when
 // closed, so no GUI runtime stays in memory while Sukut runs in the tray.
+#include <fstream>
 #include <windows.h>
 #include <shellapi.h>
 #include <commctrl.h>
@@ -159,6 +160,11 @@ class Host {
 
   // The window closed to the tray: say where Sukut went and why it is cheaper.
   void ShowTrayNotice() {
+    // Shown the first time only; a marker beside the preferences remembers it.
+    const auto marker = locations_.Preferences().parent_path() / L"tray-notice-shown";
+    std::error_code exists_error;
+    if (std::filesystem::exists(marker, exists_error)) return;
+    { std::ofstream(marker) << "1\n"; }
     const bool ar = preferences_.Arabic();
     NOTIFYICONDATAW notice{sizeof(notice)};
     notice.hWnd = window_; notice.uID = 1; notice.uFlags = NIF_INFO;

@@ -142,6 +142,10 @@ GtkWidget* SukutWindow::BuildPhone() {
   for (auto edge : {gtk_widget_set_margin_top, gtk_widget_set_margin_bottom, gtk_widget_set_margin_start, gtk_widget_set_margin_end}) edge(phone_content_, 18);
   adw_clamp_set_child(ADW_CLAMP(clamp), phone_content_);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(phone_scroll_), clamp);
+  // The phone's card leads the page: who is connected, and in what state.
+  GtkWidget* hero_clamp = adw_clamp_new();
+  adw_clamp_set_maximum_size(ADW_CLAMP(hero_clamp), 760);
+  gtk_box_append(GTK_BOX(page), hero_clamp);
   gtk_box_append(GTK_BOX(page), phone_scroll_);
 
   // Step navigation, as on Windows: Back · Step n of 5 · Next.
@@ -173,21 +177,29 @@ GtkWidget* SukutWindow::BuildPhone() {
   gtk_box_append(GTK_BOX(phone_footer_), phone_step_label_);
   gtk_box_append(GTK_BOX(phone_footer_), phone_next_);
   gtk_box_append(GTK_BOX(page), phone_footer_);
-  gtk_box_append(GTK_BOX(page), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
 
-  // The connection card stays at the bottom of every phone page.
-  GtkWidget* card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-  for (auto edge : {gtk_widget_set_margin_top, gtk_widget_set_margin_bottom, gtk_widget_set_margin_start, gtk_widget_set_margin_end}) edge(card, 12);
+  GtkWidget* card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+  AddClasses(card, {"card", "phone-hero"});
+  gtk_widget_set_vexpand(card, FALSE);
+  // Same insets as the page content below, so the edges line up.
+  for (auto edge : {gtk_widget_set_margin_top, gtk_widget_set_margin_start, gtk_widget_set_margin_end}) edge(card, 18);
+  adw_clamp_set_child(ADW_CLAMP(hero_clamp), card);
   GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
+  GtkWidget* badge = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_add_css_class(badge, "phone-badge");
+  gtk_widget_set_valign(badge, GTK_ALIGN_CENTER);
   phone_icon_ = Icon("phone-symbolic", "mode-off");
-  gtk_image_set_pixel_size(GTK_IMAGE(phone_icon_), 24);
-  gtk_box_append(GTK_BOX(row), phone_icon_);
-  GtkWidget* words = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+  gtk_widget_set_halign(phone_icon_, GTK_ALIGN_CENTER);
+  gtk_widget_set_valign(phone_icon_, GTK_ALIGN_CENTER);
+  gtk_box_append(GTK_BOX(badge), phone_icon_);
+  gtk_box_append(GTK_BOX(row), badge);
+  GtkWidget* words = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
   gtk_widget_set_hexpand(words, TRUE);
-  phone_name_ = Label("", "heading");
+  gtk_widget_set_valign(words, GTK_ALIGN_CENTER);
+  phone_name_ = Label("", "phone-title");
   phone_connection_ = Label("", "dim-label");
-  gtk_widget_add_css_class(phone_connection_, "caption");
-  phone_version_ = Label("", "caption");
+  phone_version_ = Label("", "status-pill");
+  gtk_widget_set_halign(phone_version_, GTK_ALIGN_START);
   gtk_box_append(GTK_BOX(words), phone_name_);
   gtk_box_append(GTK_BOX(words), phone_connection_);
   gtk_box_append(GTK_BOX(words), phone_version_);
@@ -221,7 +233,6 @@ GtkWidget* SukutWindow::BuildPhone() {
     s->RefreshPhone();
   }), this);
   gtk_box_append(GTK_BOX(card), phone_picker_);
-  gtk_box_append(GTK_BOX(page), card);
   RenderPhone();
   return page;
 }
@@ -248,40 +259,44 @@ void SukutWindow::SetPhoneState(std::vector<PhoneDevice> devices, std::optional<
 }
 
 void SukutWindow::PhoneChoices(GtkWidget* page) {
-  auto choice = [this](GtkWidget* list, const char* icon, const char* tone, const std::string& title, const std::string& detail, PhoneTask task) {
-    GtkWidget* row = adw_action_row_new();
-    adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
-    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), title.c_str());
-    adw_action_row_set_subtitle(ADW_ACTION_ROW(row), detail.c_str());
+  // Cards, not a settings list: one featured route and the two tools beside each other.
+  auto card = [this](const char* icon, const char* tone, const std::string& title, const std::string& detail, PhoneTask task, bool featured) {
+    GtkWidget* button = gtk_button_new();
+    AddClasses(button, {"card", featured ? "feature-card" : "tool-card"});
+    Name(button, title);
+    gtk_accessible_update_property(GTK_ACCESSIBLE(button), GTK_ACCESSIBLE_PROPERTY_DESCRIPTION, detail.c_str(), -1);
+    gtk_widget_set_has_tooltip(button, FALSE);
+    GtkWidget* box = gtk_box_new(featured ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL, featured ? 16 : 10);
     GtkWidget* image = Icon(icon, tone);
-    gtk_image_set_pixel_size(GTK_IMAGE(image), 24);
-    adw_action_row_add_prefix(ADW_ACTION_ROW(row), image);
-    adw_action_row_add_suffix(ADW_ACTION_ROW(row), Icon(Ar() ? "go-previous-symbolic" : "go-next-symbolic"));
-    gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
-    g_object_set_data(G_OBJECT(row), "task", GINT_TO_POINTER(static_cast<int>(task)));
-    g_signal_connect(row, "activated", G_CALLBACK(+[](AdwActionRow* r, gpointer self) {
-      static_cast<SukutWindow*>(self)->ShowPhoneTask(static_cast<PhoneTask>(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(r), "task"))));
+    gtk_widget_add_css_class(image, "tool-icon");
+    gtk_widget_set_halign(image, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(box), image);
+    GtkWidget* words = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    gtk_widget_set_hexpand(words, TRUE);
+    gtk_box_append(GTK_BOX(words), Label(title, "tool-title"));
+    GtkWidget* sub = Label(detail, "dim-label");
+    gtk_box_append(GTK_BOX(words), sub);
+    gtk_box_append(GTK_BOX(box), words);
+    if (featured) gtk_box_append(GTK_BOX(box), Icon(Ar() ? "go-previous-symbolic" : "go-next-symbolic"));
+    gtk_button_set_child(GTK_BUTTON(button), box);
+    g_object_set_data(G_OBJECT(button), "task", GINT_TO_POINTER(static_cast<int>(task)));
+    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton* b, gpointer self) {
+      static_cast<SukutWindow*>(self)->ShowPhoneTask(static_cast<PhoneTask>(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "task"))));
     }), this);
-    gtk_list_box_append(GTK_LIST_BOX(list), row);
+    return button;
   };
-  auto boxed = [] {
-    GtkWidget* list = gtk_list_box_new();
-    gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);
-    gtk_widget_add_css_class(list, "boxed-list");
-    return list;
-  };
-  GtkWidget* full = boxed();
-  choice(full, "preferences-system-symbolic", "mode-2", L("Full setup", "الإعداد الكامل"),
-         L("Connect, install and activate. We’ll guide you through each step.", "توصيل وتثبيت وتفعيل. نرشدك في كل خطوة."), PhoneTask::FullSetup);
-  gtk_box_append(GTK_BOX(page), full);
-  GtkWidget* tools_title = Label(L("Tools", "الأدوات"), "heading", false);
-  gtk_widget_set_margin_top(tools_title, 8);
+  gtk_box_append(GTK_BOX(page), card("preferences-system-symbolic", "mode-2", L("Full setup", "الإعداد الكامل"),
+                                     L("Connect, install and activate. We’ll guide you through each step.", "توصيل وتثبيت وتفعيل. نرشدك في كل خطوة."),
+                                     PhoneTask::FullSetup, true));
+  GtkWidget* tools_title = Label(L("Tools", "الأدوات"), "section-heading", false);
+  gtk_widget_set_margin_top(tools_title, 6);
   gtk_box_append(GTK_BOX(page), tools_title);
-  GtkWidget* tools = boxed();
-  choice(tools, "system-run-symbolic", "ready-text", L("Activate Sukut", "تفعيل سُكوت"),
-         L("Activate the audio worker over USB.", "تفعيل عامل الصوت عبر USB."), PhoneTask::Activate);
-  choice(tools, "system-software-install-symbolic", "mode-2", L("Install or update Sukut", "تثبيت سُكوت أو تحديثه"),
-         L("Install, update or open it. Keep your settings.", "تثبيت التطبيق أو تحديثه أو فتحه، مع الاحتفاظ بإعداداتك."), PhoneTask::Install);
+  GtkWidget* tools = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+  gtk_box_set_homogeneous(GTK_BOX(tools), TRUE);
+  gtk_box_append(GTK_BOX(tools), card("system-run-symbolic", "ready-text", L("Activate Sukut", "تفعيل سُكوت"),
+                                      L("Start the audio worker over USB.", "تشغيل عامل الصوت عبر USB."), PhoneTask::Activate, false));
+  gtk_box_append(GTK_BOX(tools), card("system-software-install-symbolic", "accent-text", L("Install or update Sukut", "تثبيت سُكوت أو تحديثه"),
+                                      L("Keeps your settings.", "مع الاحتفاظ بإعداداتك."), PhoneTask::Install, false));
   gtk_box_append(GTK_BOX(page), tools);
   GtkWidget* help = gtk_button_new_with_label(L("USB connection help", "المساعدة في اتصال USB"));
   AddClasses(help, {"flat", "accent-text"});
@@ -468,8 +483,8 @@ void SukutWindow::RenderPhoneCard() {
                                 : (Ar() ? Isolate(app) : app) + " · " +
                                       (info->worker_ready ? L("Worker ready", "عامل الصوت جاهز") : L("Activation needed", "يلزم التفعيل"));
     gtk_label_set_text(GTK_LABEL(phone_version_), version.c_str());
-    SetClass(phone_version_, "ready-text", info->worker_ready);
-    SetClass(phone_version_, "mode-2", !info->worker_ready);
+    SetClass(phone_version_, "ready-text", info->sukut_code && info->worker_ready);
+    SetClass(phone_version_, "warning-text", !info->sukut_code || !info->worker_ready);
   }
   // The picker appears only when more than one phone is connected.
   std::vector<std::string> labels;

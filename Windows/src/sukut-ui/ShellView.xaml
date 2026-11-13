@@ -98,6 +98,13 @@
         <toolkit:SettingsCard x:Name="LanguageCard" MinHeight="52" Padding="14,6" CornerRadius="8"><toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE774;" FontSize="16"/></toolkit:SettingsCard.HeaderIcon><ComboBox DropDownOpened="TypographyPopup_Opened" x:Name="LanguageChoice" Width="160" SelectionChanged="Language_Changed"><ComboBoxItem Content="English"/><ComboBoxItem Content="العربية"/></ComboBox></toolkit:SettingsCard>
         <toolkit:SettingsCard x:Name="ThemeCard" MinHeight="52" Padding="14,6" CornerRadius="8"><toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" FontSize="16"/></toolkit:SettingsCard.HeaderIcon><ComboBox DropDownOpened="TypographyPopup_Opened" x:Name="ThemeChoice" Width="160" SelectionChanged="Theme_Changed"><ComboBoxItem x:Name="SystemTheme"/><ComboBoxItem x:Name="LightTheme"/><ComboBoxItem x:Name="DarkTheme"/></ComboBox></toolkit:SettingsCard>
         <toolkit:SettingsCard x:Name="TrayCard" MinHeight="52" Padding="14,6" CornerRadius="8"><toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE73F;" FontSize="16"/></toolkit:SettingsCard.HeaderIcon><ToggleSwitch x:Name="TraySwitch" IsOn="True" Toggled="TraySwitch_Toggled"/></toolkit:SettingsCard>
+        <Border x:Name="AppIconCard" Padding="14,10" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"><StackPanel Spacing="8">
+         <TextBlock Loaded="Typography_Loaded" x:Name="AppIconHeading" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+         <TextBlock Loaded="Typography_Loaded" x:Name="AppIconNote" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+         <StackPanel x:Name="AppIconMarks" Orientation="Horizontal" Spacing="8"/>
+         <TextBlock Loaded="Typography_Loaded" x:Name="AppIconColorLabel" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+         <StackPanel x:Name="AppIconColors" Orientation="Horizontal" Spacing="10"/>
+        </StackPanel></Border>
        </StackPanel>
       </StackPanel>
       <StackPanel Spacing="6">

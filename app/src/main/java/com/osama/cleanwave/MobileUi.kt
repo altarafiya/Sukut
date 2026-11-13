@@ -145,9 +145,8 @@ internal class MobileUi(val activity: Activity) {
 
     fun brandIcon(size: Int) = ImageView(activity).apply {
         tag = "brand_icon"
-        setImageResource(R.drawable.sukut_logo)
-        background = rounded(Color.BLACK, (size * .22f).toInt())
-        clipToOutline = true
+        // The user's chosen icon, drawn as one rounded tile (no separate frame behind it).
+        setImageDrawable(AppIcon.tile(activity))
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
 

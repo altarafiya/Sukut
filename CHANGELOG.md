@@ -1,5 +1,12 @@
 # What’s new
 
+## 0.5.2 (Android, Linux; Windows to follow)
+
+- Choose your app icon: five designs and six background colours, in Settings. The default is the white and blue Seen on black.
+- Android: a shorter activation guide, and the in-app icon no longer shows a dark frame.
+- Linux: left-click the tray icon for the quick panel; right-click for Open and Exit. A refreshed Phone page.
+- The "Sukut is in the tray" notice appears only the first time.
+
 ## 0.5.1 (Android, Linux; Windows to follow)
 
 **All platforms**

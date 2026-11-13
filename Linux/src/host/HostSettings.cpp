@@ -87,6 +87,7 @@ HostSettings HostSettings::Load() {
   if (auto v = Number(json, "AdvancedBackgroundDb")) s.optimized_mix.background_db = std::clamp(static_cast<int>(*v), -20, 10);
   if (auto v = Bool(json, "SetupCompleted")) s.setup_completed = *v;
   if (auto v = Bool(json, "CloseToTray")) s.close_to_tray = *v;
+  if (auto v = Bool(json, "TrayNoticeShown")) s.tray_notice_shown = *v;
   if (auto v = Bool(json, "StartWithSystem")) s.start_with_system = *v;
   if (auto v = Number(json, "HostSettingsVersion"); v && *v >= 0) s.host_settings_version = static_cast<std::uint64_t>(*v);
   return s;
@@ -117,6 +118,7 @@ bool HostSettings::Save(std::string& error) const {
     << "  \"AdvancedBackgroundDb\": " << optimized_mix.background_db << ",\n"
         << "  \"SetupCompleted\": " << b(setup_completed) << ",\n"
         << "  \"CloseToTray\": " << b(close_to_tray) << ",\n"
+        << "  \"TrayNoticeShown\": " << b(tray_notice_shown) << ",\n"
         << "  \"StartWithSystem\": " << b(start_with_system) << "\n"
         << "}\n";
     if (!out) { error = "cannot write " + temporary; return false; }

@@ -198,7 +198,7 @@ class Runner {
         window_->ShowPage(SukutWindow::Page::Settings);
         // The headless display lays out a long page slowly; Tab sorts by position, so wait for it.
         Later(1500, [this] {
-          Walk("settings", {"Language", "App theme", "Close to tray", "Start with system", "Audio amplification", "Sound settings",
+          Walk("settings", {"Language", "App theme", "Close to tray", "Start with system", "White and blue", "Black", "Audio amplification", "Sound settings",
                             "Open guide", "Refresh devices", "Copy diagnostics", "What’s new"});
           window_->OpenHelp();
           Later(3000, [this] {

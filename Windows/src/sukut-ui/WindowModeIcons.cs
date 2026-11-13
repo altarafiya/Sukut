@@ -14,10 +14,12 @@ internal sealed class WindowModeIcons : IDisposable
         uint dpi=GetDpiForWindow(_window); if(dpi==0)dpi=96;
         if(dpi==_dpi && _small!=IntPtr.Zero)return;
         _dpi=dpi;
-        string path=Path.Combine(AppContext.BaseDirectory,"Assets","Sukut.ico");
+        string path=AppIcons.CurrentIconPath();
         Replace(ref _small,LoadImage(IntPtr.Zero,path,1,GetSystemMetricsForDpi(49,dpi),GetSystemMetricsForDpi(50,dpi),0x10),0);
         Replace(ref _large,LoadImage(IntPtr.Zero,path,1,GetSystemMetricsForDpi(11,dpi),GetSystemMetricsForDpi(12,dpi),0x10),1);
     }
+    // The user chose another app icon: load it again at the current DPI.
+    internal void Refresh(){_dpi=0;SetMode(0);}
     private void Replace(ref IntPtr current,IntPtr next,int kind)
     {
         if(next==IntPtr.Zero)return;

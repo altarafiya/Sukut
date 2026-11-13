@@ -13,8 +13,10 @@ case "$CHANNEL" in beta|candidate|stable|edge) ;; *) echo "Unknown channel: $CHA
 echo "Uploading $SNAP_FILE to the '$CHANNEL' channel."
 sha256sum "$SNAP_FILE"
 D=$(mktemp -d); trap 'rm -rf "$D"' EXIT
-snapcraft export-login --snaps=sukut --acls=package_access,package_push,package_update,package_release "$D/login" || exit 1
+snapcraft export-login --snaps=sukut --acls=package_access,package_push,package_update,package_release,package_metadata "$D/login" || exit 1
 export SNAPCRAFT_STORE_CREDENTIALS="$(cat "$D/login")"
 snapcraft upload --release="$CHANNEL" "$SNAP_FILE"; R=$?
+# The store page keeps its own icon and text; refresh them from this snap.
+[ $R -eq 0 ] && snapcraft upload-metadata --force "$SNAP_FILE"
 snapcraft status sukut
 exit $R

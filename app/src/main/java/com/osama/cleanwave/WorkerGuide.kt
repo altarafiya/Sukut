@@ -24,9 +24,11 @@ internal object WorkerGuide {
         private lateinit var content:LinearLayout
         var method = if(Build.VERSION.SDK_INT<30) WINDOWS else (state?.getInt("guide_method",initial)?:initial).coerceIn(PHONE,WINDOWS)
             private set
-        var step = (state?.getInt("guide_step",-1)?:-1).coerceIn(-1,if(method==WINDOWS)4 else 3)
+        var step = (state?.getInt("guide_step",-1)?:-1).coerceIn(-1,3)
             private set
-        private val steps get() = if(method==PHONE) (0..3).toList() else (0..4).toList()
+        // Every page asks for something: the computer route ends on Activate (connecting the
+        // cable is part of it), and the phone route explains the code beside the Pair button.
+        private val steps get() = if(method==PHONE) listOf(0,2,3) else listOf(0,1,3)
         val progressCount get()=steps.size+1 // Choosing a method belongs inside Activation too.
         val progressIndex get()=if(step<0)0 else steps.indexOf(step)+1
         private var snapshot=""
@@ -131,26 +133,33 @@ internal object WorkerGuide {
         }
         private fun computerStep() {when(step) {
             1 -> {title(R.string.guide_usb_title,R.drawable.ic_phone);statuses(1);if(!DeveloperOptionsControl.usbEnabled(activity)){body(R.string.guide_windows_1_body);action(R.string.guide_developer_options){openSettings()};picture(GuidePictures.Picture.DEVELOPER)}}
-            2 -> {title(R.string.guide_connect_title,R.drawable.ic_setup_pc);body(R.string.guide_windows_2_body)}
             3 -> {
-                title(R.string.guide_activate_title,R.drawable.ic_worker)
-                statuses(2)
-                if(!WorkerConnection.ready) {
+                if(WorkerConnection.ready) {
+                    title(R.string.guide_phone_ready_title,R.drawable.ic_worker)
+                    statuses(0,1,2)
+                    instruction(R.string.ready_start,R.string.ready_start_body,R.drawable.ic_power,ui.readyColor)
+                } else {
+                    title(R.string.guide_activate_title,R.drawable.ic_worker)
+                    statuses(2)
+                    instruction(R.string.guide_connect_title,R.string.guide_windows_2_body,R.drawable.ic_setup_pc)
                     instruction(R.string.route_open_computer,R.string.route_open_computer_body,R.drawable.ic_setup_pc)
                     instruction(R.string.route_phone,R.string.route_phone_body,R.drawable.ic_phone,ui.warning)
                     instruction(R.string.route_activate,R.string.route_activate_body,R.drawable.ic_worker)
                 }
             }
-            4 -> {
-                title(if(WorkerConnection.ready)R.string.guide_phone_ready_title else R.string.status_activation_needed,R.drawable.ic_worker)
-                statuses(0,1,2)
-                if(WorkerConnection.ready)instruction(R.string.ready_start,R.string.ready_start_body,R.drawable.ic_power,ui.readyColor)
-                else body(R.string.worker_needed_detail)
-            }
         }}
         private fun phoneStep() {when(step) {
-            1 -> {title(R.string.guide_code_title,R.drawable.ic_pair_key);body(R.string.guide_phone_1_body);picture(GuidePictures.Picture.NOTIFICATION);action(R.string.guide_watch_video,R.drawable.ic_tutorial_video){AudioTools.website(activity,ReleaseLinks.TUTORIAL_VIDEO)}}
-            2 -> {title(R.string.guide_pair_title,R.drawable.ic_setup_wireless);statuses(3,2);if(!WorkerConnection.ready){body(R.string.guide_phone_2_body);action(R.string.local_pair_button,R.drawable.ic_pair_key,true,"guide_pair_phone",pair);picture(GuidePictures.Picture.WIRELESS)}}
+            2 -> {
+                title(R.string.guide_pair_title,R.drawable.ic_setup_wireless);statuses(3,2)
+                if(!WorkerConnection.ready) {
+                    instruction(R.string.guide_code_title,R.string.guide_phone_1_body,R.drawable.ic_pair_key)
+                    picture(GuidePictures.Picture.NOTIFICATION)
+                    body(R.string.guide_phone_2_body)
+                    action(R.string.local_pair_button,R.drawable.ic_pair_key,true,"guide_pair_phone",pair)
+                    picture(GuidePictures.Picture.WIRELESS)
+                    action(R.string.guide_watch_video,R.drawable.ic_tutorial_video){AudioTools.website(activity,ReleaseLinks.TUTORIAL_VIDEO)}
+                }
+            }
             3 -> {
                 title(if(WorkerConnection.ready)R.string.guide_phone_ready_title else R.string.status_activation_needed,R.drawable.ic_worker)
                 statuses(0,3,2)

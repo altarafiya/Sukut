@@ -30,8 +30,8 @@ modules:
       - install -Dm755 sukut-adb ${FLATPAK_DEST}/bin/sukut-adb
     sources:
       - type: archive
-        url: https://github.com/altarafiya/Sukut/releases/download/v0.5.1/Sukut-0.5.1-Flatpak-x86_64.tar.xz
-        sha256: 6ae4cc2482202aee6674676a3a22b66998f4c3aae21a3c56223acf1db5e43c83
+        url: https://github.com/altarafiya/Sukut/releases/download/v0.5.2/Sukut-0.5.2-Flatpak-x86_64.tar.xz
+        sha256: 0666d10d5bdc352a5f49b8fd621a3cc697b17b22cbb7ee04f94bd5057bd768f7
         strip-components: 0
       - type: file
         path: sukut-adb

@@ -70,7 +70,7 @@ public sealed partial class ShellView : UserControl
         if (new Windows.UI.ViewManagement.AccessibilitySettings().HighContrast)
             Root.Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["ApplicationPageBackgroundThemeBrush"];
         WindowSizing.Initialize(_window);
-        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Sukut.ico"));
+        AppWindow.SetIcon(AppIcons.CurrentIconPath());
         _windowModeIcons=new WindowModeIcons(WinRT.Interop.WindowNative.GetWindowHandle(_window));
         // The tray icon and flyout live in the native host (Sukut.exe).
         _host = new HostLink(_window, ShowWindow, () => _ = CloseWindow(), UpdateLifecycle);
@@ -137,6 +137,23 @@ public sealed partial class ShellView : UserControl
     {
         try { await _settings.Flush(_preferences); return true; }
         catch (Exception error) { Error(error.Message); return false; }
+    }
+
+    // App icon (AppIcons.cs): the window and its taskbar button follow at once.
+    private void RenderAppIcons()
+    {
+        AppIconHeading.Text = L("App icon", "أيقونة التطبيق");
+        AppIconNote.Text = L("Used for this window and its taskbar button. The tray keeps the س icon.", "تظهر لهذه النافذة وزرها في شريط المهام. تبقى أيقونة س في منطقة الإشعارات.");
+        AppIconColorLabel.Text = L("Background colour", "لون الخلفية");
+        AppIcons.Render(AppIconMarks, AppIconColors, Arabic, (mark, color) =>
+        {
+            try { AppIcons.Save(mark, color); }
+            catch (IOException) { return; }
+            catch (UnauthorizedAccessException) { return; }
+            AppWindow.SetIcon(AppIcons.IconPath(mark, color));
+            _windowModeIcons?.Refresh();
+            RenderAppIcons();
+        });
     }
 
     private void ApplyLanguageAndTheme()
@@ -234,6 +251,7 @@ public sealed partial class ShellView : UserControl
         LanguageCard.Header = L("Language", "اللغة"); ThemeCard.Header = L("App theme", "المظهر");
         TrayCard.Header = L("Close to tray", "الإغلاق إلى منطقة الإشعارات");
         TrayCard.Description = L("Closing the window keeps Sukut in the tray, using under 20 MB.", "إغلاق النافذة يُبقي سُكوت في منطقة الإشعارات بأقل من 20 ميغابايت.");
+        RenderAppIcons();
         SetupCard.Header = L("Setup guide", "دليل الإعداد"); RunSetupLabel.Text = L("Open guide", "فتح الدليل");
         AutomationProperties.SetName(RunSetupButton, RunSetupLabel.Text);
         LanguageChoice.SelectedIndex = Arabic ? 1 : 0;

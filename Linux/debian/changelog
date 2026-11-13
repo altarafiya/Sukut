@@ -1,3 +1,13 @@
+sukut (0.5.2-1) resolute; urgency=medium
+
+  * Choose the app icon (five designs) and its background colour; default
+    white-and-blue Seen on black. The tray keeps the Seen glyph.
+  * Tray: left click opens the quick panel, right click shows Open and Exit.
+  * The "Sukut is in the tray" notice appears only the first time.
+  * A modern Phone page; bundles Android 0.5.2/code63.
+
+ -- الطرفية <altarafiyah@gmail.com>  Fri, 13 Nov 2026 23:30:00 +0800
+
 sukut (0.5.1-1) resolute; urgency=medium
 
   * New hand app icon; the tray keeps the original Seen glyph.

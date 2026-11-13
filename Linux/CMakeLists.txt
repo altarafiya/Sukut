@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 # Sukut for Linux. Stage 1 (Linux/PLAN.md section 12): the engine without audio,
 # built from the same sources as Windows so both platforms run identical code.
-project(SukutLinux VERSION 0.5.1 LANGUAGES C CXX)
+project(SukutLinux VERSION 0.5.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -157,7 +157,8 @@ if(SUKUT_WINDOW)
     add_executable(sukut
         src/window/Main.cpp src/window/HostLink.cpp src/window/Style.cpp src/window/Widgets.cpp
         src/window/Window.cpp src/window/Setup.cpp src/window/Capture.cpp
-        src/window/PhoneTools.cpp src/window/PhonePage.cpp src/window/AdvancedMix.cpp src/window/TrayPopup.cpp)
+        src/window/PhoneTools.cpp src/window/PhonePage.cpp src/window/AdvancedMix.cpp src/window/TrayPopup.cpp
+        src/window/AppIcon.cpp)
     target_include_directories(sukut PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_libraries(sukut PRIVATE PkgConfig::ADW)
     if(LAYERSHELL_FOUND)
@@ -178,6 +179,8 @@ if(SUKUT_WINDOW)
     file(GLOB SUKUT_FONTS "${SUKUT_ENGINE_SOURCE}/sukut-ui/Assets/*.ttf")
     file(COPY ${SUKUT_FONTS} DESTINATION "${SUKUT_STAGE}/fonts")
     file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/hicolor" DESTINATION "${SUKUT_STAGE}/icons")
+    # The marks the window draws the chosen app icon from.
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/marks" DESTINATION "${SUKUT_STAGE}/icons")
     file(GLOB SUKUT_ENGINE_FILES "${SUKUT_ENGINE_SOURCE}/../assets/engine/*")
     file(COPY ${SUKUT_ENGINE_FILES} DESTINATION "${SUKUT_STAGE}/engine")
     # Stage 7: the same signed APK as the Windows build, with its checks. The
@@ -208,6 +211,7 @@ if(SUKUT_WINDOW)
     install(FILES ${SUKUT_ANDROID_FILES} DESTINATION "${SUKUT_SHARE}/android" COMPONENT sukut)
     install(FILES ${SUKUT_PHONE_IMAGES} DESTINATION "${SUKUT_SHARE}/images" COMPONENT sukut)
     install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/hicolor" DESTINATION "${CMAKE_INSTALL_DATADIR}/icons" COMPONENT sukut)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/marks" DESTINATION "${SUKUT_SHARE}/icons" COMPONENT sukut)
     install(FILES data/io.github.altarafiya.Sukut.desktop DESTINATION "${CMAKE_INSTALL_DATADIR}/applications" COMPONENT sukut)
     install(FILES data/io.github.altarafiya.Sukut.metainfo.xml DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo" COMPONENT sukut)
     install(FILES data/sukut.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1" COMPONENT sukut)

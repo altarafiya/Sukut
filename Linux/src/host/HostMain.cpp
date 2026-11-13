@@ -475,6 +475,11 @@ void Host::OnWindow(bool connected, bool exit_requested) {
     return;
   }
   Refresh();
+  Log("window closed to the tray");
+  TrimIfOff();
+  // Say where Sukut went the first time only.
+  if (s.tray_notice_shown) return;
+  Change([](HostSettings& c) { c.tray_notice_shown = true; }, false);
   const bool ar = s.Arabic();
   const bool off = engine_.State().mode == 0;
   // The Windows texts without its "under 20 MB": the Linux figure is measured in stage 9.
@@ -483,8 +488,6 @@ void Host::OnWindow(bool connected, bool exit_requested) {
                  "أُغلقت النافذة لتوفير الذاكرة. اضغط أيقونة س لفتح سُكوت.")
              : T(ar, "Filtering continues. The window closed to save memory.",
                  "يستمر الترشيح. أُغلقت النافذة لتوفير الذاكرة."));
-  Log("window closed to the tray");
-  TrimIfOff();
 }
 
 void Host::TrimIfOff() {

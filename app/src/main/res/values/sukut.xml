@@ -51,7 +51,7 @@
  <string name="next">Next</string>
  <string name="finish_setup">Get started</string>
  <string name="developed_by">Developed by</string>
- <string name="sukut_changelog_latest">0.5.1\n• New hand app icon. The audio tile and notification keep the original س.\n• A clearer Debugging tile icon.\n• Corrected Arabic wording and grammar.\n• Includes 0.5.0: activation one step at a time, compact recovery, the Advanced Optimized mix and the Android 12 and 13 fixes.</string>
+ <string name="sukut_changelog_latest">0.5.2\n• Choose the app icon and its background colour in Settings. The default is the white and blue Seen on black.\n• A shorter activation guide: every page now asks for one thing.\n• The in-app icon no longer shows a dark frame.\n• Includes 0.5.1: corrected Arabic and a clearer Debugging tile.</string>
  <string name="notification_mode">Audio Mode: %1$s</string>
  <string name="home_tap_to_start">Tap to start · %1$s</string>
  <string name="status_filtering">Filtering music</string>

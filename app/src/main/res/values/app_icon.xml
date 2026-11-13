@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_icon">App icon</string>
+    <string name="app_icon_color">Background colour</string>
+    <string name="app_icon_updated">Home screen icon changed. Some launchers take a moment to update.</string>
+    <string name="icon_mark_soft">Seen</string>
+    <string name="icon_mark_wave">Seen wave</string>
+    <string name="icon_mark_wordmark">Sukut wordmark</string>
+    <string name="icon_mark_gold">Original gold</string>
+    <string name="icon_mark_blue">White and blue</string>
+    <string name="icon_color_black">Black</string>
+    <string name="icon_color_graphite">Graphite</string>
+    <string name="icon_color_navy">Navy</string>
+    <string name="icon_color_forest">Forest green</string>
+    <string name="icon_color_burgundy">Burgundy</string>
+    <string name="icon_color_plum">Plum</string>
+</resources>

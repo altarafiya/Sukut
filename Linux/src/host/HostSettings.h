@@ -26,6 +26,7 @@ struct HostSettings {
   cleanwave::OptimizedMix optimized_mix;
   bool setup_completed = false;
   bool close_to_tray = true;
+  bool tray_notice_shown = false; // the "Sukut is in the tray" notice is shown once
   bool start_with_system = false;
   std::uint64_t host_settings_version = 0;
 

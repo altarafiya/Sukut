@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/sukut_launcher_background" />
-    <foreground android:drawable="@drawable/sukut_launcher_foreground" />
-    <monochrome android:drawable="@drawable/sukut_launcher_monochrome" />
+    <background android:drawable="@color/icon_bg_black" />
+    <foreground android:drawable="@drawable/icon_mark_blue_layer" />
+    <monochrome android:drawable="@drawable/icon_mono_blue_layer" />
 </adaptive-icon>

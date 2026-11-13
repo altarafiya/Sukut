@@ -99,6 +99,7 @@ class SettingsActivity : Activity() {
                 UiPrefs.setTheme(this@SettingsActivity, which); recreate()
             }.apply { tag = "appearance_choice" }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(10) })
             addView(ui.space(20)); addView(backgroundPreferences())
+            addView(ui.space(20)); addView(appIconPreferences())
             addView(ui.space(20))
             addView(label(R.drawable.ic_language, R.string.language))
             val languages = arrayOf(UiPrefs.LANGUAGE_SYSTEM, UiPrefs.LANGUAGE_ENGLISH, UiPrefs.LANGUAGE_ARABIC)
@@ -170,6 +171,45 @@ class SettingsActivity : Activity() {
                 }.also { dialog -> dialog.setOnDismissListener { if (tintDialog === dialog) tintDialog = null } }
             }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(10) })
+    }
+
+    // Launcher icon: five marks, six background colours, a rounded square (AppIcon).
+    private fun appIconPreferences(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        val context = this@SettingsActivity
+        val mark = AppIcon.mark(context); val color = AppIcon.color(context)
+        addView(label(R.drawable.ic_palette, R.string.app_icon))
+        addView(LinearLayout(context).apply {
+            tag = "app_icon_marks"; gravity = Gravity.CENTER_VERTICAL
+            AppIcon.MARKS.forEachIndexed { i, m ->
+                addView(ImageView(context).apply {
+                    setImageDrawable(AppIcon.tile(context, m, color))
+                    contentDescription = getString(AppIcon.markName(m)); isSelected = m == mark; isFocusable = true
+                    setPadding(ui.dp(4), ui.dp(4), ui.dp(4), ui.dp(4))
+                    if (m == mark) background = ui.rounded(android.graphics.Color.TRANSPARENT, 16).apply { setStroke(ui.dp(2), ui.accent) }
+                    ui.springPress(this)
+                    setOnClickListener { ui.tap(this); changeIcon(m, color) }
+                }, LinearLayout.LayoutParams(0, ui.dp(60), 1f).apply { if (i > 0) marginStart = ui.dp(6) })
+            }
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
+        addView(ui.text(R.string.app_icon_color, 14f, color = ui.secondary), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(14) })
+        addView(LinearLayout(context).apply {
+            tag = "app_icon_colors"; gravity = Gravity.CENTER_VERTICAL
+            AppIcon.COLORS.forEachIndexed { i, (key, value) ->
+                addView(View(context).apply {
+                    background = ui.circle(value).apply { setStroke(ui.dp(if (key == color) 3 else 1), if (key == color) ui.accent else ui.dividerColor) }
+                    contentDescription = getString(AppIcon.colorName(key)); isSelected = key == color; isFocusable = true
+                    ui.springPress(this)
+                    setOnClickListener { ui.tap(this); changeIcon(mark, key) }
+                }, LinearLayout.LayoutParams(ui.dp(36), ui.dp(36)).apply { if (i > 0) marginStart = ui.dp(10) })
+            }
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(8) })
+    }
+
+    private fun changeIcon(mark: String, color: String) {
+        AppIcon.apply(this, mark, color)
+        android.widget.Toast.makeText(this, R.string.app_icon_updated, android.widget.Toast.LENGTH_SHORT).show()
+        recreate()
     }
 
     private fun reconfigureAudio() {

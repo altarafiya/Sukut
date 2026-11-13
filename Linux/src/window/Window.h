@@ -91,6 +91,7 @@ class SukutWindow {
   void RenderOutputs(GtkWidget* list);
   void RenderApps();
   void RenderSettings();
+  void RenderAppIcon();
   void RenderSetup();
   void RenderBuffering(GtkWidget* group);
 
@@ -185,6 +186,8 @@ class SukutWindow {
   GtkWidget* theme_row_ = nullptr;
   GtkWidget* tray_row_ = nullptr;
   GtkWidget* autostart_row_ = nullptr;
+  GtkWidget* icon_marks_ = nullptr;
+  GtkWidget* icon_colors_ = nullptr;
   GtkWidget* amp_scale_ = nullptr;
   GtkWidget* amp_value_ = nullptr;
   // Setup.

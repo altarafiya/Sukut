@@ -2,7 +2,7 @@
 
 The plan is in [PLAN.md](PLAN.md): Debian 13 first, with stages and owner gates.
 
-Current version: **0.5.1** as snap, Flatpak and `.deb`.
+Current version: **0.5.2** as snap, Flatpak and `.deb`.
 
 ## Packages
 
@@ -10,9 +10,9 @@ Three builds of the same Sukut. Pick one; they don't share settings.
 
 | Package | Version | Where | Works on |
 |---|---|---|---|
-| Snap | 0.5.1 | [Snap Store](https://snapcraft.io/sukut) | Ubuntu 24.04 and 26.04 (tested), other distributions with snapd |
-| Flatpak | 0.5.1 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.1) (`.flatpak` file) | Most distributions with Flatpak; it uses the GNOME 51 runtime from Flathub |
-| `.deb` | 0.5.1 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.1) | Ubuntu 26.04 or newer, PikaOS 4: it needs `libc6` 2.43. On older Ubuntu, use the snap |
+| Snap | 0.5.1 (0.5.2 coming) | [Snap Store](https://snapcraft.io/sukut) | Ubuntu 24.04 and 26.04 (tested), other distributions with snapd |
+| Flatpak | 0.5.2 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.2) (`.flatpak` file) | Most distributions with Flatpak; it uses the GNOME 51 runtime from Flathub |
+| `.deb` | 0.5.2 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.2) | Ubuntu 26.04 or newer, PikaOS 4: it needs `libc6` 2.43. On older Ubuntu, use the snap |
 
 All three need PipeWire and an x86-64 PC.
 
@@ -33,7 +33,7 @@ sudo snap connect sukut:pipewire && sudo snap connect sukut:audio-record && sudo
 **Flatpak**
 
 ```bash
-flatpak install --user ./Sukut-0.5.1-Linux-x86_64.flatpak
+flatpak install --user ./Sukut-0.5.2-Linux-x86_64.flatpak
 ```
 
 - The first time the Phone page needs it, Sukut downloads Google's adb and checks it.
@@ -46,7 +46,7 @@ flatpak install --user ./Sukut-0.5.1-Linux-x86_64.flatpak
 Open it with your software installer, or:
 
 ```bash
-sudo apt install ./Sukut-0.5.1-Linux-amd64.deb
+sudo apt install ./Sukut-0.5.2-Linux-amd64.deb
 ```
 
 It brings `adb`, and **Allow access** on the Phone page sets up USB access to the phone.

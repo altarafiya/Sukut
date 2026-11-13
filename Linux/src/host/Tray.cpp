@@ -120,7 +120,9 @@ bool Tray::Start(GDBusConnection* connection, std::string& error) {
 void Tray::SetCustomMenu(bool enabled) {
   if(custom_menu_==enabled)return;
   custom_menu_=enabled;
-  if(connection_)Emit(kItemPath,kItemInterface,"NewMenu",nullptr);
+  // The right-click menu changes between short and full.
+  Build(state_);
+  if(connection_){++revision_;Emit(kMenuPath,kMenuInterface,"LayoutUpdated",g_variant_new("(ui)",revision_,0));}
 }
 
 void Tray::OnWatcher(bool present) {
@@ -189,7 +191,9 @@ void Tray::Build(const State& s) {
   add(14, exit);
 
   Item root;
-  if (s.window_open) {
+  // With the flyout, left click opens it and right click is a short menu, as on
+  // Windows. Without it (GNOME, sandboxes), right click is the full menu.
+  if (custom_menu_ || s.window_open) {
     // The window is the one place to control Sukut while it is open.
     root.children = {13, 14};
     add(0, root);
@@ -316,7 +320,7 @@ GVariant* Tray::OnItemProperty(const gchar* property) {
   if (p == "IconThemePath") return g_variant_new_string(icon_theme_path_.c_str());
   if (p == "AttentionIconName") return g_variant_new_string((std::string(kAppId) + "-tray-on").c_str());
   if (p == "ItemIsMenu") return g_variant_new_boolean(FALSE);
-  if (p == "Menu") return g_variant_new_object_path(custom_menu_?"/NO_DBUSMENU":kMenuPath);
+  if (p == "Menu") return g_variant_new_object_path(kMenuPath);
   if (p == "ToolTip")
     return g_variant_new("(s@a(iiay)ss)", "", g_variant_new_array(G_VARIANT_TYPE("(iiay)"), nullptr, 0),
                          "سُكوت Sukut", state_.status.c_str());
@@ -325,8 +329,10 @@ GVariant* Tray::OnItemProperty(const gchar* property) {
 
 void Tray::OnItemMethod(const gchar* method, GVariant* parameters, GDBusMethodInvocation* invocation) {
   const std::string m = method;
-  if (m == "Activate") { if (actions_.activate) actions_.activate(); }
-  else if(m=="ContextMenu" && custom_menu_ && actions_.popup) {gint32 x=0,y=0;g_variant_get(parameters,"(ii)",&x,&y);actions_.popup(x,y);}
+  if (m == "Activate") {
+    if (custom_menu_ && actions_.popup) { gint32 x = 0, y = 0; g_variant_get(parameters, "(ii)", &x, &y); actions_.popup(x, y); }
+    else if (actions_.activate) actions_.activate();
+  }
   else if (m == "ProvideXdgActivationToken") {
     const gchar* token = nullptr;
     g_variant_get(parameters, "(&s)", &token);

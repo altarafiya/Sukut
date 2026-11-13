@@ -35,6 +35,19 @@ window.sukut.arabic { font-family: "IBM Plex Sans Arabic", sans-serif; font-size
 .about-name { font-family: "IBM Plex Sans Arabic"; font-size: 1.5em; font-weight: 600; }
 .about-card { padding: 18px 16px; }
 .dot { min-width: 8px; min-height: 8px; border-radius: 4px; }
+.phone-hero { padding: 18px; border-radius: 18px; }
+.phone-badge { min-width: 56px; min-height: 56px; border-radius: 28px; background-color: alpha(currentColor, 0.08); }
+.phone-badge image { -gtk-icon-size: 28px; }
+.phone-title { font-size: 1.3em; font-weight: 700; }
+.status-pill { padding: 3px 12px; border-radius: 999px; font-size: 0.85em; font-weight: 600; background-color: alpha(currentColor, 0.14); }
+.feature-card { padding: 18px 20px; border-radius: 18px; }
+.tool-card { padding: 16px; border-radius: 16px; }
+.tool-icon { -gtk-icon-size: 28px; }
+.tool-title { font-weight: 700; font-size: 1.05em; }
+.icon-choice { padding: 4px; border-radius: 16px; }
+.icon-choice:checked { box-shadow: inset 0 0 0 2px var(--accent-bg-color); background: none; }
+.color-choice { min-width: 34px; min-height: 34px; padding: 0; box-shadow: inset 0 0 0 1px alpha(currentColor, 0.25); }
+.color-choice:checked { box-shadow: inset 0 0 0 3px var(--accent-bg-color); }
 )css";
 
 // The Windows palette (App.xaml): accent, accent container, warning, modes.

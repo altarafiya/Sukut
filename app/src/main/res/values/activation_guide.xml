@@ -4,7 +4,7 @@
  <string name="guide_method_windows">Computer</string>
  <string name="guide_developer_body">Open About phone. Tap Build number seven times. On Xiaomi, tap OS version instead. Enter your screen lock if asked.</string>
  <string name="guide_phone_1_body">Connect to Wi-Fi. You will enter Android’s six-digit code through Sukut’s notification. Keep the pairing-code window open, pull down notifications, expand Sukut’s notification, then tap Enter pairing code and send the code.</string>
- <string name="guide_phone_2_body">Tap below and allow notifications. In Android settings, enable Wireless debugging and choose Pair device with pairing code. Follow step 2; Sukut returns here when ready.</string>
+ <string name="guide_phone_2_body">Tap below and allow notifications. In Android settings, enable Wireless debugging and choose Pair device with pairing code. Enter the code through Sukut’s notification, as shown above; Sukut returns here when ready.</string>
  <string name="guide_windows_1_body">In Developer options, turn on USB debugging.</string>
  <string name="guide_windows_2_body">Use a USB data cable. Unlock the phone and approve Allow USB debugging for your computer.</string>
  <string name="guide_picture_usb">See USB debugging screen</string>

@@ -91,7 +91,7 @@ class GuidedActivationTest {
             }
             click(page!!, R.string.next)
             ins.runOnMainSync {
-                assertEquals(page!!.getString(R.string.setup_activation_progress,2,4,2,6), (byTag(page!!, "setup_step_counter") as TextView).text.toString())
+                assertEquals(page!!.getString(R.string.setup_activation_progress,2,4,2,4), (byTag(page!!, "setup_step_counter") as TextView).text.toString())
                 assertTrue(labels(page!!).contains(page!!.getString(R.string.guide_dev_title)))
                 assertTrue(all(page!!).any {it.tag=="activation_status_0"})
                 assertFalse(all(page!!).any {it.tag=="activation_status_2"})
@@ -100,7 +100,7 @@ class GuidedActivationTest {
             click(page!!, R.string.next)
             page = recreated(page!!)
             ins.runOnMainSync {
-                assertEquals(page!!.getString(R.string.setup_activation_progress,2,4,3,6), (byTag(page!!, "setup_step_counter") as TextView).text.toString())
+                assertEquals(page!!.getString(R.string.setup_activation_progress,2,4,3,4), (byTag(page!!, "setup_step_counter") as TextView).text.toString())
                 assertTrue(labels(page!!).contains(page!!.getString(R.string.guide_usb_title)))
                 assertTrue(all(page!!).any {it.tag=="activation_status_1"})
                 assertFalse(all(page!!).any {it.tag=="activation_status_0" || it.tag=="activation_status_2"})
@@ -122,9 +122,10 @@ class GuidedActivationTest {
             click(page!!, R.string.next)
             page = recreated(page!!)
             ins.runOnMainSync {
-                assertEquals(page!!.getString(R.string.guide_progress, 3, 5), (byTag(page!!, "guide_step_counter") as TextView).text.toString())
+                assertEquals(page!!.getString(R.string.guide_progress, 3, 4), (byTag(page!!, "guide_step_counter") as TextView).text.toString())
+                // The code help sits beside the Pair button; showing it starts nothing.
                 assertTrue(labels(page!!).contains(page!!.getString(R.string.guide_code_title)))
-                assertFalse(all(page!!).any { it.tag == "guide_pair_phone" })
+                assertTrue(all(page!!).any { it.tag == "guide_pair_phone" })
                 assertFalse(LocalActivationState.busy)
             }
             click(page!!, R.string.back)
@@ -132,7 +133,7 @@ class GuidedActivationTest {
             click(page!!, R.string.back)
             ins.runOnMainSync {
                 assertTrue(byTag(page!!, "guide_choose_phone").isSelected)
-                assertEquals(page!!.getString(R.string.guide_progress,1,5),(byTag(page!!,"guide_step_counter") as TextView).text.toString())
+                assertEquals(page!!.getString(R.string.guide_progress,1,4),(byTag(page!!,"guide_step_counter") as TextView).text.toString())
                 assertFalse(LocalActivationState.busy)
             }
         } finally { finish(page) }
@@ -152,7 +153,7 @@ class GuidedActivationTest {
                 assertEquals(3, guide.step)
                 assertEquals(0, pairCalls)
                 assertTrue(guide.back())
-                assertEquals(2, guide.step)
+                assertEquals(1, guide.step)
                 assertTrue(guide.canNext)
             }
         } finally { finish(page) }
@@ -161,8 +162,8 @@ class GuidedActivationTest {
     @Test fun finalSummariesExplainStatusAndContainNoCleanupStep() = preservingPreferences {
         val page=launch(LocalActivationActivity::class.java)
         try {ins.runOnMainSync {
-            for(method in listOf(WorkerGuide.WINDOWS,WorkerGuide.PHONE)) {
-                val guide=WorkerGuide.Controller(page,Bundle().apply {putInt("guide_method",method);putInt("guide_step",if(method==WorkerGuide.WINDOWS)4 else 3)},pair={},cancelPair={},changed={})
+            for(method in listOf(WorkerGuide.PHONE)) {
+                val guide=WorkerGuide.Controller(page,Bundle().apply {putInt("guide_method",method);putInt("guide_step",3)},pair={},cancelPair={},changed={})
                 val all=views(guide.view)
                 assertEquals(3,all.count {it.tag in listOf("activation_status_0","activation_status_1","activation_status_2","activation_status_3")})
                 assertEquals(3,all.count {it.tag?.toString()?.startsWith("activation_status_detail_")==true})
@@ -174,17 +175,19 @@ class GuidedActivationTest {
 
     @Test fun desktopLaunchResumesTheOpenGuideWithoutResettingItsStep() = preservingPreferences {
         UiPrefs.setLanguage(context,"en"); UiPrefs.setActivationMethod(context,WorkerGuide.WINDOWS)
+        // First setup must still be open for the launcher to return to it.
+        context.getSharedPreferences("cleanwave_ui",Context.MODE_PRIVATE).edit().putBoolean("sukut_setup_v1",false).commit()
         val page=launch(SetupActivity::class.java,1)
         try {
             click(page,R.string.next);click(page,R.string.next)
             ins.runOnMainSync { context.startActivity(Intent(context,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-            ins.waitForIdleSync();SystemClock.sleep(400)
+            ins.waitForIdleSync();SystemClock.sleep(1200)
             ins.runOnMainSync {
                 val resumed=ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
                 assertTrue(resumed.contains(page))
-                assertEquals(page.getString(R.string.setup_activation_progress,2,4,3,6),(byTag(page,"setup_step_counter") as TextView).text.toString())
+                assertEquals(page.getString(R.string.setup_activation_progress,2,4,3,4),(byTag(page,"setup_step_counter") as TextView).text.toString())
                 val segments=byTag(page,"setup_progress_1") as ViewGroup
-                assertEquals(6,segments.childCount)
+                assertEquals(4,segments.childCount)
                 assertEquals(3,(0 until segments.childCount).count {segments.getChildAt(it).isSelected})
             }
         } finally {finish(page)}
@@ -341,9 +344,10 @@ class GuidedActivationTest {
                     val photo=byTag(page,"guide_picture_notification")
                     assertTrue((photo.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin>=12*context.resources.displayMetrics.density)
                 }
-                capture("code-help");click(page,R.string.next)
+                capture("pair")
+                // Next waits for a real worker on the Pair page.
                 ins.runOnMainSync {WorkerConnection.attach(Bundle().apply {putBinder("worker",binder);putInt("protocol",WorkerProtocol.VERSION);putInt("version",BuildConfig.VERSION_CODE);putInt("pid",12345)})}
-                ins.waitForIdleSync();click(page,R.string.next);capture("phone-ready")
+                ins.waitForIdleSync();SystemClock.sleep(300);click(page,R.string.next);capture("phone-ready")
             } finally {ins.runOnMainSync {WorkerConnection.clear(binder)};finish(page)}
         }
     }
@@ -366,7 +370,6 @@ class GuidedActivationTest {
                 capture("choose")
                 click(page, R.string.next); capture("developer")
                 click(page, R.string.next); capture("usb")
-                click(page, R.string.next); capture("connect")
                 click(page, R.string.next); capture("activate")
             } finally { finish(page) }
         }

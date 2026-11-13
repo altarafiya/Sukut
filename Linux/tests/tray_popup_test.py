@@ -18,21 +18,24 @@ try:
    menu=call('org.freedesktop.DBus.Properties.Get','org.kde.StatusNotifierItem','Menu');break
   except RuntimeError:time.sleep(.05)
  else:raise RuntimeError('tray did not export: '+(root/'host.log').read_text())
- assert '/NO_DBUSMENU' in menu,menu
- call('org.kde.StatusNotifierItem.ContextMenu',1880,1040)
+ assert '/MenuBar' in menu,menu
+ def root_items():
+  out=subprocess.run(['gdbus','call','--session','--dest',name,'--object-path','/MenuBar','--method','com.canonical.dbusmenu.GetLayout','0','1','[]'],capture_output=True,text=True,timeout=10).stdout
+  return out.count("'label'")
+ assert root_items()==2,'right click must be the short Open/Exit menu while the flyout works'
+ call('org.kde.StatusNotifierItem.Activate',1880,1040)
  for _ in range(50):
   if record.exists() and '--tray-popup 1880 1040' in record.read_text():break
   time.sleep(.05)
- else:raise AssertionError('right-click did not launch the popup')
+ else:raise AssertionError('left click did not launch the popup')
  maps=pathlib.Path(f'/proc/{p.pid}/maps').read_text();assert 'libgtk-4' not in maps and 'libgtk4-layer-shell' not in maps
- print('PASS: right-click coordinates launch the on-demand popup; host does not load GTK',flush=True)
- time.sleep(.15);fail.touch();call('org.kde.StatusNotifierItem.ContextMenu',1800,1030)
+ print('PASS: left click launches the on-demand popup; right click is Open/Exit; host does not load GTK',flush=True)
+ time.sleep(.15);fail.touch();call('org.kde.StatusNotifierItem.Activate',1800,1030)
  for _ in range(50):
-  menu=call('org.freedesktop.DBus.Properties.Get','org.kde.StatusNotifierItem','Menu')
-  if '/MenuBar' in menu:break
+  if root_items()>2:break
   time.sleep(.05)
- else:raise AssertionError('unsupported compositor did not restore native menu: '+menu)
- print('PASS: popup child reaped and unsupported compositor restores native menu',flush=True)
+ else:raise AssertionError('unsupported compositor did not restore the full right-click menu')
+ print('PASS: popup child reaped and unsupported compositor restores the full menu',flush=True)
 finally:
  p.terminate()
  try:p.wait(timeout=8)

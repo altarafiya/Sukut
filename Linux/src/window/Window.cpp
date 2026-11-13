@@ -1,4 +1,5 @@
 #include "window/Window.h"
+#include "window/AppIcon.h"
 
 #include <algorithm>
 #include <cmath>
@@ -611,6 +612,32 @@ GtkWidget* SukutWindow::BuildSettings() {
   }, this);
   adw_preferences_group_add(ADW_PREFERENCES_GROUP(general), autostart_row_);
   gtk_widget_set_visible(autostart_row_, !InSandbox());  // writes to the autostart folder, outside the sandbox
+
+  // App icon: five marks on a rounded square of the chosen colour (window/AppIcon.h).
+  GtkWidget* appearance = group(L("App icon", "أيقونة التطبيق"));
+  if (app_icon::CanApply()) {
+    adw_preferences_group_set_description(ADW_PREFERENCES_GROUP(appearance),
+        L("Used in the menu, the taskbar and this window. The tray keeps the س icon.",
+          "تظهر في القائمة وشريط المهام وهذه النافذة. تبقى أيقونة س في منطقة الإشعارات."));
+    GtkWidget* row = adw_preferences_row_new();
+    gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
+    gtk_widget_set_focusable(row, FALSE);  // the choices inside take focus
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    for (auto edge : {gtk_widget_set_margin_top, gtk_widget_set_margin_bottom, gtk_widget_set_margin_start, gtk_widget_set_margin_end}) edge(box, 12);
+    icon_marks_ = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_set_homogeneous(GTK_BOX(icon_marks_), TRUE);
+    icon_colors_ = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_box_append(GTK_BOX(box), icon_marks_);
+    gtk_box_append(GTK_BOX(box), Label(L("Background colour", "لون الخلفية"), "dim-label"));
+    gtk_box_append(GTK_BOX(box), icon_colors_);
+    gtk_list_box_row_set_child(GTK_LIST_BOX_ROW(row), box);
+    adw_preferences_group_add(ADW_PREFERENCES_GROUP(appearance), row);
+    RenderAppIcon();
+  } else {
+    adw_preferences_group_set_description(ADW_PREFERENCES_GROUP(appearance),
+        L("In the Flatpak and Snap versions the desktop shows the standard icon; install the .deb to choose another.",
+          "في نسختي Flatpak وSnap يعرض سطح المكتب الأيقونة الافتراضية؛ ثبّت حزمة .deb لاختيار أيقونة أخرى."));
+  }
 
   // Audio: amplification.
   GtkWidget* audio = group(L("Audio", "الصوت"));
@@ -1439,6 +1466,71 @@ void SukutWindow::CopyDiagnostics() {
   text += "outputs=" + std::to_string(catalog_.outputs.size()) + " apps=" + std::to_string(catalog_.apps.size()) + "\n";
   gdk_clipboard_set_text(gtk_widget_get_clipboard(window_), text.c_str());
   Toast(L("Diagnostics copied", "نُسخ التشخيص"));
+}
+
+
+namespace {
+// A cairo image (premultiplied ARGB, native order) as a GdkTexture for GtkPicture.
+GdkTexture* Texture(cairo_surface_t* surface) {
+  cairo_surface_flush(surface);
+  const int w = cairo_image_surface_get_width(surface), h = cairo_image_surface_get_height(surface);
+  const int stride = cairo_image_surface_get_stride(surface);
+  GBytes* bytes = g_bytes_new(cairo_image_surface_get_data(surface), static_cast<gsize>(stride) * h);
+  GdkTexture* texture = gdk_memory_texture_new(w, h, GDK_MEMORY_DEFAULT, bytes, stride);
+  g_bytes_unref(bytes);
+  return texture;
+}
+}  // namespace
+
+void SukutWindow::RenderAppIcon() {
+  if (!icon_marks_) return;
+  const app_icon::Choice current = app_icon::Load();
+  for (GtkWidget* box : {icon_marks_, icon_colors_})
+    while (GtkWidget* child = gtk_widget_get_first_child(box)) gtk_box_remove(GTK_BOX(box), child);
+  auto choose = [](GtkWidget* button, gpointer self) {
+    auto* s = static_cast<SukutWindow*>(self);
+    app_icon::Choice next = app_icon::Load();
+    if (const char* mark = static_cast<const char*>(g_object_get_data(G_OBJECT(button), "mark"))) next.mark = mark;
+    if (const char* color = static_cast<const char*>(g_object_get_data(G_OBJECT(button), "color"))) next.color = color;
+    std::string error;
+    if (!app_icon::Apply(next, error)) s->Toast(error);
+    else s->Toast(s->L("App icon changed. Some desktops show it after you sign in again.",
+                       "تغيّرت أيقونة التطبيق. تظهر في بعض أسطح المكتب بعد تسجيل الدخول مجددًا."));
+    // Rebuild after the click has finished.
+    g_idle_add_once(+[](gpointer data) { static_cast<SukutWindow*>(data)->RenderAppIcon(); }, s);
+  };
+  for (const auto& mark : app_icon::kMarks) {
+    GtkWidget* button = gtk_toggle_button_new();
+    gtk_widget_add_css_class(button, "flat");
+    gtk_widget_add_css_class(button, "icon-choice");
+    cairo_surface_t* image = app_icon::Render({mark.id, current.color}, 112);
+    GdkTexture* texture = Texture(image);
+    GtkWidget* picture = gtk_picture_new_for_paintable(GDK_PAINTABLE(texture));
+    g_object_unref(texture);
+    cairo_surface_destroy(image);
+    gtk_widget_set_size_request(picture, 56, 56);
+    gtk_picture_set_content_fit(GTK_PICTURE(picture), GTK_CONTENT_FIT_CONTAIN);
+    gtk_button_set_child(GTK_BUTTON(button), picture);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), current.mark == mark.id);
+    Name(button, L(mark.en, mark.ar));
+    g_object_set_data(G_OBJECT(button), "mark", const_cast<char*>(mark.id));
+    g_signal_connect(button, "clicked", G_CALLBACK(+choose), this);
+    gtk_box_append(GTK_BOX(icon_marks_), button);
+  }
+  for (const auto& color : app_icon::kColors) {
+    GtkWidget* button = gtk_toggle_button_new();
+    AddClasses(button, {"circular", "color-choice"});
+    gtk_widget_set_size_request(button, 34, 34);
+    GtkCssProvider* fill = gtk_css_provider_new();
+    gtk_css_provider_load_from_string(fill, (std::string("button { background: ") + color.hex + "; }").c_str());
+    gtk_style_context_add_provider(gtk_widget_get_style_context(button), GTK_STYLE_PROVIDER(fill), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(fill);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), current.color == color.id);
+    Name(button, L(color.en, color.ar));
+    g_object_set_data(G_OBJECT(button), "color", const_cast<char*>(color.id));
+    g_signal_connect(button, "clicked", G_CALLBACK(+choose), this);
+    gtk_box_append(GTK_BOX(icon_colors_), button);
+  }
 }
 
 }  // namespace sukut::window

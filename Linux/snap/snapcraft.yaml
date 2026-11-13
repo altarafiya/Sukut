@@ -8,7 +8,7 @@ description: |
 
   **After installing, open Sukut. If it asks for permission, it shows one command
   to copy into Terminal.** Snap apps can't grant themselves access to your audio.
-version: 0.5.1
+version: 0.5.2
 base: core26
 grade: stable
 confinement: strict
@@ -50,7 +50,7 @@ parts:
       export PKG_CONFIG_PATH="$CRAFT_STAGE/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
       sed -i "s#^prefix=.*#prefix=$CRAFT_STAGE/usr#" "$CRAFT_STAGE/usr/lib/x86_64-linux-gnu/pkgconfig/gtk4-layer-shell-0.pc"
       cmake -S Linux -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBEXECDIR=libexec \
-        -DSUKUT_DEV_TOOLS=OFF -DSUKUT_DEPS_DIR="$HOME/sukut-deps" -DSUKUT_VERSION_LABEL=0.5.1 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        -DSUKUT_DEV_TOOLS=OFF -DSUKUT_DEPS_DIR="$HOME/sukut-deps" -DSUKUT_VERSION_LABEL=0.5.2 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       cmake --build build --parallel "$CRAFT_PARALLEL_BUILD_COUNT"
       DESTDIR="$CRAFT_PART_INSTALL" cmake --install build --component sukut
       cd "$CRAFT_PART_INSTALL"
