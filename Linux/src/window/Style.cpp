@@ -36,8 +36,7 @@ window.sukut.arabic { font-family: "IBM Plex Sans Arabic", sans-serif; font-size
 .about-card { padding: 18px 16px; }
 .dot { min-width: 8px; min-height: 8px; border-radius: 4px; }
 .phone-hero { padding: 18px; border-radius: 18px; }
-.phone-badge { min-width: 56px; min-height: 56px; border-radius: 28px; background-color: alpha(currentColor, 0.08); }
-.phone-badge image { -gtk-icon-size: 28px; }
+.phone-badge { min-width: 56px; min-height: 56px; border-radius: 28px; background-color: alpha(currentColor, 0.10); -gtk-icon-size: 28px; }
 .phone-title { font-size: 1.3em; font-weight: 700; }
 .status-pill { padding: 3px 12px; border-radius: 999px; font-size: 0.85em; font-weight: 600; background-color: alpha(currentColor, 0.14); }
 .feature-card { padding: 18px 20px; border-radius: 18px; }
