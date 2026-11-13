@@ -31,7 +31,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/altarafiya/Sukut/releases/download/v0.5.2/Sukut-0.5.2-Flatpak-x86_64.tar.xz
-        sha256: 0666d10d5bdc352a5f49b8fd621a3cc697b17b22cbb7ee04f94bd5057bd768f7
+        sha256: 2c560db26e0b1123ef99473ce0c5e247c0f8982abd7631361109735511435571
         strip-components: 0
       - type: file
         path: sukut-adb
