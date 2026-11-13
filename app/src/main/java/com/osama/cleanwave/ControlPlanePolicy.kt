@@ -13,6 +13,7 @@ internal object ControlPlanePolicy {
     fun affectsHome(key: String?) = key in homeKeys
     private val homeKeys = tileKeys + setOf(
         "error", "recovery_until", "overload_tip", "optimized_background_db",
+        "advanced_mix_enabled", "advanced_voice_db", "advanced_music_db", "advanced_background_db",
         "buffering", "effects_compatibility", "engine_performance_custom", "bluetooth_output_key",
     )
 }

@@ -8,8 +8,6 @@
  <string name="performance_quality_detail">لسماعات البلوتوث ومؤثرات الهاتف مثل Dolby. تأخير أكبر قليلًا.</string>
  <string name="performance_custom_detail">اختر مسار الصوت ومقدار الصوت الجاهز بنفسك.</string>
  <string name="performance_help">اختر مؤثرات الهاتف والتخزين المؤقت للصوت.</string>
- <string name="performance_output_explanation">«مباشر» هو الأسرع. «مؤثرات الهاتف» يتيح لـ Dolby والمعادل والبلوتوث أداء دورها، مع تأخير بسيط.</string>
- <string name="performance_buffer_explanation">اختر «الأقل» لتأخير أقل، أو «متوازن» للاستماع اليومي، أو «الأكبر» إذا استمر تقطّع الصوت.</string>
  <string name="performance_done">تم</string>
  <string name="background_level">أصوات الخلفية</string>
  <string name="buffer_delay_warning">الاحتفاظ بقليل من الصوت الجاهز يحل ذلك عادةً. سيبدأ الصوت متأخرًا قليلًا.</string>

@@ -186,6 +186,7 @@ class Host {
       fresh.buffering = preferences_.buffering; fresh.source_pid = preferences_.source_pid;
       fresh.preferred_mode = preferences_.preferred_mode;
       fresh.optimized_background_db = preferences_.optimized_background_db;
+      fresh.optimized_mix = preferences_.optimized_mix;
       fresh.settings_version = settings_revision_;
     }
     preferences_ = std::move(fresh);
@@ -196,7 +197,11 @@ class Host {
     std::lock_guard lock(settings_mutex_);
     settings_snapshot_ = ",\"hostSettingsVersion\":" + std::to_string(settings_revision_) + ",\"hostOutput\":\"" + json::Escape(preferences_.output)
       + "\",\"hostBuffering\":" + std::to_string(preferences_.buffering) + ",\"hostSourcePid\":" + std::to_string(preferences_.source_pid)
-      + ",\"hostOptimizedBackgroundDb\":" + std::to_string(preferences_.optimized_background_db);
+      + ",\"hostOptimizedBackgroundDb\":" + std::to_string(preferences_.optimized_background_db)
+      + ",\"hostAdvancedOptimized\":" + (preferences_.optimized_mix.advanced ? "true" : "false")
+      + ",\"hostAdvancedVoiceDb\":" + std::to_string(preferences_.optimized_mix.voice_db)
+      + ",\"hostAdvancedMusicDb\":" + std::to_string(preferences_.optimized_mix.music_db)
+      + ",\"hostAdvancedBackgroundDb\":" + std::to_string(preferences_.optimized_mix.background_db);
   }
 
   void RequestCatalog(bool include_apps = true) {
@@ -261,10 +266,12 @@ class Host {
     if (mode_ == 0 && field != 1) {
       preferences_.buffering = s.buffering; preferences_.source_pid = s.pid;
       preferences_.optimized_background_db=s.optimized_background_db;
+      preferences_.optimized_mix=s.optimized_mix;
       preferences_.settings_version = ++settings_revision_; preferences_.Save(locations_.Preferences()); UpdateTray(); return;
     }
     if(field==3) {
       preferences_.optimized_background_db=s.optimized_background_db;
+      preferences_.optimized_mix=s.optimized_mix;
       preferences_.settings_version=++settings_revision_;preferences_.Save(locations_.Preferences());
     }
     BeginSelection(s);
@@ -366,6 +373,7 @@ class Host {
     m.standby = mode_ != 0 && status_.state == 1 && status_.standby;
     m.buffering = preferences_.buffering; m.output = preferences_.output; m.source_pid = std::to_string(preferences_.source_pid);
     m.optimized_background_db=preferences_.optimized_background_db;
+    m.advanced_optimized=preferences_.optimized_mix.advanced;
     for (const auto& e : status_.endpoints) if (e.flow == 1 && !e.is_virtual) m.outputs.push_back({e.id, Widen(e.name)});
     m.apps.push_back({"0", m.arabic ? L"صوت النظام بالكامل" : L"All system audio"});
     for (const auto& a : source_apps_) m.apps.push_back(a);
@@ -462,7 +470,7 @@ class Host {
     s.mode = mode; s.restart = restart;
     s.source = Widen(preferences_.source); s.capture = Widen(preferences_.capture); s.output = Widen(preferences_.output);
     s.pid = preferences_.source_pid; s.buffering = preferences_.buffering;
-    s.cable_confirmed = preferences_.cable_confirmed; s.optimized_background_db = preferences_.optimized_background_db;
+    s.cable_confirmed = preferences_.cable_confirmed; s.optimized_background_db = preferences_.optimized_background_db; s.optimized_mix=preferences_.optimized_mix;
     return s;
   }
   void RunSelect(int mode, bool restart, const std::string& output = {}, bool automatic_output = false) {
@@ -493,6 +501,7 @@ class Host {
       preferences_.source = Narrow(s.source); preferences_.capture = Narrow(s.capture); preferences_.output = Narrow(s.output);
       preferences_.buffering = s.buffering; preferences_.source_pid = s.pid;
       preferences_.optimized_background_db=s.optimized_background_db;
+      preferences_.optimized_mix=s.optimized_mix;
       preferences_.settings_version = ++settings_revision_; preferences_.Save(locations_.Preferences()); attention_.clear();
       if (s.mode == 0) { policy_.Reset(); if (!client_) TrimMemory(); }
     } else if (!exiting_) {
@@ -632,6 +641,8 @@ class Host {
       s.source = Widen(arg(2)); s.capture = Widen(arg(3)); s.output = Widen(arg(4));
       s.pid = static_cast<std::uint32_t>(number(5)); s.buffering = static_cast<int>(number(6));
       s.cable_confirmed = number(7) != 0; s.optimized_background_db = static_cast<int>(number(8)); s.restart = number(9) != 0;
+      if(f.size()>=14) { s.optimized_mix.advanced=number(10)!=0; s.optimized_mix.voice_db=std::clamp(static_cast<int>(number(11)),-20,10);
+        s.optimized_mix.music_db=std::clamp(static_cast<int>(number(12)),-20,10); s.optimized_mix.background_db=std::clamp(static_cast<int>(number(13)),-20,10); }
       std::string error;
       const bool success = engine_.Run<bool>([&] { return engine_.Select(s, error); });
       auto result = std::make_unique<CommandResult>();

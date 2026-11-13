@@ -8,8 +8,6 @@
  <string name="performance_quality_detail">For Bluetooth earbuds and phone sound effects like Dolby. A little more delay.</string>
  <string name="performance_custom_detail">Choose the sound path and how much sound is held ready.</string>
  <string name="performance_help">Choose phone effects and audio buffering.</string>
- <string name="performance_output_explanation">Direct is fastest. Phone effects lets Dolby, equalisers and Bluetooth do their part, with a little extra delay.</string>
- <string name="performance_buffer_explanation">Choose Lowest for less delay, Balanced for everyday listening, or Maximum if sound keeps breaking up.</string>
  <string name="performance_done">Done</string>
  <string name="background_level">Background sounds</string>
  <string name="buffer_delay_warning">Keeping a little more sound ready usually fixes it. Sound will start slightly later.</string>

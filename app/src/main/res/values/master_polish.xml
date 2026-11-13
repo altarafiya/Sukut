@@ -1,0 +1,6 @@
+<resources>
+<string name="recovery_ready_detail">No activation steps needed. Return to Sukut to choose a mode.</string>
+<string name="recovery_return">Return to Sukut</string>
+<string name="recovery_pc_route">On your computer: Sukut → Phone → Activate Sukut</string>
+<string name="recovery_enable_debugging">Enable debugging</string>
+</resources>

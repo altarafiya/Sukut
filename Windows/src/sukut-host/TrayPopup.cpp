@@ -129,7 +129,7 @@ void TrayPopup::Position(bool animate) {
 void TrayPopup::Update(Model model) {
   if (model == model_) return;
   const bool appearance=model.mode!=model_.mode || model.dark!=model_.dark;
-  const bool resize=(SelectedTile(model)==2)!=(SelectedTile(model_)==2);
+  const bool resize=(SelectedTile(model)==2)!=((SelectedTile(model_)==2 && !model_.advanced_optimized));
   const bool changed = model.outputs != model_.outputs || model.apps != model_.apps || model.buffering != model_.buffering || model.output != model_.output || model.source_pid != model_.source_pid;
   model_ = std::move(model);
   accent_=Accent(); accent_text_=PaletteFor(model_.dark).on_accent;
@@ -180,7 +180,7 @@ void TrayPopup::Layout() {
   if(expanded_>=0) {
     MONITORINFO monitor{sizeof(monitor)};
     GetMonitorInfoW(MonitorFromRect(&anchor_,MONITOR_DEFAULTTONEAREST),&monitor);
-    const float room=std::max(36.0F,(monitor.rcWork.bottom-monitor.rcWork.top)/Scale()-kBaseHeight-(SelectedTile(model_)==2?64:0)-20);
+    const float room=std::max(36.0F,(monitor.rcWork.bottom-monitor.rcWork.top)/Scale()-kBaseHeight-((SelectedTile(model_)==2 && !model_.advanced_optimized)?64:0)-20);
     expansion_height_=std::min({180.0F,std::max(1.0F,static_cast<float>(CurrentChoices().size()))*36.0F,room});
   }
   const auto place=[&](HWND control,float x,float y,float width,float height){
@@ -191,7 +191,7 @@ void TrayPopup::Layout() {
   const float tile=(kWidth-28-12)/3;
   for(int i=1;i<4;++i)place(buttons_[i],14+(i-1)*(tile+6),modes_top_,tile,kTileHeight);
   playback_top_=modes_top_+kTileHeight+8;                  // "Playback" label sits here
-  if(SelectedTile(model_)==2) {
+  if((SelectedTile(model_)==2 && !model_.advanced_optimized)) {
     if(!background_slider_) {
       background_slider_=CreateWindowExW(model_.arabic?WS_EX_LAYOUTRTL:0,TRACKBAR_CLASSW,
           model_.arabic?L"مستوى الخلفية، ديسيبل":L"Background level, dB",

@@ -48,7 +48,7 @@ internal class PowerButton(context: Context, private val palette: UiPalette, pri
         }
     }
     private fun target(state: State) = when (state) {
-        State.OFF -> Look(palette.accentContainer, palette.accent, palette.onAccentContainer)
+        State.OFF -> Look(palette.cardAlt, palette.divider, palette.secondary)
         State.ON -> Look(modeColor, 0, ThemeColors.onAccent(modeColor))
         State.STARTING -> Look(ThemeColors.mix(palette.card, modeColor, .18f), modeColor, modeColor)
         State.STANDBY -> Look(modeColor,0,ThemeColors.onAccent(modeColor))

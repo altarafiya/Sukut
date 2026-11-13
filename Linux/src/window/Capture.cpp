@@ -373,8 +373,8 @@ using Severity = SukutWindow::Severity;
 
 PhoneDevice Pixel() { return {"R5CT10A2B3C", "device", "Pixel 8"}; }
 PhoneInfo PixelInfo(bool installed, bool ready) {
-  PhoneInfo info{"Pixel 8", "15", installed ? "0.4" : "", std::nullopt, ready};
-  if (installed) info.sukut_code = 54;
+  PhoneInfo info{"Pixel 8", "15", installed ? "0.4.6" : "", std::nullopt, ready};
+  if (installed) info.sukut_code = 58;
   return info;
 }
 
@@ -400,7 +400,7 @@ std::vector<Scene> PhoneScenes() {
        Phone(light, Task::FullSetup, 2, one, PixelInfo(true, false), "Sukut installed. Continue to open it on the phone.", Severity::Success), {}},
       {"45-phone-en-dark-setup-4-activated", 1040, 720,
        Phone(en, Task::FullSetup, 3, one, PixelInfo(true, true),
-             "Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart.", Severity::Success),
+             "Sukut audio worker is ready. Choose a mode and press Start on the phone. You can unplug USB.", Severity::Success),
        {}},
       {"46-phone-en-dark-setup-5-ready", 1040, 720, Phone(en, Task::FullSetup, 4, one, PixelInfo(true, true)), {}},
       {"47-phone-en-dark-install-refused", 1040, 720,
@@ -411,11 +411,11 @@ std::vector<Scene> PhoneScenes() {
       {"49-phone-ar-dark-activation-needed", 1040, 720, Phone(ar, Task::Choices, 0, one, PixelInfo(true, false)), {}},
       {"50-phone-ar-light-activated", 1040, 720,
        Phone(ar_light, Task::Activate, 0, one, PixelInfo(true, true),
-             "Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart.", Severity::Success),
+             "Sukut audio worker is ready. Choose a mode and press Start on the phone. You can unplug USB.", Severity::Success),
        {}},
       {"51-phone-en-minimum", 420, 480, Phone(en, Task::Choices, 0, one, PixelInfo(true, true)), {}},
       {"52-phone-en-dark-two-phones", 1040, 720,
-       Phone(en, Task::Choices, 0, {Pixel(), {"9A281FFAZ0", "device", "Pixel 8a"}}, std::nullopt), {}},
+       Phone(en, Task::Choices, 0, {Pixel(), {"9A281FFAZ0", "device", "Galaxy S24"}}, std::nullopt), {}},
       // Linux only: adb can't open the phone yet; Allow access appears on the card.
       {"53-phone-en-dark-no-permissions", 1040, 720,
        Phone(en, Task::UsbHelp, 0, {{"R5CT10A2B3C", "no permissions", "Android"}}, std::nullopt,
@@ -423,6 +423,20 @@ std::vector<Scene> PhoneScenes() {
        {}},
       {"54-phone-ar-light-no-permissions", 1040, 720,
        Phone(ar_light, Task::Choices, 0, {{"R5CT10A2B3C", "no permissions", "Android"}}, std::nullopt), {}},
+      {"57-phone-ar-dark-setup-5-ready", 1040, 720, Phone(ar, Task::FullSetup, 4, one, PixelInfo(true, true)), {}},
+      {"60-phone-ar-light-setup-5-narrow", 420, 560, Phone(ar_light, Task::FullSetup, 4, one, PixelInfo(true, true)), {}},
+      {"61-phone-en-dark-shortcut-refused", 1040, 720,
+       Phone(en, Task::Activate, 0, one, PixelInfo(true, true),
+             "Sukut audio worker is ready. Developer options shortcut setup was not allowed. The worker can be used without the shortcut.", Severity::Warning), {}},
+  };
+}
+
+std::vector<Scene> AdvancedMixScenes() {
+  auto mix=[](const char* language,const char* theme){auto state=Base(language,theme);state.preferred_mode=2;state.advanced_optimized=true;state.advanced_voice_db=0;state.advanced_music_db=-20;state.advanced_background_db=-10;return state;};
+  return {
+    {"80-advanced-en-dark",1040,720,Show(mix("en","dark")),[](SukutWindow& w){w.VerifyMixSlidersForTest();}},
+    {"81-advanced-ar-light",1040,720,Show(mix("ar","light")),{}},
+    {"82-advanced-ar-minimum",420,560,Show(mix("ar","light")),{}},
   };
 }
 
@@ -444,8 +458,8 @@ int RunCapture(AdwApplication* app, const std::string& directory, const std::str
   const bool contrast = set == "contrast";
   auto runner = std::make_shared<Runner>(app, directory,
                                          contrast ? ContrastScenes() : set == "keyboard" ? std::vector<Scene>{} : set == "phone" ? PhoneScenes()
-                                         : set == "easyeffects" ? EasyEffectsScenes() : set == "snap" ? SnapScenes() : MainScenes(),
-                                         !contrast && set != "phone" && set != "easyeffects" && set != "snap");
+                                         : set == "advanced" ? AdvancedMixScenes() : set == "easyeffects" ? EasyEffectsScenes() : set == "snap" ? SnapScenes() : MainScenes(),
+                                         !contrast && set != "phone" && set != "easyeffects" && set != "snap" && set != "advanced");
   g_signal_connect_data(app, "activate", G_CALLBACK(+[](GApplication* a, gpointer data) {
     InstallStyle();
     // Still frames: dialogs open at once and the credit holds its first colours.

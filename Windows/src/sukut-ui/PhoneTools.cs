@@ -175,7 +175,8 @@ internal sealed partial class PhoneTools
     public async Task<string> OpenSukut(PhoneDevice device)
     {
         await EnsureAuthorized(device);
-        string result = await Run(["-s", device.Serial, "shell", "am", "start", "-W", "-n", SukutPackage + "/com.osama.cleanwave.MainActivity"]);
+        string result = await Run(["-s", device.Serial, "shell", "am", "start", "-W", "-a", "android.intent.action.MAIN",
+            "-c", "android.intent.category.LAUNCHER", "-f", "0x10200000", "-n", SukutPackage + "/com.osama.cleanwave.MainActivity"]);
         if (result.Contains("Error:", StringComparison.OrdinalIgnoreCase)) throw new IOException(result.Trim());
         return "Sukut opened. Activate its audio worker, then press Start on the phone.";
     }

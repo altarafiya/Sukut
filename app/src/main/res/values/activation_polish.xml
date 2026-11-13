@@ -1,12 +1,21 @@
 <resources>
- <string name="local_returning_title">Already paired?</string>
- <string name="local_returning_note">Turn on Wireless debugging, then tap Activate. No new code is usually needed.</string>
- <string name="local_first_time">First time · pair this phone</string>
- <string name="local_step_enable">Open Wireless debugging</string>
- <string name="local_step_enable_detail">Tap Pair, then turn on Wireless debugging in Developer options.</string>
- <string name="local_step_code">Show the six-digit code</string>
- <string name="local_step_code_detail">Choose Pair device with pairing code. Leave that window open.</string>
- <string name="local_step_notification">Reply in Sukut’s notification</string>
- <string name="local_step_notification_detail">Pull down notifications, tap Enter pairing code and send the six digits. Sukut then activates automatically.</string>
- <string name="local_short_privacy">Everything stays on this phone. Once activated, you can turn Wireless debugging off and press Start on Home.</string>
+ <string name="status_developer">Developer options</string>
+ <string name="status_usb">USB debugging</string>
+ <string name="status_worker">Audio worker</string>
+ <string name="status_ready">Ready</string>
+ <string name="status_activation_needed">Activation needed</string>
+ <string name="status_on">On</string>
+ <string name="status_off">Off</string>
+ <string name="status_on_plural">On</string>
+ <string name="status_off_plural">Off</string>
+ <string name="route_open_computer">Open Sukut on your computer</string>
+ <string name="route_open_computer_body">Windows or Linux · keep the phone connected by USB.</string>
+ <string name="route_phone">Phone</string>
+ <string name="route_phone_body">Choose Phone in the computer app’s sidebar.</string>
+ <string name="route_activate">Activate Sukut</string>
+ <string name="route_activate_body">Choose Activate Sukut, then wait for the Ready status above.</string>
+ <string name="ready_start">Start on Home</string>
+ <string name="ready_start_body">Choose your audio mode, then press the power button. You can unplug USB.</string>
+ <string name="ready_reconnect">If activation is needed again</string>
+ <string name="ready_reconnect_body">Enable Wireless debugging, then choose Activate Sukut. Pair again only if Android forgot the pairing.</string>
 </resources>

@@ -27,7 +27,7 @@ public readonly record struct AudioModePreset(
 
     public static float DbToLinear(float db) => db <= -80.0f ? 0.0f : MathF.Pow(10.0f, db / 20.0f);
 
-    public static AudioModePreset ForMode(int mode, int optimizedBackgroundDb = 0) => mode switch
+    public static AudioModePreset ForMode(int mode, int optimizedBackgroundDb = 0, bool advanced = false, int voiceDb = 0, int musicDb = -20, int backgroundDb = 0) => mode switch
     {
         // Music Filter keeps voice and background at unity.
         1 => new AudioModePreset(
@@ -52,10 +52,10 @@ public readonly record struct AudioModePreset(
         2 => new AudioModePreset(
             Mode: 2,
             Name: "Optimized",
-            MusicDb: -100.0f,
-            BackgroundDb: Math.Clamp(optimizedBackgroundDb, -20, 10),
-            VoiceDb: 0.0f,
-            MuteMusic: true,
+            MusicDb: advanced ? Math.Clamp(musicDb,-20,10) : -100.0f,
+            BackgroundDb: advanced ? Math.Clamp(backgroundDb,-20,10) : Math.Clamp(optimizedBackgroundDb, -20, 10),
+            VoiceDb: advanced ? Math.Clamp(voiceDb,-20,10) : 0.0f,
+            MuteMusic: !advanced,
             MuteBackground: false),
 
         // OFF stops the bridge and restores the original route.
@@ -141,6 +141,10 @@ public sealed class EngineState
     public int HostBuffering { get; set; }
     public uint HostSourcePid { get; set; }
     public int? HostOptimizedBackgroundDb { get; set; }
+    public bool? HostAdvancedOptimized { get; set; }
+    public int HostAdvancedVoiceDb { get; set; }
+    public int HostAdvancedMusicDb { get; set; } = -20;
+    public int HostAdvancedBackgroundDb { get; set; }
     public List<Endpoint> Endpoints { get; set; } = [];
 }
 
@@ -171,6 +175,10 @@ internal sealed class HostSettingsRevision
         preferences.Buffering = Math.Clamp(state.HostBuffering, 0, 2);
         preferences.SourcePid = state.HostSourcePid;
         if (state.HostOptimizedBackgroundDb is int background) preferences.OptimizedBackgroundDb = Math.Clamp(background, -20, 10);
+        if(state.HostAdvancedOptimized is bool advanced) {
+            preferences.AdvancedOptimized=advanced; preferences.AdvancedVoiceDb=Math.Clamp(state.HostAdvancedVoiceDb,-20,10);
+            preferences.AdvancedMusicDb=Math.Clamp(state.HostAdvancedMusicDb,-20,10); preferences.AdvancedBackgroundDb=Math.Clamp(state.HostAdvancedBackgroundDb,-20,10);
+        }
         preferences.HostSettingsVersion = Version;
         return true;
     }

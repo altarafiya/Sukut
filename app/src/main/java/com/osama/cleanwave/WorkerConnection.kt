@@ -16,6 +16,8 @@ object WorkerConnection {
     @Volatile private var binder: IBinder? = null
     @Volatile var workerPid = 0
         private set
+    @Volatile var debuggingTethered = true
+        private set
     val ready: Boolean get() = binder?.isBinderAlive == true
     val api: ICleanWaveService? get() = binder?.takeIf { it.isBinderAlive }?.let(ICleanWaveService.Stub::asInterface)
     @Synchronized fun attach(extras: Bundle): Bundle {
@@ -30,6 +32,7 @@ object WorkerConnection {
             binder = incoming
         }
         workerPid = extras.getInt("pid")
+        debuggingTethered = extras.getBoolean("debugging_tethered",true)
         answer.putBoolean("accepted", true)
         answer.putInt("protocol", WorkerProtocol.VERSION)
         answer.putInt("version", BuildConfig.VERSION_CODE)
@@ -43,5 +46,6 @@ object WorkerConnection {
     }
     fun addListener(listener: OnChanged) { listeners.add(listener); main.post { listener.changed() } }
     fun removeListener(listener: OnChanged) { listeners.remove(listener) }
+    internal fun refreshStatus() { notifyChanged() }
     private fun notifyChanged() { main.post { listeners.forEach { it.changed() } } }
 }

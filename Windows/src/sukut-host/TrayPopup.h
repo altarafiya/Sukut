@@ -31,6 +31,7 @@ class TrayPopup {
     bool attention = false, standby = false;
     int buffering = 0;
     int optimized_background_db = 0;
+  bool advanced_optimized = false;
     std::string output, source_pid = "0";
     std::vector<Choice> outputs, apps;
     bool operator==(const Model&) const = default;

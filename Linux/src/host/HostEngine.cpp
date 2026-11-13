@@ -137,7 +137,7 @@ bool HostEngine::Apply(int mode, const HostSettings& settings, bool by_user, std
   const bool same_route = session_ && settings.output == applied_.output && settings.source_pid == applied_.source_pid &&
                           settings.buffering == applied_.buffering;
   if (same_route) {
-    session_->SetMode(mode, settings.optimized_background_db);
+    session_->SetMode(mode, settings.optimized_background_db, settings.optimized_mix);
     session_->SetAmplification(settings.amplification_db);
     applied_ = settings;
     applied_mode_ = mode;
@@ -151,6 +151,7 @@ bool HostEngine::Apply(int mode, const HostSettings& settings, bool by_user, std
   start.mode = mode;
   start.buffering = settings.buffering;
   start.optimized_background_db = settings.optimized_background_db;
+  start.optimized_mix = settings.optimized_mix;
   start.amplification_db = settings.amplification_db;
   start.output = settings.output;
   start.fallback_output = true;  // headphones off or EasyEffects not running yet: play on the default until it returns

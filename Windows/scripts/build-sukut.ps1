@@ -1,8 +1,6 @@
 param([ValidateSet('Release','Debug')][string]$Configuration='Release',[string]$OutputDirectory='',[switch]$NativeOnly)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
-$requiredAsset=Join-Path $projectRoot 'assets/engine/separator.tflite'
-if(-not(Test-Path -LiteralPath $requiredAsset -PathType Leaf)){throw 'Required local engine asset is unavailable. Read AGENTS.md before building.'}
 $uiProject=[xml](Get-Content -LiteralPath (Join-Path $projectRoot 'src/sukut-ui/Sukut.csproj') -Raw)
 if([string]::IsNullOrWhiteSpace($OutputDirectory)){$OutputDirectory='build/sukut-'+$uiProject.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()}
 $paths=Get-Content -LiteralPath (Join-Path $projectRoot 'local.build.json') -Raw | ConvertFrom-Json
@@ -31,6 +29,10 @@ try{
     $gradle=Get-Content -LiteralPath (Join-Path $repository 'app/build.gradle.kts') -Raw
     $androidVersion=[regex]::Match($gradle,'versionName\s*=\s*"(\d+\.\d+(?:\.\d+)?(?:-beta\.\d+)?)"').Groups[1].Value
     $apk=Join-Path $repository ('Builds/Sukut-'+$androidVersion+'-android-arm64.apk')
+    if(-not (Test-Path -LiteralPath $apk)){
+        $code=[regex]::Match($gradle,'versionCode\s*=\s*(\d+)').Groups[1].Value
+        $apk=Join-Path $repository ('Builds/Sukut-'+$androidVersion+'-code'+$code+'-android-arm64.apk')
+    }
     if(-not (Test-Path -LiteralPath $apk)){throw 'Build Android first'}
     $phoneAssets=Join-Path $projectRoot 'src/sukut-ui/Assets/Phone'
     New-Item -ItemType Directory -Path $phoneAssets -Force | Out-Null

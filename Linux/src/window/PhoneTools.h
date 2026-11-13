@@ -76,6 +76,7 @@ class PhoneTools {
   void EnsureAuthorized(const PhoneDevice& device);
   int CurrentUser(const PhoneDevice& device);
   std::string WorkerState(const PhoneDevice& device, int user);
+  std::string FinishActivation(const PhoneDevice& device, int user, long long version, bool already_ready);
   std::filesystem::path Verified(const std::string& name, const std::string& what);
 
   std::string adb_, pkexec_;

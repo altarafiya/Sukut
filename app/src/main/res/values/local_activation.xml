@@ -1,19 +1,10 @@
 <resources>
  <string name="local_notifications_needed">Allow Sukut notifications in Android settings to enter the pairing code while its dialog is open.</string>
  <string name="local_title">Activate Sukut</string>
- <string name="local_steps">1. Connect to Wi-Fi and enable Developer options → Wireless debugging.\n\n2. Tap Pair Sukut below, then choose Pair device with pairing code in Android settings. Keep that dialog open.\n\n3. Pull down notifications. On Sukut’s notification, tap Enter pairing code and send the six digits. Return to Sukut after pairing.\n\nNext time, enable Wireless debugging and tap Activate. No computer or Shizuku app is needed.</string>
- <string name="local_android10">Phone-only pairing requires Android 11 or newer. On Android 10, use Sukut on Windows → Phone → Activate Sukut.</string>
  <string name="local_pair_button">Pair this phone</string>
  <string name="local_activate_button">Activate</string>
  <string name="local_enter_code">Enter pairing code</string>
  <string name="local_code">Six-digit pairing code</string>
- <string name="local_privacy">Activation connects only to this phone. Pairing is saved in Android Keystore. After activation, discovery and the debugging connection close; audio stays on your phone. You can turn Wireless debugging off. Activate again after restarting your phone or updating Sukut.</string>
- <string name="local_pc_fallback">Windows → Phone → Activate Sukut remains available if your phone blocks local Wireless debugging. Pairing is an Android permission step; Sukut cannot silently enable it.</string>
- <string name="local_manual">More options</string>
- <string name="local_pair_port">Pairing port (optional)</string>
- <string name="local_connect_port">Wireless debugging connection port (optional)</string>
- <string name="local_submit">Pair with this code</string>
- <string name="local_initial">Audio worker needs activation</string>
  <string name="local_searching">Looking for this phone’s Wireless debugging. Keep it enabled.</string>
  <string name="local_pair_wait">Open Pair device with pairing code in Android settings. Enter the code through this notification while the dialog stays open.</string>
  <string name="local_pairing">Pairing with this phone…</string>

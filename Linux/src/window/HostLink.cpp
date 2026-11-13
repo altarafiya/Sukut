@@ -74,7 +74,7 @@ HostLink::~HostLink() {
   if (fd_ >= 0) ::close(fd_);
 }
 
-bool HostLink::Connect(const std::string& host_command, std::string& error) {
+bool HostLink::Connect(const std::string& host_command, std::string& error, bool popup, const std::string& snapshot) {
   fd_ = ConnectSocket(SocketPath());
   if (fd_ < 0) {
     // No host yet: start it for the tray, so it doesn't open a second window.
@@ -96,10 +96,12 @@ bool HostLink::Connect(const std::string& host_command, std::string& error) {
     if (fd_ < 0) { error = "Sukut's audio service did not answer."; return false; }
   }
   std::string reply;
-  if (!Exchange(fd_, "hello", reply) || reply.empty() || reply[0] != '1') {
+  if(popup && !snapshot.empty()) reply="1"+snapshot;
+  else if (!Exchange(fd_, popup ? "read" : "hello", reply) || reply.empty() || reply[0] != '1') {
     error = reply.size() > 1 ? reply.substr(1) : "Sukut's audio service did not answer.";
     return false;
   }
+  initial_state_ = reply.substr(1);
   hangup_watch_ = g_unix_fd_add(fd_, static_cast<GIOCondition>(G_IO_HUP | G_IO_ERR), Hangup, this);
   worker_ = std::thread([this] { Work(); });
   return true;

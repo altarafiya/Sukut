@@ -43,7 +43,6 @@ class CleanerService : Service() {
     private var switchingMode = false
     private var routeStarted = false
     private var notifiedBypass = false
-    private var notifiedStandby = false
     private var stopRequested = false
 
     @SuppressLint("ForegroundServiceType") // Merged manifest declares specialUse; AGP 8.7 lint predates compileSdk 36.
@@ -134,7 +133,7 @@ class CleanerService : Service() {
                 switchingMode = false
                 routeGeneration++
                 routeStarted = true
-                notifiedBypass = false; notifiedStandby = false
+                notifiedBypass = false
                 CleanerPrefs.setEnabled(this@CleanerService, true)
                 CleanerPrefs.setStatus(this@CleanerService, "Active", detail)
                 updateNotification(uiString(R.string.notification_active))
@@ -164,7 +163,6 @@ class CleanerService : Service() {
                 CleanerPrefs.setStatus(this@CleanerService, "Active", detail)
                 if (metrics.isNotBlank()) recordRecovery(metrics)
                 val bypassed = detail.startsWith("AI temporarily bypassed")
-                val standby = detail == PrivilegedAudioService.STANDBY_STATUS
                 if (bypassed && !notifiedBypass) {
                     notifiedBypass = true
                     updateNotification(uiString(R.string.notification_busy))
@@ -172,11 +170,8 @@ class CleanerService : Service() {
                     notifiedBypass = false
                     updateNotification(uiString(R.string.notification_active))
                 }
-                // Only notify on change: the notification is not a clock.
-                if (!bypassed && standby != notifiedStandby) {
-                    notifiedStandby = standby
-                    updateNotification(uiString(if (standby) R.string.notification_standby else R.string.notification_active))
-                }
+                // Standby is an audio state, not a notification event. Keep the
+                // user's ongoing notification stable as playback sleeps/wakes.
             }
         })
         backend = next
@@ -222,6 +217,8 @@ class CleanerService : Service() {
             .setContentText(modeNotification(text))
             .setContentIntent(open)
             .addAction(Notification.Action.Builder(null, uiString(R.string.turn_off), turnOff).build())
+            .setOnlyAlertOnce(true)
+            .setShowWhen(false)
             .setOngoing(true)
             .build()
     }
@@ -257,7 +254,11 @@ class CleanerService : Service() {
         lastFallbacks = fallbacks; lastRecoveries = recoveries; lastProbeFailures = failures
     }
 
+    private var lastNotificationText: String? = null
     private fun updateNotification(text: String) {
+        val signature = modeNotification(text)
+        if (lastNotificationText == signature) return
+        lastNotificationText = signature
         getSystemService(NotificationManager::class.java)
             .notify(NOTIFICATION_ID, notification(text))
     }

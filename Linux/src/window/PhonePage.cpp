@@ -1,5 +1,5 @@
 // The Phone page (Linux/PLAN.md section 7): the Windows flows from
-// PhoneSetup.cs and PhoneConnectionCard.cs. Choices, the five-step Full setup,
+// PhoneSetup.cs and PhoneConnectionCard.cs. Choices, the seven-step Full setup,
 // Activate, Install or update, USB help, and the connection card at the bottom.
 // adb work runs on a background thread; results come back on the main loop.
 #include <algorithm>
@@ -341,12 +341,12 @@ void SukutWindow::RenderPhone() {
   };
   const auto activate_page = [&] {
     gtk_box_append(GTK_BOX(page), Heading(L("Activate Sukut", "تفعيل سُكوت")));
-    gtk_box_append(GTK_BOX(page), Label(L("Keep your phone unlocked. Activate the audio worker, then unplug USB when it is ready.",
-                                          "أبقِ الهاتف مفتوحًا. فعّل عامل الصوت ثم افصل USB عندما يصبح جاهزًا.")));
+    gtk_box_append(GTK_BOX(page), Label(L("Keep your phone unlocked. Activate Sukut, then choose a mode and press Start on the phone.",
+                                          "أبقِ الهاتف مفتوحًا. فعّل سُكوت ثم اختر وضعًا واضغط زر التشغيل في الهاتف.")));
     AddPhoneActions(page, "Activate Sukut", "تفعيل سُكوت", "media-playback-start-symbolic",
                     [](PhoneTools& tools, const PhoneDevice& device) { return tools.Activate(device); });
-    gtk_box_append(GTK_BOX(page), Note("accent-text", L("Activation does not start audio. Press Start in Sukut on your phone. Activate again after a phone restart or update.",
-                                                        "التفعيل لا يشغّل الصوت. اضغط زر التشغيل في سُكوت على هاتفك. أعد التفعيل بعد إعادة تشغيل الهاتف أو تحديث التطبيق.")));
+    gtk_box_append(GTK_BOX(page), Note("accent-text", L("Activation does not start audio. Press Start in Sukut on the phone. Keep debugging enabled while using Sukut if turning it off stops the audio worker.",
+                                                        "التفعيل لا يشغّل الصوت. اضغط زر التشغيل في سُكوت على الهاتف. أبقِ تصحيح الأخطاء مفعّلًا أثناء استخدام سُكوت إذا كان إيقافه يوقف عامل الصوت.")));
     GtkWidget* stop = gtk_button_new();
     gtk_button_set_child(GTK_BUTTON(stop), IconLabel("media-playback-stop-symbolic", L("Deactivate worker", "إلغاء تفعيل عامل الصوت")));
     gtk_widget_add_css_class(stop, "pill");
@@ -395,8 +395,6 @@ void SukutWindow::RenderPhone() {
             {"object-select-symbolic", "ready-text", L("Tap seven times", "اضغط سبع مرات"),
              L("Enter your phone PIN if asked. Then open Developer options.", "أدخل رمز قفل هاتفك إذا طُلب، ثم افتح خيارات المطوّر.")}}));
         developer();
-        gtk_box_append(GTK_BOX(page), Note("mode-2", L("You will see a warning that these options are for developers. That is normal.",
-                                                      "ستظهر رسالة تحذير بأن هذه الخيارات للمطوّرين. هذا طبيعي.")));
         break;
       case 1:
         gtk_box_append(GTK_BOX(page), Heading(L("Allow USB debugging", "السماح بتصحيح USB")));
@@ -411,12 +409,13 @@ void SukutWindow::RenderPhone() {
         break;
       case 2: install_page(); break;
       case 3: activate_page(); break;
-      default:
-        gtk_box_append(GTK_BOX(page), Heading(L("Ready on your phone", "جاهز في هاتفك")));
-        gtk_box_append(GTK_BOX(page), Label(L("Check that the phone says Audio worker ready. Choose a mode and press Start. You can unplug the cable.",
-                                              "تحقّق من ظهور «عامل الصوت جاهز» في الهاتف. اختر وضعًا واضغط زر التشغيل. يمكنك فصل الكابل.")));
-        AddPhoneActions(page, "Open Sukut on the phone", "فتح سُكوت في الهاتف", "phone-symbolic",
-                        [](PhoneTools& tools, const PhoneDevice& device) { return tools.Open(device); });
+      case 4:
+        gtk_box_append(GTK_BOX(page), Heading(L("Ready on your phone", "جاهز على هاتفك")));
+        gtk_box_append(GTK_BOX(page), Bullets({
+          {"media-playback-start-symbolic", "ready-text", L("Choose a mode and press Start", "اختر وضعًا واضغط التشغيل"),
+           L("Open Home in Sukut on the phone. You can unplug USB.", "افتح الرئيسية في سُكوت على الهاتف. يمكنك فصل USB.")},
+          {"io.github.altarafiya.Sukut-lightning-symbolic", "accent-text", L("If activation is lost", "إذا فُقد التفعيل"),
+           L("Connect USB and choose Phone → Activate Sukut here. The phone offers a separate guide when you ask for help.", "وصّل USB واختر هنا الهاتف ← تفعيل سُكوت. يعرض الهاتف دليلًا منفصلًا عندما تطلب المساعدة.")}}));
         break;
     }
   }
@@ -542,7 +541,8 @@ void SukutWindow::PhoneAction(std::function<std::string(PhoneTools&, const Phone
       if (!outcome.devices.empty() || outcome.ok) phone_devices_ = outcome.devices;
       if (!outcome.serial.empty()) phone_serial_ = outcome.serial;
       phone_message_ = outcome.text;
-      phone_severity_ = outcome.ok ? Severity::Success : Severity::Warning;
+      phone_severity_ = outcome.ok && outcome.text.find("Developer options shortcut setup was not allowed.") == std::string::npos
+          ? Severity::Success : Severity::Warning;
       RenderPhoneCard();
       RenderPhoneMessage();
       RefreshPhone();
@@ -609,15 +609,22 @@ std::string SukutWindow::PhoneText(const std::string& english) const {
       {"Sukut opened. Activate its audio worker, then press Start on the phone.", "تم فتح سُكوت. فعّل عامل الصوت، ثم اضغط زر التشغيل في الهاتف."},
       {"Sukut is installed and ready for activation.", "سُكوت مثبّت وجاهز للتفعيل."},
       {"Sukut audio worker is already ready. Press Start on the phone.", "عامل الصوت جاهز بالفعل. اضغط زر التشغيل في الهاتف."},
+      {"Sukut audio worker is already ready. Choose a mode and press Start on the phone. You can unplug USB.",
+       "عامل الصوت جاهز بالفعل. اختر وضعًا واضغط التشغيل في الهاتف. يمكنك فصل USB."},
+      {"Sukut audio worker is ready. Choose a mode and press Start on the phone. You can unplug USB.",
+       "عامل الصوت جاهز. اختر وضعًا واضغط التشغيل في الهاتف. يمكنك فصل USB."},
+      {"Sukut audio worker is ready. Developer options shortcut setup was not allowed. The worker can be used without the shortcut.",
+       "عامل الصوت جاهز. لم يُسمح بإعداد اختصار خيارات المطوّر. يمكنك استخدام عامل الصوت دون الاختصار."},
       {"Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart.",
        "عامل الصوت جاهز. يمكنك فصل USB والضغط على زر التشغيل في الهاتف. أعد التفعيل بعد إعادة تشغيل الهاتف."},
       {"Sukut audio worker deactivated. Activate it again before using Start.", "أُلغي تفعيل عامل الصوت. فعّله مجدّدًا قبل استخدام زر التشغيل."},
+      {"Sukut worker is no longer ready. Keep the phone unlocked and activate again.", "لم يعد عامل سُكوت جاهزًا. أبقِ الهاتف مفتوحًا ثم أعد التفعيل."},
       {"Unlock the phone, allow USB debugging, then refresh devices.", "افتح قفل الهاتف واسمح بتصحيح USB، ثم حدّث قائمة الأجهزة."},
       {"Connect your phone by USB and allow debugging.", "وصّل الهاتف عبر USB واسمح بتصحيح USB."},
       {"Select your phone first.", "اختر هاتفك أولًا."},
       {"Allow USB debugging on the phone, then try again.", "وافق على تصحيح USB في الهاتف، ثم أعد المحاولة."},
       {"The phone is offline. Reconnect the USB cable.", "الهاتف غير متصل. أعد توصيل كابل USB."},
-      {"Install Sukut beta.12 or later before activation.", "ثبّت سُكوت beta.12 أو أحدث قبل التفعيل."},
+      {"Update Sukut on your phone before activation.", "حدّث سُكوت على هاتفك قبل التفعيل."},
       {"USB access is closed to Sukut on this computer. On Android 11 or newer, open Sukut on the phone and activate it with Wireless debugging.", "الوصول عبر USB مغلق أمام سُكوت على هذا الحاسوب. في أندرويد 11 أو أحدث، افتح سُكوت على الهاتف وفعّله عبر تصحيح الأخطاء اللاسلكي."},
       {"Sukut can't access the phone yet. Choose Allow access.", "لا يستطيع سُكوت الوصول إلى الهاتف بعد. اختر «السماح بالوصول»."},
       {"USB access allowed. Unplug the phone and plug it in again.", "سُمح بالوصول عبر USB. افصل الهاتف ثم وصّله من جديد."},

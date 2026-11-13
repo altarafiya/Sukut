@@ -5,9 +5,9 @@
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <RootNamespace>Sukut</RootNamespace>
     <AssemblyName>SukutWindow</AssemblyName>
-    <Version>0.4.2</Version>
-    <AssemblyVersion>0.4.2.0</AssemblyVersion>
-    <FileVersion>0.4.2.0</FileVersion>
+    <Version>0.5.1</Version>
+    <AssemblyVersion>0.5.1.0</AssemblyVersion>
+    <FileVersion>0.5.1.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Sukut.ico</ApplicationIcon>
     <Platforms>x64</Platforms>

@@ -6,14 +6,20 @@ Don't confuse a published binary with a source-build prerequisite.
 
 ## Current state and layout
 
-- Windows **0.4.2** (Store package 0.4.2.0): C# WinUI 3 window, native C++20 tray
-  host (`Sukut.exe`) and CPU audio engine (`SukutEngine.dll`), VB-CABLE routing.
-- Android **0.4.2 / code 56**, package `com.altarafiyah.sukut`, internal namespace
+- Windows **0.5.1** source (Store package 0.5.1.0; the published build is 0.4.2): C# WinUI 3
+  window, native C++20 tray host (`Sukut.exe`) and CPU audio engine (`SukutEngine.dll`), VB-CABLE routing.
+- Android **0.5.1 / code 62**, package `com.altarafiyah.sukut`, internal namespace
   `com.osama.cleanwave`; Kotlin/Java, framework Views only, ARM64. Sukut runs its own
   ADB-activated audio worker (Wireless debugging on Android 11+, or USB from a PC).
-- Linux **0.4.0~beta.7**: GTK 4/libadwaita window (`sukut`), `sukut-host` with the engine,
-  PipeWire routing, tray and phone tools; Debian packaging in `Linux/debian`.
-  Stage 9 (real-hardware validation) is in progress. See `Linux/README.md` and `Linux/PLAN.md`.
+- Linux **0.5.1**: GTK 4/libadwaita window (`sukut`), `sukut-host` with the engine,
+  PipeWire routing, tray (with a layer-shell flyout) and phone tools. Packaging: `Linux/debian`,
+  `Linux/flatpak`, `Linux/snap`. See `Linux/README.md` and `Linux/PLAN.md`.
+- Icons: `tools/export-branding.py` writes every platform's resources from
+  `assets/branding/sukut-app-icon.png` (the hand, app icons) and `assets/branding/system-glyph/`
+  (the original س, tray, Android tile and notification).
+- The Advanced Optimized access code is not in the source: only a salted SHA-256. Tests use a
+  stand-in code; pass the real one as `SUKUT_ADVANCED_CODE` (or `-e advancedCode` for the
+  Android UI test) to test it.
 
 | Path | Contents |
 | --- | --- |

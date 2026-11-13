@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Development permission: granted explicitly by authorised ADB, never by an app dialog. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -56,7 +58,15 @@
             android:name=".SettingsActivity"
             android:exported="false" />
         <activity android:name=".SetupActivity" android:exported="false" />
+        <activity
+            android:name=".TileStartActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
         <activity android:name=".LocalActivationActivity" android:exported="false" />
+        <activity android:name=".ReactivationActivity" android:exported="false" android:launchMode="singleTop" />
         <service android:name=".LocalActivationService" android:exported="false" android:foregroundServiceType="shortService" />
 
         <service
@@ -83,6 +93,17 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
+        </service>
+
+        <service
+            android:name=".DeveloperOptionsTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_developer_tile"
+            android:label="@string/dev_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <meta-data android:name="android.service.quicksettings.ACTIVE_TILE" android:value="false" />
+            <meta-data android:name="android.service.quicksettings.TOGGLEABLE_TILE" android:value="true" />
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
         </service>
 
         <receiver

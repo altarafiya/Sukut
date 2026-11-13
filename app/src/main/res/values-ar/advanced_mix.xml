@@ -1,0 +1,9 @@
+<resources>
+ <string name="advanced_mix_title">المزج المتقدم للوضع المحسّن</string>
+ <string name="advanced_mix_body">تحكّم في الصوت البشري والموسيقى والخلفية بخطوات قدرها 1 dB، من ‎−20 إلى ‎+10 dB. أقل قيمة تخفّض الصوت ولا تكتمه.</string>
+ <string name="advanced_code_hint">أدخل رمز الوصول</string>
+ <string name="advanced_enable">تفعيل الوضع المتقدم</string>
+ <string name="advanced_use_standard">استخدام الوضع المحسّن العادي</string>
+ <string name="advanced_incorrect">رمز غير صحيح. المحاولات المتبقية: %1$d.</string>
+ <plurals name="advanced_locked"><item quantity="zero">أعد المحاولة الآن.</item><item quantity="one">أعد المحاولة بعد دقيقة واحدة.</item><item quantity="two">أعد المحاولة بعد دقيقتين.</item><item quantity="few">أعد المحاولة بعد %1$d دقائق.</item><item quantity="many">أعد المحاولة بعد %1$d دقيقة.</item><item quantity="other">أعد المحاولة بعد %1$d دقيقة.</item></plurals>
+</resources>

@@ -46,6 +46,10 @@ GtkWidget* CommitScale(double min, double max, const bool* applying, std::functi
   GtkWidget* scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, min, max, 1);
   gtk_scale_set_draw_value(GTK_SCALE(scale), FALSE);
   gtk_range_set_round_digits(GTK_RANGE(scale), 0);
+  gtk_scale_set_digits(GTK_SCALE(scale), 0);
+  gtk_range_set_increments(GTK_RANGE(scale), 1, 5);
+  for (int db = static_cast<int>(min); db <= static_cast<int>(max); db += 5)
+    gtk_scale_add_mark(GTK_SCALE(scale), db, GTK_POS_BOTTOM, nullptr);
   gtk_widget_set_hexpand(scale, TRUE);
   auto* state = new CommitState{std::move(changed), std::move(committed), applying, false, 0, scale};
   g_object_set_data_full(G_OBJECT(scale), "commit", state, [](gpointer data) {
@@ -392,6 +396,40 @@ GtkWidget* SukutWindow::BuildAudio() {
       if (s->applying_ || !gtk_check_button_get_active(check)) return;
       s->ChooseMode(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(check), "mode")));
     }, this);
+    if (m == 2) {
+      struct Hold {
+        guint timer=0; double x=0,y=0; bool fired=false;
+        GtkWidget* row; SukutWindow* owner;
+        void Cancel(){if(timer){g_source_remove(timer);timer=0;}}
+      };
+      auto* hold=new Hold{0,0,0,false,row,this};
+      g_object_set_data_full(G_OBJECT(row),"advanced-hold",hold,[](gpointer p){auto*h=static_cast<Hold*>(p);h->Cancel();delete h;});
+      GtkEventController* controller=gtk_event_controller_legacy_new();
+      gtk_event_controller_set_propagation_phase(controller,GTK_PHASE_CAPTURE);
+      g_signal_connect(controller,"event",G_CALLBACK(+[](GtkEventControllerLegacy*,GdkEvent* event,gpointer p)->gboolean {
+        auto*h=static_cast<Hold*>(p);const auto type=gdk_event_get_event_type(event);
+        if(type==GDK_BUTTON_PRESS || type==GDK_TOUCH_BEGIN) {
+          if(type==GDK_BUTTON_PRESS && gdk_button_event_get_button(event)!=GDK_BUTTON_PRIMARY)return FALSE;
+          h->Cancel();h->fired=false;gdk_event_get_position(event,&h->x,&h->y);
+          h->timer=g_timeout_add(h->owner->state_.advanced_optimized?3000:5000,[](gpointer pointer)->gboolean {
+            auto*st=static_cast<Hold*>(pointer);st->timer=0;
+            if(gtk_widget_get_mapped(st->row) && gtk_widget_is_sensitive(st->row)) {st->fired=true;if(st->owner->state_.advanced_optimized)st->owner->SetAdvancedMix(false);else st->owner->OpenAdvancedMix();}
+            return G_SOURCE_REMOVE;
+          },h);
+        } else if(type==GDK_MOTION_NOTIFY || type==GDK_TOUCH_UPDATE) {
+          double x=0;double y=0;gdk_event_get_position(event,&x,&y);
+          if(std::abs(x-h->x)>10 || std::abs(y-h->y)>10)h->Cancel();
+        } else if(type==GDK_BUTTON_RELEASE || type==GDK_TOUCH_END) {
+          h->Cancel();const bool consumed=h->fired;h->fired=false;return consumed;
+        } else if(type==GDK_TOUCH_CANCEL || type==GDK_LEAVE_NOTIFY || type==GDK_GRAB_BROKEN)h->Cancel();
+        return FALSE;
+      }),hold);
+      gtk_widget_add_controller(row,controller);
+      g_signal_connect(row,"unmap",G_CALLBACK(+[](GtkWidget*,gpointer p){static_cast<Hold*>(p)->Cancel();}),hold);
+      GtkEventController* focus=gtk_event_controller_focus_new();
+      g_signal_connect(focus,"leave",G_CALLBACK(+[](GtkEventControllerFocus*,gpointer p){static_cast<Hold*>(p)->Cancel();}),hold);
+      gtk_widget_add_controller(row,focus);
+    }
     gtk_list_box_append(GTK_LIST_BOX(modes_list_), row);
   }
   gtk_box_append(GTK_BOX(modes_card), modes_list_);
@@ -415,6 +453,10 @@ GtkWidget* SukutWindow::BuildAudio() {
   gtk_box_append(GTK_BOX(background_card_), bg_header);
   gtk_box_append(GTK_BOX(background_card_), background_scale_);
   gtk_box_append(GTK_BOX(modes_card), background_card_);
+  advanced_mix_card_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+  gtk_widget_set_margin_top(advanced_mix_card_, 8);
+  advanced_mix_values_={}; advanced_mix_scales_={};
+  gtk_box_append(GTK_BOX(modes_card),advanced_mix_card_);
   gtk_box_append(GTK_BOX(main), modes_card);
 
   gtk_box_append(GTK_BOX(audio_columns_), main);
@@ -1049,10 +1091,69 @@ void SukutWindow::RenderStatus() {
   Name(power_button_, state_.mode == 0 ? std::string(L("Turn on ", "تشغيل ")) + ModeName(selected_mode_) : L("Turn off Sukut", "إيقاف سُكوت"));
 }
 
+void SukutWindow::EnsureAdvancedMixControls() {
+  if(advanced_mix_scales_[0])return;
+  const char* mix_icons[] = {"audio-input-microphone-symbolic", "multimedia-player-symbolic", "audio-speakers-symbolic"};
+  const char* mix_tones[] = {"accent-text", "mode-3", "mode-2"};
+  for (int stem=0; stem<3; ++stem) {
+    const char* name=stem==0?L("Voice", "الصوت البشري"):stem==1?L("Music", "الموسيقى"):L("Background", "الخلفية");
+    GtkWidget* header=gtk_box_new(GTK_ORIENTATION_HORIZONTAL,8);
+    gtk_box_append(GTK_BOX(header),Icon(mix_icons[stem],mix_tones[stem]));
+    GtkWidget* label=Label(name,"section-heading",false); gtk_widget_set_hexpand(label,TRUE);
+    gtk_widget_add_css_class(label,mix_tones[stem]); gtk_box_append(GTK_BOX(header),label);
+    advanced_mix_values_[stem]=Label("",mix_tones[stem],false);
+    gtk_widget_set_direction(advanced_mix_values_[stem],GTK_TEXT_DIR_LTR);
+    gtk_box_append(GTK_BOX(header),advanced_mix_values_[stem]);
+    gtk_box_append(GTK_BOX(advanced_mix_card_),header);
+    advanced_mix_scales_[stem]=CommitScale(-20,10,&applying_,
+      [this,stem](int db){gtk_label_set_text(GTK_LABEL(advanced_mix_values_[stem]),Gain(db).c_str());},
+      [this,stem](int db){CommitAdvancedGain(stem,db);});
+    gtk_widget_add_css_class(advanced_mix_scales_[stem],mix_tones[stem]); Name(advanced_mix_scales_[stem],name);
+    gtk_box_append(GTK_BOX(advanced_mix_card_),advanced_mix_scales_[stem]);
+  }
+}
+
+void SukutWindow::VerifyMixSlidersForTest() {
+  g_assert_null(link_);
+  EnsureAdvancedMixControls();
+  const HostState stale = state_;
+  for (int stem=0; stem<3; ++stem) {
+    auto* range=GTK_RANGE(advanced_mix_scales_[stem]);
+    auto* adjustment=gtk_range_get_adjustment(range);
+    g_assert_cmpfloat(gtk_adjustment_get_lower(adjustment),==,-20);
+    g_assert_cmpfloat(gtk_adjustment_get_upper(adjustment),==,10);
+    g_assert_cmpfloat(gtk_adjustment_get_step_increment(adjustment),==,1);
+    auto* interaction=static_cast<CommitState*>(g_object_get_data(G_OBJECT(range),"commit"));
+    interaction->pressed=true;
+    gtk_range_set_value(range,-14);
+    Apply(stale); // periodic host refresh during a live drag
+    g_assert_cmpfloat(gtk_range_get_value(range),==,-14);
+    g_assert_cmpstr(gtk_label_get_text(GTK_LABEL(advanced_mix_values_[stem])),==,"-14 dB");
+    gtk_range_set_value(range,-20);
+    Apply(stale);
+    g_assert_cmpstr(gtk_label_get_text(GTK_LABEL(advanced_mix_values_[stem])),==,"-20 dB");
+    interaction->pressed=false;
+  }
+  Render();
+  g_print("mix_slider_refresh=PASS range=-20..10 step=1 live_label=-14dB minimum_is_not_mute\n");
+}
+
 void SukutWindow::RenderModes() {
   for (int m = 1; m <= 3; ++m) gtk_check_button_set_active(GTK_CHECK_BUTTON(mode_checks_[m - 1]), selected_mode_ == m);
-  gtk_widget_set_visible(background_card_, selected_mode_ == 2);
-  if (!static_cast<CommitState*>(g_object_get_data(G_OBJECT(background_scale_), "commit"))->pressed)
+  gtk_widget_set_visible(background_card_, selected_mode_ == 2 && !state_.advanced_optimized);
+  gtk_widget_set_visible(advanced_mix_card_, selected_mode_ == 2 && state_.advanced_optimized);
+  if(state_.advanced_optimized)EnsureAdvancedMixControls();
+  const int gains[]={state_.advanced_voice_db,state_.advanced_music_db,state_.advanced_background_db};
+  for(int stem=0;stem<3 && advanced_mix_scales_[0];++stem) {
+    const auto* interaction = static_cast<CommitState*>(g_object_get_data(G_OBJECT(advanced_mix_scales_[stem]),"commit"));
+    // A host snapshot can arrive while dragging or during a keyboard commit.
+    // Keep both the thumb and its label on the live value until that interaction ends.
+    if (!interaction->pressed && !interaction->pause)
+      gtk_range_set_value(GTK_RANGE(advanced_mix_scales_[stem]),std::clamp(gains[stem],-20,10));
+    const int shown = static_cast<int>(std::lround(gtk_range_get_value(GTK_RANGE(advanced_mix_scales_[stem]))));
+    gtk_label_set_text(GTK_LABEL(advanced_mix_values_[stem]),Gain(shown).c_str());
+  }
+  if (const auto* interaction = static_cast<CommitState*>(g_object_get_data(G_OBJECT(background_scale_), "commit")); !interaction->pressed && !interaction->pause)
     gtk_range_set_value(GTK_RANGE(background_scale_), state_.background_db);
   gtk_label_set_text(GTK_LABEL(background_value_), Gain(static_cast<int>(std::lround(gtk_range_get_value(GTK_RANGE(background_scale_))))).c_str());
 }
@@ -1211,7 +1312,8 @@ void SukutWindow::Select(int mode) {
   error_.clear();
   Render();
   Send({"select", std::to_string(mode), state_.chosen_output, std::to_string(state_.source_pid), std::to_string(state_.buffering),
-        std::to_string(state_.background_db)},
+        std::to_string(state_.background_db),state_.advanced_optimized?"1":"0",std::to_string(state_.advanced_voice_db),
+        std::to_string(state_.advanced_music_db),std::to_string(state_.advanced_background_db)},
        [this](bool ok, const std::string& payload) {
          command_ = false;
          if (!ok) error_ = payload;
@@ -1258,6 +1360,28 @@ void SukutWindow::CommitBackground(int db) {
   state_.background_db = db;
   if (state_.mode == 2) Select(2);
   else Save("OptimizedBackgroundDb", std::to_string(db));
+}
+
+void SukutWindow::CommitAdvancedGain(int stem, int db) {
+  db=std::clamp(db,-20,10);
+  int& saved=stem==0?state_.advanced_voice_db:stem==1?state_.advanced_music_db:state_.advanced_background_db;
+  if(saved==db)return;
+  saved=db;
+  if(state_.mode==2)Select(2);
+  else Save(stem==0?"AdvancedVoiceDb":stem==1?"AdvancedMusicDb":"AdvancedBackgroundDb",std::to_string(db));
+}
+void SukutWindow::SetAdvancedMix(bool enabled) {
+  if(state_.advanced_optimized==enabled)return;
+  // Advanced mode starts music at its lowest finite gain; standard mode still mutes it.
+  if(enabled) { state_.advanced_voice_db=0;state_.advanced_music_db=-20;state_.advanced_background_db=state_.background_db; }
+  state_.advanced_optimized=enabled;
+  Send({"settings",std::string("AdvancedOptimized=")+(enabled?"1":"0"),"AdvancedVoiceDb="+std::to_string(state_.advanced_voice_db),
+      "AdvancedMusicDb="+std::to_string(state_.advanced_music_db),"AdvancedBackgroundDb="+std::to_string(state_.advanced_background_db)},
+      [this,enabled](bool ok,const std::string& error){
+        if(!ok){state_.advanced_optimized=!enabled;Toast(error);Render();return;}
+        selected_mode_=2;
+        if(state_.mode!=0)Select(2);else {Save("PreferredMode","2");Render();}
+      });
 }
 
 void SukutWindow::CommitAmplification(int db) {

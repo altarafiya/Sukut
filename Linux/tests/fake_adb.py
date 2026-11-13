@@ -73,15 +73,32 @@ def main(args):
             f"    versionName={installed['version']}\n")
     if args == ["shell", "am", "get-current-user"]:
         out(f"{state.get('user', 0)}\n")
+    if args == ["shell", "pm", "grant", "--user", str(state.get("user", 0)), PACKAGE, "android.permission.WRITE_SECURE_SETTINGS"]:
+        if state.get("deny_shortcut") or state.get("worker") != "READY":
+            out("SecurityException: WRITE_SECURE_SETTINGS grant not allowed\n", 1)
+        state["shortcut_granted"] = True
+        save(state)
+        out("")
     if args[:3] == ["shell", "content", "call"]:
         method = args[args.index("--method") + 1]
         if not installed:
             out("Error while accessing provider:com.altarafiyah.sukut.worker\n", 1)
+        if method == "computer-setup":
+            if not state.get("shortcut_granted") or state.get("worker") != "READY" or str(state.get("user", 0)) != args[args.index("--user") + 1]:
+                out("IllegalStateException: Computer setup needs ready worker and permission\n", 1)
+            if state.get("wrong_shortcut_ack"):
+                out("Result: Bundle[{state=READY}]\n")
+            state["computer_setup"] = True
+            save(state)
+            out("Result: Bundle[{state=COMPUTER_SETUP_READY}]\n")
         if method == "deactivate":
             state["worker"] = "INACTIVE"
             save(state)
             out("Result: Bundle[{state=INACTIVE, protocol=1}]\n")
         if state.get("worker") == "READY":
+            if state.get("worker_dies_after_ready"):
+                state["worker"] = "INACTIVE"
+                save(state)
             out(f"Result: Bundle[{{state=READY, protocol=1, version={installed['code']}, pid=12345}}]\n")
         out(f"Result: Bundle[{{state=INACTIVE, protocol=1, version={installed['code']}}}]\n")
     if args[:1] == ["install"]:

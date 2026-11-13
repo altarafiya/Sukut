@@ -19,11 +19,12 @@ internal object AudioModes {
     fun mode(id: Int) = modes.find { it.id == id } ?: modes[1]
     fun levels(context: Context, id: Int): CharSequence {
         val palette = UiPalette(context)
-        val voice = 0
-        val music = if (id == OFF) 0 else -100
-        val other = when (id) { CleanerPrefs.SOURCE_STRICT -> -100; CleanerPrefs.SOURCE_OPTIMIZED -> CleanerPrefs.optimizedBackground(context); else -> 0 }
+        val advanced = id == CleanerPrefs.SOURCE_OPTIMIZED && CleanerPrefs.advancedMix(context)
+        val voice = if(advanced)CleanerPrefs.advancedGain(context,0) else 0
+        val music = if(advanced)CleanerPrefs.advancedGain(context,1) else if (id == OFF) 0 else -100
+        val other = when (id) { CleanerPrefs.SOURCE_STRICT -> -100; CleanerPrefs.SOURCE_OPTIMIZED -> if(advanced)CleanerPrefs.advancedGain(context,2) else CleanerPrefs.optimizedBackground(context); else -> 0 }
         val result = SpannableStringBuilder()
-        val colors = intArrayOf(palette.accent, palette.highlight, palette.secondary)
+        val colors = if(advanced)intArrayOf(palette.accent,ModeStyle.buffer(2,palette.dark),ModeStyle.buffer(1,palette.dark)) else intArrayOf(palette.accent, palette.highlight, palette.secondary)
         listOf(R.string.voice to voice, R.string.music to music, R.string.background to other).forEachIndexed { index, (label, db) ->
             if (index > 0) result.append("   ·   ")
             val start = result.length

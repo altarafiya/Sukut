@@ -292,7 +292,7 @@ public sealed partial class ShellView
     private void PhoneInstallPage()
     {
         var page = PhonePage(L("Activate Sukut", "تفعيل سُكوت"));
-        page.Children.Add(PhoneBody(L("Keep your phone unlocked. Activate the audio worker, then unplug USB when it is ready.", "أبقِ الهاتف مفتوحًا. فعّل عامل الصوت ثم افصل USB عندما يصبح جاهزًا.")));
+        page.Children.Add(PhoneBody(L("Keep your phone unlocked and activate Sukut. Wait for Audio worker ready, then choose a mode and press Start on the phone.", "أبقِ الهاتف مفتوحًا وفعّل سُكوت. انتظر ظهور «عامل الصوت جاهز»، ثم اختر وضعًا واضغط التشغيل في الهاتف.")));
         PhoneToolActions(page, "Activate Sukut", "تفعيل سُكوت", device => _phoneTools.ActivateSukut(device), "\uE768");
         page.Children.Add(PhoneNote("AccentText", L("Activation does not start audio. Press Start in Sukut on your phone. Activate again after a phone restart or update.", "التفعيل لا يشغّل الصوت. اضغط زر التشغيل في سُكوت على هاتفك. أعد التفعيل بعد إعادة تشغيل الهاتف أو تحديث التطبيق.")));
         var stop = PhoneActionButton("Deactivate worker", "إلغاء تفعيل عامل الصوت", async () => await _phoneTools.DeactivateSukut(await GetPhone()), "\uE71A");
@@ -301,9 +301,12 @@ public sealed partial class ShellView
 
     private void PhoneAllowPage()
     {
-        var page = PhonePage(L("Ready on your phone", "جاهز في هاتفك"));
-        page.Children.Add(PhoneBody(L("Check that the phone says Audio worker ready. Choose a mode and press Start. You can unplug the cable.", "تحقّق من ظهور «عامل الصوت جاهز» في الهاتف. اختر وضعًا واضغط زر التشغيل. يمكنك فصل الكابل.")));
-        PhoneToolActions(page, "Open Sukut on the phone", "فتح سُكوت في الهاتف", device => _phoneTools.OpenSukut(device));
+        var page = PhonePage(L("Ready — and easy next time", "جاهز، وبخطوات أسهل لاحقًا"));
+        page.Children.Add(PhoneBody(L("On the phone, choose a mode and press Start on Home.", "في الهاتف، اختر وضعًا واضغط زر التشغيل في الرئيسية.")));
+        page.Children.Add(PhoneBullets(
+            ("\uE713", "AccentText", L("When activation is needed again", "عندما تحتاج إلى التفعيل مجددًا"), L("Enable USB debugging in Android Settings, then connect the USB cable.", "فعّل تصحيح USB من إعدادات أندرويد، ثم وصّل كابل USB.")),
+            ("\uE768", "GainRaised", L("Activate Sukut", "فعّل سُكوت"), L("Choose Phone → Activate Sukut here. Keep debugging enabled if turning it off stops the worker.", "اختر هنا الهاتف ← تفعيل سُكوت. أبقِ التصحيح مفعّلًا إذا كان إيقافه يوقف عامل الصوت."))));
+        page.Children.Add(PhoneNote("ModeOptimizedText", L("Repeat activation after a phone restart, an app update or if Android ends the worker. The shortcut does not enable debugging automatically.", "أعد التفعيل بعد إعادة تشغيل الهاتف أو تحديث التطبيق أو إنهاء أندرويد لعامل الصوت. لا يفعّل الاختصار تصحيح الأخطاء تلقائيًا.")));
     }
 
     private void PhoneSukutPage()
@@ -420,7 +423,7 @@ public sealed partial class ShellView
         SetPhoneActionsEnabled(false);
         var message = _phoneMessage;
         if (message != null) { message.IsOpen = true; message.Severity = InfoBarSeverity.Informational; message.Message = L("Working… Check the phone for prompts.", "جارٍ التنفيذ… تحقّق من طلبات الهاتف."); }
-        try { string result = await action(); if (message != null) { message.Severity = InfoBarSeverity.Success; message.Message = Arabic ? result switch {
+        try { string result = await action(); if (message != null) { message.Severity = result == PhoneTools.ComputerShortcutUnavailable ? InfoBarSeverity.Warning : InfoBarSeverity.Success; message.Message = Arabic ? result switch {
             "Sukut is already installed. Your settings are kept." => "سُكوت مثبّت بالفعل. إعداداتك محفوظة.",
             "Sukut installed. Continue to open it on the phone." => "تم تثبيت سُكوت. تابع لفتحه في الهاتف.",
             "Sukut updated. Your settings are kept." => "تم تحديث سُكوت. إعداداتك محفوظة.",
@@ -430,6 +433,8 @@ public sealed partial class ShellView
             "Sukut is installed and ready for activation." => "سُكوت مثبّت وجاهز للتفعيل.",
             "Sukut audio worker is already ready. Press Start on the phone." => "عامل الصوت جاهز بالفعل. اضغط زر التشغيل في الهاتف.",
             "Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart." => "عامل الصوت جاهز. يمكنك فصل USB والضغط على زر التشغيل في الهاتف. أعد التفعيل بعد إعادة تشغيل الهاتف.",
+            PhoneTools.ComputerShortcutReady => "عامل الصوت جاهز. اختر وضعًا واضغط التشغيل في الهاتف. يمكنك فصل USB.",
+            PhoneTools.ComputerShortcutUnavailable => "عامل الصوت جاهز، لكن تعذّر إعداد اختصار خيارات المطوّر. يمكنك استخدام عامل الصوت دون الاختصار.",
             "Sukut audio worker deactivated. Activate it again before using Start." => "أُلغي تفعيل عامل الصوت. فعّله مجدّدًا قبل استخدام زر التشغيل.",
             _ => result } : result; } }
         catch (Exception error) { if (message != null) {
@@ -438,6 +443,8 @@ public sealed partial class ShellView
             message.Message = error switch {
                 OperationCanceledException => L("Timed out. Check the phone and connection, then retry.", "انتهت المهلة. تحقّق من الهاتف والاتصال، ثم أعد المحاولة."),
                 System.Net.Http.HttpRequestException => L("Couldn’t download the tools. Check this PC’s internet connection, then retry.", "تعذّر تنزيل الأدوات. تحقّق من اتصال الحاسوب بالإنترنت، ثم أعد المحاولة."),
+                _ when detail == "Sukut audio worker is no longer ready. Keep the phone unlocked and activate again."
+                    => L("Sukut audio worker is no longer ready. Keep the phone unlocked and activate again.", "عامل الصوت في سُكوت لم يعد جاهزًا. أبقِ الهاتف مفتوحًا وأعد التفعيل."),
                 _ when detail.Contains("INSTALL_FAILED_USER_RESTRICTED", StringComparison.OrdinalIgnoreCase)
                     => L("Approve the installation on your phone. On Xiaomi, enable Install via USB in Developer options, then retry.", "وافق على التثبيت في هاتفك. في شاومي، فعّل «التثبيت عبر USB» من خيارات المطوّر، ثم أعد المحاولة."),
                 _ when detail.Contains("INSTALL_FAILED_UPDATE_INCOMPATIBLE", StringComparison.OrdinalIgnoreCase)

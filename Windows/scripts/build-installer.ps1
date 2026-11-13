@@ -1,4 +1,4 @@
-param([switch]$SkipPayloadStage)
+param([switch]$SkipPayloadStage,[string]$CompanionApk="")
 $ErrorActionPreference='Stop'
 $taskRoot=Split-Path -Parent $PSScriptRoot
 $taskRepo=Split-Path -Parent $taskRoot
@@ -9,9 +9,13 @@ $taskGradle=Get-Content -LiteralPath (Join-Path $taskRepo 'app/build.gradle.kts'
 $taskAndroidVersion=[regex]::Match($taskGradle,'versionName\s*=\s*"(\d+\.\d+(?:\.\d+)?(?:-beta\.\d+)?)"').Groups[1].Value
 $taskParsedVersion=[version]([regex]::Match($taskVersion,'^\d+\.\d+(?:\.\d+)?').Value)
 $taskNumericVersion=('{0}.{1}.{2}' -f $taskParsedVersion.Major,$taskParsedVersion.Minor,[Math]::Max(0,$taskParsedVersion.Build))
-$taskApk=Join-Path $taskRepo ('Builds/Sukut-'+$taskAndroidVersion+'-android-arm64.apk')
+$taskApk=if($CompanionApk){[IO.Path]::GetFullPath($CompanionApk)}else{Join-Path $taskRepo ('Builds/Sukut-'+$taskAndroidVersion+'-android-arm64.apk')}
+if(-not(Test-Path -LiteralPath $taskApk)){
+    $code=[regex]::Match($taskGradle,'versionCode\s*=\s*(\d+)').Groups[1].Value
+    $taskApk=Join-Path $taskRepo ('Builds/Sukut-'+$taskAndroidVersion+'-code'+$code+'-android-arm64.apk')
+}
 $taskBundle=Join-Path $taskRoot ('build/sukut-'+$taskVersion+'/Assets/Phone/Sukut.apk')
-$taskCurrentApk=Join-Path $taskRepo 'app/build/outputs/apk/engine/app-engine.apk'
+$taskCurrentApk=if($CompanionApk){$taskApk}else{Join-Path $taskRepo 'app/build/outputs/apk/engine/app-engine.apk'}
 $taskApkHash=(Get-FileHash -LiteralPath $taskApk -Algorithm SHA256).Hash
 if((Get-FileHash -LiteralPath $taskCurrentApk -Algorithm SHA256).Hash -ne $taskApkHash){throw 'Release APK differs from current Android output'}
 if((Get-FileHash -LiteralPath $taskBundle -Algorithm SHA256).Hash -ne $taskApkHash){throw 'Bundled Android APK is out of date'}

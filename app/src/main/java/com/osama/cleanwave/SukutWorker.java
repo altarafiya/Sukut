@@ -23,6 +23,7 @@ public final class SukutWorker {
     private final FileObserver apkObserver;
     private final String installedApk;
     private final int ownerUid;
+    private final boolean debuggingTethered = WorkerLifetime.debuggingTethered(Process.myPid());
     private IBinder controller;
     private IBinder.DeathRecipient death;
     private boolean queued;
@@ -84,6 +85,7 @@ public final class SukutWorker {
             Bundle extras = new Bundle();
             extras.putInt("version", BuildConfig.VERSION_CODE); extras.putInt("protocol", WorkerProtocol.VERSION);
             extras.putInt("pid", Process.myPid()); extras.putBinder("worker", audio);
+            extras.putBoolean("debugging_tethered", debuggingTethered);
             Bundle answer = bridge.publish(extras);
             if (answer == null || !answer.getBoolean("accepted")) {
                 if (answer != null && "version".equals(answer.getString("reason"))) { audio.destroy(); return; }

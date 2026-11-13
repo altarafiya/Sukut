@@ -23,7 +23,7 @@ constexpr const char* kItemXml = R"xml(<node><interface name="org.kde.StatusNoti
   <method name="SecondaryActivate"><arg name="x" type="i" direction="in"/><arg name="y" type="i" direction="in"/></method>
   <method name="Scroll"><arg name="delta" type="i" direction="in"/><arg name="orientation" type="s" direction="in"/></method>
   <method name="ProvideXdgActivationToken"><arg name="token" type="s" direction="in"/></method>
-  <signal name="NewTitle"/><signal name="NewIcon"/><signal name="NewAttentionIcon"/><signal name="NewToolTip"/>
+  <signal name="NewMenu"/><signal name="NewTitle"/><signal name="NewIcon"/><signal name="NewAttentionIcon"/><signal name="NewToolTip"/>
   <signal name="NewStatus"><arg name="status" type="s"/></signal>
 </interface></node>)xml";
 
@@ -76,6 +76,10 @@ const char* T(bool arabic, const char* english, const char* arabic_text) { retur
 
 Tray::Tray(Actions actions, std::string icon_theme_path)
     : actions_(std::move(actions)), icon_theme_path_(std::move(icon_theme_path)) {
+#ifdef SUKUT_TRAY_FLYOUT
+  const std::string desktop=std::getenv("XDG_CURRENT_DESKTOP")?std::getenv("XDG_CURRENT_DESKTOP"):"";
+  custom_menu_=std::getenv("WAYLAND_DISPLAY") && !std::getenv("FLATPAK_ID") && !std::getenv("SNAP") && desktop.find("GNOME")==std::string::npos;
+#endif
   // Flatpak lets an app own names under its own id only.
   const char* app_id = std::getenv("FLATPAK_ID");
   bus_name_ = app_id && *app_id ? std::string(app_id) + ".StatusNotifierItem"
@@ -111,6 +115,12 @@ bool Tray::Start(GDBusConnection* connection, std::string& error) {
   watch_id_ = g_bus_watch_name_on_connection(connection_, "org.kde.StatusNotifierWatcher", G_BUS_NAME_WATCHER_FLAGS_NONE,
                                              WatcherAppeared, WatcherVanished, this, nullptr);
   return true;
+}
+
+void Tray::SetCustomMenu(bool enabled) {
+  if(custom_menu_==enabled)return;
+  custom_menu_=enabled;
+  if(connection_)Emit(kItemPath,kItemInterface,"NewMenu",nullptr);
 }
 
 void Tray::OnWatcher(bool present) {
@@ -306,7 +316,7 @@ GVariant* Tray::OnItemProperty(const gchar* property) {
   if (p == "IconThemePath") return g_variant_new_string(icon_theme_path_.c_str());
   if (p == "AttentionIconName") return g_variant_new_string((std::string(kAppId) + "-tray-on").c_str());
   if (p == "ItemIsMenu") return g_variant_new_boolean(FALSE);
-  if (p == "Menu") return g_variant_new_object_path(kMenuPath);
+  if (p == "Menu") return g_variant_new_object_path(custom_menu_?"/NO_DBUSMENU":kMenuPath);
   if (p == "ToolTip")
     return g_variant_new("(s@a(iiay)ss)", "", g_variant_new_array(G_VARIANT_TYPE("(iiay)"), nullptr, 0),
                          "سُكوت Sukut", state_.status.c_str());
@@ -316,6 +326,7 @@ GVariant* Tray::OnItemProperty(const gchar* property) {
 void Tray::OnItemMethod(const gchar* method, GVariant* parameters, GDBusMethodInvocation* invocation) {
   const std::string m = method;
   if (m == "Activate") { if (actions_.activate) actions_.activate(); }
+  else if(m=="ContextMenu" && custom_menu_ && actions_.popup) {gint32 x=0,y=0;g_variant_get(parameters,"(ii)",&x,&y);actions_.popup(x,y);}
   else if (m == "ProvideXdgActivationToken") {
     const gchar* token = nullptr;
     g_variant_get(parameters, "(&s)", &token);

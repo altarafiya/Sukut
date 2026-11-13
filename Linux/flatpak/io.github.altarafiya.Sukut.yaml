@@ -26,12 +26,12 @@ modules:
   - name: sukut
     buildsystem: simple
     build-commands:
-      - cp -a bin libexec share ${FLATPAK_DEST}/
+      - cp -a bin lib libexec share ${FLATPAK_DEST}/
       - install -Dm755 sukut-adb ${FLATPAK_DEST}/bin/sukut-adb
     sources:
       - type: archive
-        url: https://github.com/altarafiya/Sukut/releases/download/v0.4.0-beta.8/Sukut-0.4.0-beta.8-Flatpak-x86_64.tar.xz
-        sha256: f8f7734af671bd5c5353dfd144c347d80bd2fb79483782f62049820e6cc350a5
+        url: https://github.com/altarafiya/Sukut/releases/download/v0.5.1/Sukut-0.5.1-Flatpak-x86_64.tar.xz
+        sha256: 6ae4cc2482202aee6674676a3a22b66998f4c3aae21a3c56223acf1db5e43c83
         strip-components: 0
       - type: file
         path: sukut-adb

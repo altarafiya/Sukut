@@ -28,8 +28,10 @@ class HostLink {
   HostLink& operator=(const HostLink&) = delete;
 
   // Connects and says hello, starting `host_command` (with --tray) when no
-  // host answers yet. Blocking; called once before the window is shown.
-  bool Connect(const std::string& host_command, std::string& error);
+  // host answers yet. A popup snapshot skips the synchronous initial request;
+  // subsequent state/catalog reads run on the worker after its first frame.
+  bool Connect(const std::string& host_command, std::string& error, bool popup = false, const std::string& snapshot = {});
+  const std::string& InitialState() const { return initial_state_; }
   // Queues a request; `reply` runs on the main loop.
   void Send(std::vector<std::string> fields, Reply reply = {});
   // Runs on the main loop when the host goes away (it exited or crashed).
@@ -42,6 +44,7 @@ class HostLink {
   static gboolean Hangup(gint fd, GIOCondition condition, gpointer self);
 
   int fd_ = -1;
+  std::string initial_state_;
   guint hangup_watch_ = 0;
   std::function<void()> lost_;
   bool lost_reported_ = false;

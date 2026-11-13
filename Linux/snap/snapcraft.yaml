@@ -8,10 +8,15 @@ description: |
 
   **After installing, open Sukut. If it asks for permission, it shows one command
   to copy into Terminal.** Snap apps can't grant themselves access to your audio.
-version: 0.4.0-beta.10
+version: 0.5.1
 base: core26
-grade: devel
+grade: stable
 confinement: strict
+license: Proprietary
+contact: https://github.com/altarafiya/Sukut/issues
+website: https://altarafiya.github.io/Sukut
+issues: https://github.com/altarafiya/Sukut/issues
+source-code: https://github.com/altarafiya/Sukut
 platforms:
   amd64:
 apps:
@@ -23,20 +28,34 @@ apps:
     extensions: [gnome]
     plugs: [pipewire, audio-playback, audio-record, network, network-bind, raw-usb, unity7]
 parts:
+  gtk4-layer-shell:
+    plugin: meson
+    source: https://github.com/wmww/gtk4-layer-shell/archive/refs/tags/v1.3.0.tar.gz
+    source-checksum: sha256/1ebb01ab14e98afd1727f68f64981c37bd23305b1f131f5667c02b94cf593192
+    build-packages: [meson, ninja-build, libwayland-dev, wayland-protocols]
+    meson-parameters: [--prefix=/usr, --libdir=lib/x86_64-linux-gnu, -Dintrospection=false, -Dvapi=false, -Dexamples=false, -Dtests=false, -Dsmoke-tests=false]
+    override-build: |
+      craftctl default
+      install -Dm644 "$CRAFT_PART_SRC/LICENSE" "$CRAFT_PART_INSTALL/usr/share/doc/sukut/licenses/GTK4-Layer-Shell/LICENSE"
+    prime: [-usr/include, -usr/lib/pkgconfig, -usr/lib/x86_64-linux-gnu/pkgconfig, -usr/lib/x86_64-linux-gnu/liblayer-shell-preload.so]
   sukut:
+    after: [gtk4-layer-shell]
     plugin: nil
     # Built from a local tree holding the private sealing header and sealed model
     # (Linux/scripts/build-snap.sh), so it can't be built from the public source.
     source: .
-    build-packages: [cmake, ninja-build, g++, pkg-config, libpipewire-0.3-dev, libfontconfig-dev]
+    build-packages: [cmake, ninja-build, g++, pkg-config, libpipewire-0.3-dev, libfontconfig-dev, adwaita-icon-theme]
     stage-packages: [adb, libpipewire-0.3-0t64, libspa-0.2-modules, libpipewire-0.3-modules, pipewire-bin]
     override-build: |
+      export PKG_CONFIG_PATH="$CRAFT_STAGE/usr/lib/x86_64-linux-gnu/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+      sed -i "s#^prefix=.*#prefix=$CRAFT_STAGE/usr#" "$CRAFT_STAGE/usr/lib/x86_64-linux-gnu/pkgconfig/gtk4-layer-shell-0.pc"
       cmake -S Linux -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBEXECDIR=libexec \
-        -DSUKUT_DEV_TOOLS=OFF -DSUKUT_DEPS_DIR="$HOME/sukut-deps" -DSUKUT_VERSION_LABEL=0.4.0-beta.10 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        -DSUKUT_DEV_TOOLS=OFF -DSUKUT_DEPS_DIR="$HOME/sukut-deps" -DSUKUT_VERSION_LABEL=0.5.1 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       cmake --build build --parallel "$CRAFT_PARALLEL_BUILD_COUNT"
       DESTDIR="$CRAFT_PART_INSTALL" cmake --install build --component sukut
       cd "$CRAFT_PART_INSTALL"
       rm -rf usr/lib/udev usr/share/polkit-1 usr/libexec/sukut/sukut-usb-access
       strip --strip-all usr/bin/sukut usr/libexec/sukut/sukut-host
       install -Dm755 "$CRAFT_PART_SRC/Linux/snap/local/sukut-launch" usr/bin/sukut-launch
+      sh "$CRAFT_PART_SRC/Linux/snap/local/bundle-icons.sh" "$CRAFT_PART_SRC" "$CRAFT_PART_INSTALL"
       sed -i 's#^Icon=.*#Icon=${SNAP}/usr/share/icons/hicolor/256x256/apps/io.github.altarafiya.Sukut.png#' usr/share/applications/io.github.altarafiya.Sukut.desktop

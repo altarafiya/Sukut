@@ -62,8 +62,8 @@ object CleanerPrefs {
     fun customVoiceDb(context: Context): Int = prefs(context).getInt(KEY_VOICE_DB, 0).coerceIn(-100, 10)
     fun customMusicDb(context: Context): Int = prefs(context).getInt(KEY_MUSIC_DB, -10).coerceIn(-100, 10)
     fun customOtherDb(context: Context): Int = prefs(context).getInt(KEY_OTHER_DB, -20).coerceIn(-100, 10)
-    fun sourceVoiceDb(context: Context): Int = 0
-    fun sourceMusicDb(context: Context): Int = -100
+    fun sourceVoiceDb(context: Context): Int = if (advancedMix(context) && sourcePreset(context) == SOURCE_OPTIMIZED) advancedGain(context, 0) else 0
+    fun sourceMusicDb(context: Context): Int = if (advancedMix(context) && sourcePreset(context) == SOURCE_OPTIMIZED) advancedGain(context, 1) else -100
     fun optimizedBackground(context: Context): Int = EnginePerformanceConfig.background(prefs(context).getInt("optimized_background_db", -10))
     fun setOptimizedBackground(context: Context, db: Int) {
         val value = EnginePerformanceConfig.background(db)
@@ -72,9 +72,29 @@ object CleanerPrefs {
         if (sourcePreset(context) == SOURCE_OPTIMIZED) reconfigure(context)
     }
     fun sourceOtherDb(context: Context): Int = when (sourcePreset(context)) {
-        SOURCE_OPTIMIZED -> optimizedBackground(context)
+        SOURCE_OPTIMIZED -> if (advancedMix(context)) advancedGain(context, 2) else optimizedBackground(context)
         SOURCE_STRICT -> -100
         else -> 0
+    }
+    fun advancedMix(context: Context) = prefs(context).getBoolean("advanced_mix_enabled", false)
+    fun advancedGain(context: Context, stem: Int): Int {
+        val key = listOf("advanced_voice_db", "advanced_music_db", "advanced_background_db")[stem.coerceIn(0, 2)]
+        val initial = when(stem) { 0 -> 0; 1 -> -20; else -> optimizedBackground(context) }
+        return prefs(context).getInt(key, initial).coerceIn(-20, 10)
+    }
+    fun setAdvancedMix(context: Context, enabled: Boolean) {
+        if (advancedMix(context) == enabled) return
+        val state = prefs(context)
+        val edit = state.edit().putBoolean("advanced_mix_enabled", enabled)
+        if (enabled) edit.putInt("advanced_voice_db", 0).putInt("advanced_music_db", -20).putInt("advanced_background_db", optimizedBackground(context))
+        edit.apply()
+        if (sourcePreset(context) == SOURCE_OPTIMIZED) reconfigure(context)
+    }
+    fun setAdvancedGain(context: Context, stem: Int, db: Int) {
+        val safe = stem.coerceIn(0, 2); val value = db.coerceIn(-20, 10)
+        if (advancedGain(context, safe) == value) return
+        prefs(context).edit().putInt(listOf("advanced_voice_db", "advanced_music_db", "advanced_background_db")[safe], value).apply()
+        if (advancedMix(context) && sourcePreset(context) == SOURCE_OPTIMIZED) reconfigure(context)
     }
     fun silentRecovery(context: Context): Boolean = sourceMusicDb(context) <= -100
 

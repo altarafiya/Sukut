@@ -1,3 +1,66 @@
+sukut (0.5.1-1) resolute; urgency=medium
+
+  * New hand app icon; the tray keeps the original Seen glyph.
+  * Bundle Android 0.5.1/code62: corrected Arabic, a clearer Debugging tile
+    icon, the original Seen on the audio tile and notification.
+
+ -- الطرفية <altarafiyah@gmail.com>  Fri, 13 Nov 2026 20:00:00 +0800
+
+sukut (0.5.0-1) resolute; urgency=medium
+
+  * Stable 0.5.0 release train shared with Flatpak and Snap.
+  * Apply the approved flowing Seen icon to app, tray and system resources.
+  * Hold Optimized five seconds to unlock; hold three seconds to return to normal.
+  * Bundle Android 0.5.0/code61 with a distinct Debugging tile and live,
+    compact recovery that removes setup controls when the worker is ready.
+
+ -- الطرفية <altarafiyah@gmail.com>  Fri, 13 Nov 2026 18:00:00 +0800
+
+sukut (0.4.0~beta.15-1) trixie; urgency=medium
+
+  * Show the tray as a utility surface without normal-window opening effects.
+  * Remove tray blur shadow and reduce idle state polling; handle top panels.
+  * Remove developer-off steps from computer setup and simplify Ready messages.
+  * Bundle Android 0.4.6/code60: coherent progress, optional recovery guide,
+    green explanatory status, sliding substeps and a wireless shortcut.
+
+ -- الطرفية <altarafiyah@gmail.com>  Fri, 13 Nov 2026 16:00:00 +0800
+
+sukut (0.4.0~beta.14-1) trixie; urgency=medium
+
+  * Keep the tray menu open while mode changes temporarily move widget focus.
+  * Centre it above the tray icon, inside the desktop work area above panels.
+  * Show cached state immediately, defer discovery, coalesce reads and avoid
+    rebuilding output/source choices after unrelated mode or gain changes.
+  * Use the lightweight Cairo renderer for this temporary popup only.
+
+ -- الطرفية <altarafiyah@gmail.com>  Fri, 13 Nov 2026 12:00:00 +0800
+
+sukut (0.4.0~beta.13-1) trixie; urgency=medium
+
+  * Tray: on-demand Windows-style flyout on supported Wayland desktops,
+    with power, mode tiles, mix sliders and playback choices; native fallback.
+  * Advanced mix: -20 to +10 dB in 1 dB steps, no mute endpoint.
+  * Preserve live slider labels across host refreshes; five-second hold.
+  * Include Android 0.4.5/code59 with resumable setup, status pills,
+    quick USB reactivation, Arabic tile icon and stable notification text.
+  * Explain firmware that stops the worker when ADB is disabled.
+
+ -- الطرفية <altarafiyah@gmail.com>  Fri, 13 Nov 2026 02:00:00 +0800
+
+sukut (0.4.0~beta.12-1) trixie; urgency=medium
+
+  * Optional advanced Optimized mix: ten-second hold, code gate with a
+    three-attempt/ten-minute lock, and existing three-stem gain controls.
+  * Phone setup: explain the Developer options shortcut, explicit debugging
+    cleanup after activation and one-tap USB setup for the next activation.
+  * Provision the optional shortcut only after a verified Android 0.4.4/code58
+    worker is ready. Keep activation usable if the phone refuses the grant.
+  * Preserve existing supported Android installations during activation,
+    including Google Play installs with a different app-signing key.
+
+ -- الطرفية <altarafiyah@gmail.com>  Thu, 12 Nov 2026 23:00:00 +0800
+
 sukut (0.4.0~beta.7-1) trixie; urgency=medium
 
   * Outputs, as Windows 0.4.2: a newly connected Bluetooth or USB output

@@ -80,7 +80,7 @@ def tampered(name):
 
 
 def main():
-    # The APK is the Windows build's and the activation script Android 0.4.2's
+    # The APK is the Windows build's and the activation script Android's
     # (Linux/data/android), byte for byte, and both pass their own checks.
     android = DATA / "android"
     sources = [f for f in WINDOWS.iterdir() if f.name.startswith("Sukut.apk")] + list((HERE.parent / "data" / "android").iterdir())
@@ -153,7 +153,7 @@ def main():
 
     phone({})
     code, text = sukut("setup")
-    opened = any(c.endswith("shell am start -W -n com.altarafiyah.sukut/com.osama.cleanwave.MainActivity") for c in calls())
+    opened = any("shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.altarafiyah.sukut/com.osama.cleanwave.MainActivity" in c for c in calls())
     check("P_setup_installs_and_opens", code == 0 and "ready for activation" in text and opened, text)
 
     code, text = sukut("activate")
@@ -172,7 +172,8 @@ def main():
 
     phone({}, installed={"code": bundled - 1, "version": "0.4"})
     code, text = sukut("activate")
-    check("P_activate_updates_first", code == 0 and "audio worker is ready" in text and state()["installed"]["code"] == bundled, text)
+    check("P_activate_preserves_supported_installed_app", code == 0 and "audio worker is ready" in text
+          and state()["installed"]["code"] == bundled - 1 and not any(" install " in call for call in calls()), text)
 
     phone({})
     code, text = sukut("install", data=tampered("Sukut.apk"))
@@ -189,12 +190,63 @@ def main():
     check("P_worker_fails_reported", code == 1 and "did not connect" in text and "fake worker log" in text and launches == 2,
           f"launches={launches} | {text}")
 
-    second = {"serial": "9A281FFAZ0", "state": "device", "model": "Pixel 8a"}
+    # Computer-only code58+ shortcut provisioning happens after a verified
+    # worker, is scoped to the current Android user, and never disables ADB.
+    modern = max(58, bundled)
+    phone({}, installed={"code": modern, "version": "0.4.4"}, user=10)
+    code, text = sukut("activate")
+    sequence = calls()
+    grant = next((i for i, call in enumerate(sequence) if "shell pm grant --user 10 com.altarafiyah.sukut android.permission.WRITE_SECURE_SETTINGS" in call), -1)
+    ack = next((i for i, call in enumerate(sequence) if "--method computer-setup" in call), -1)
+    ready_checks = [i for i, call in enumerate(sequence) if "--method status" in call]
+    launch = next((i for i, call in enumerate(sequence) if call.endswith("sukut-activate-worker.sh 10")), -1)
+    check("P_shortcut_provisioned_after_ready", code == 0 and state().get("computer_setup") is True
+          and launch >= 0 and ready_checks and launch < max(ready_checks) < grant < ack
+          and "Choose a mode and press Start" in text and "turn Developer options off" not in text, text)
+    check("P_shortcut_does_not_disable_debugging", not any("settings put" in call or "settings delete" in call for call in sequence), sequence)
+
+    pathlib.Path(str(STATE) + ".log").write_text("")
+    code, text = sukut("activate")
+    sequence = calls()
+    check("P_shortcut_already_ready_without_restart", code == 0 and "already ready" in text
+          and any("--method computer-setup" in call for call in sequence)
+          and not any(" shell sh " in call or " push " in call or " install " in call or "--method deactivate" in call for call in sequence), text)
+
+    phone({}, installed={"code": modern, "version": "0.4.4"}, worker="READY", deny_shortcut=True)
+    code, text = sukut("activate")
+    check("P_shortcut_denial_keeps_worker_ready", code == 0 and state()["worker"] == "READY"
+          and "shortcut setup was not allowed" in text and "without the shortcut" in text and "turn Developer options off" not in text
+          and not any("--method computer-setup" in call for call in calls()), text)
+
+    phone({}, installed={"code": modern, "version": "0.4.4"}, worker="READY", wrong_shortcut_ack=True)
+    code, text = sukut("activate")
+    check("P_shortcut_ack_must_be_specific", code == 0 and state()["worker"] == "READY"
+          and "shortcut setup was not allowed" in text and not state().get("computer_setup"), text)
+
+    phone({}, installed={"code": modern, "version": "0.4.4"}, worker="READY", worker_dies_after_ready=True)
+    code, text = sukut("activate")
+    check("P_shortcut_dying_worker_not_reported_ready", code == 1 and "no longer ready" in text
+          and not any("pm grant" in call or "computer-setup" in call for call in calls()), text)
+
+    legacy = WORK / "legacy-data"
+    shutil.copytree(DATA, legacy, dirs_exist_ok=True)
+    (legacy / "android" / "Sukut.apk.version").write_text("0.4.3\n57\n")
+    phone({}, installed={"code": 57, "version": "0.4.3"}, worker="READY")
+    code, text = sukut("activate", data=legacy)
+    check("P_shortcut_old_app_untouched", code == 0 and "already ready" in text
+          and not any("pm grant" in call or "computer-setup" in call for call in calls()), text)
+
+    phone({}, installed={"code": modern, "version": "0.4.4"}, worker_fails=True)
+    code, text = sukut("activate")
+    check("P_shortcut_not_granted_before_activation", code == 1 and "did not connect" in text
+          and not any("pm grant" in call or "computer-setup" in call for call in calls()), text)
+
+    second = {"serial": "9A281FFAZ0", "state": "device", "model": "Galaxy S24"}
     phone({}, devices=[PIXEL, second])
     code, text = sukut("inspect")
     check("P_two_phones_need_choice", code == 1 and "Select your phone first" in text, text)
     code, text = sukut("inspect", "--serial", "9A281FFAZ0")
-    check("P_two_phones_chosen", code == 0 and text.startswith("OK: Pixel 8a"), text)
+    check("P_two_phones_chosen", code == 0 and text.startswith("OK: Galaxy S24"), text)
 
 
 try:

@@ -2,16 +2,8 @@
 <resources>
  <string name="guide_restart_note">يحرّر الإيقاف موارد النموذج والصوت. يبقى التفعيل جاهزًا حتى إعادة تشغيل الهاتف أو تحديث سُكوت أو إنهاء أندرويد لعامل الصوت.</string>
  <string name="change_sound_quality">تغيير جودة الصوت</string>
- <string name="guide_pc_title">التفعيل من ويندوز · USB</string>
- <string name="guide_pc_body">في إعدادات الهاتف ← حول الهاتف، اضغط رقم الإصدار سبع مرات (إصدار النظام في شاومي) لتفعيل خيارات المطوّر.\nفعّل تصحيح USB، وصّل كابل بيانات ووافق على اتصال الحاسوب في الهاتف.\nفي ويندوز افتح سُكوت ← الهاتف ← تثبيت سُكوت أو تحديثه، ثم تفعيل سُكوت.\nانتظر ظهور «عامل الصوت جاهز» هنا. اختر وضعًا واضغط زر التشغيل؛ يمكنك فصل USB.</string>
- <string name="guide_wireless_title">الإعداد من الهاتف · Wi-Fi</string>
- <string name="guide_wireless_body">استخدم «التفعيل من هذا الهاتف» لإقران سُكوت عبر تصحيح أندرويد اللاسلكي. يبقى التفعيل عبر USB من ويندوز متاحًا.</string>
- <string name="guide_developer_options">فتح إعدادات التصحيح</string>
- <string name="guide_wireless_picture">أين أجد التصحيح اللاسلكي؟</string>
- <string name="guide_worker_picture">التفعيل عبر USB</string>
- <string name="guide_show_steps">عرض الخطوات</string>
- <string name="guide_hide_steps">إخفاء الخطوات</string>
- <string name="guide_wireless_min_api">يلزم أندرويد ١١ أو أحدث للإعداد اللاسلكي. استخدم طريقة الحاسوب على هذا الهاتف.</string>
- <string name="guide_google_play">فتح Google Play</string>
+ <string name="guide_pc_title">التفعيل من الكمبيوتر · USB</string>
+ <string name="guide_developer_options">فتح إعدادات تصحيح الأخطاء</string>
+ <string name="guide_wireless_min_api">يلزم أندرويد ١١ أو أحدث للإعداد اللاسلكي. استخدم طريقة الكمبيوتر على هذا الهاتف.</string>
  <string name="guide_about_phone">فتح «حول الهاتف»</string>
 </resources>

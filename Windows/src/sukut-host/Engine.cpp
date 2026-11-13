@@ -164,14 +164,6 @@ std::string Engine::Apps(std::string& error) {
   return Reply([&](char* b, int n) { return apps_(b, n); }, error);
 }
 
-namespace {
-float BackgroundDb(int mode, int optimized) {
-  if (mode == 3) return -100.0F;
-  if (mode == 2) return static_cast<float>(std::clamp(optimized, -20, 10));
-  return 0.0F;
-}
-}  // namespace
-
 bool Engine::Select(const Selection& s, std::string& error) {
   // Same sequence and stem gains as the window's Engine.Select and
   // AudioModePreset: voice 0 dB; music muted in every filtering mode.
@@ -186,9 +178,9 @@ bool Engine::Select(const Selection& s, std::string& error) {
   if (buffering_(context_, std::clamp(s.buffering, 0, 2)) == 0) return failed();
   if (s.restart && s.mode != 0 &&
       select_(context_, 0, s.source.c_str(), s.capture.c_str(), s.output.c_str(), s.pid, 0, 0, 0) == 0) return failed();
-  const float music = s.mode == 0 ? 0.0F : -100.0F;
-  if (select_(context_, s.mode, s.source.c_str(), s.capture.c_str(), s.output.c_str(), s.pid, 0.0F, music,
-              BackgroundDb(s.mode, s.optimized_background_db)) == 0) return failed();
+  const auto gains=cleanwave::ModeGains(s.mode,s.optimized_background_db,s.optimized_mix);
+  if (select_(context_, s.mode, s.source.c_str(), s.capture.c_str(), s.output.c_str(), s.pid,
+              static_cast<float>(gains.voice_db),static_cast<float>(gains.music_db),static_cast<float>(gains.background_db)) == 0) return failed();
   return true;
 }
 

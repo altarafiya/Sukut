@@ -1,1 +1,1 @@
-<inset xmlns:android="http://schemas.android.com/apk/res/android" android:inset="12%"><bitmap android:src="@drawable/sukut_app_icon" android:gravity="fill" android:filter="true"/></inset>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android" android:src="@drawable/sukut_launcher_mark" android:gravity="fill" android:filter="true"/>

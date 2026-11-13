@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include "live/OptimizedMix.h"
 
 namespace sukut::host {
 
@@ -22,6 +23,7 @@ struct HostSettings {
   int buffering = 1;
   int amplification_db = 0;
   int optimized_background_db = 0;
+  cleanwave::OptimizedMix optimized_mix;
   bool setup_completed = false;
   bool close_to_tray = true;
   bool start_with_system = false;

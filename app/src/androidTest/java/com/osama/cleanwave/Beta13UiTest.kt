@@ -135,17 +135,20 @@ class Beta13UiTest {
                         assertFalse(all.any { it.tag=="guide_windows" })
                     }
                     ins.waitForIdleSync(); shot("activation-phone-$locale")
-                    ins.runOnMainSync { (views(page.window.decorView).first { it.tag=="activation_method_choice" } as SegmentedChoice).getChildAt(1).performClick() }
+                    ins.runOnMainSync { views(page.window.decorView).first { it.tag=="guide_choose_computer" }.performClick() }
                     ins.waitForIdleSync()
                     ins.runOnMainSync {
                         val all=views(page.window.decorView)
                         assertTrue(all.any { it.tag=="guide_windows" }); assertFalse(all.any { it.tag=="guide_phone" })
                     }; shot("activation-windows-$locale")
-                    ins.runOnMainSync { (views(page.window.decorView).first { it.tag=="activation_method_choice" } as SegmentedChoice).getChildAt(0).performClick() }
+                    ins.runOnMainSync { views(page.window.decorView).first { it.tag=="guide_choose_phone" }.performClick() }
                     ins.waitForIdleSync()
                     ins.runOnMainSync {
-                        val armed=LocalActivationActivity::class.java.getDeclaredField("returnAfterConnection").apply { isAccessible=true }.getBoolean(page)
-                        assertFalse("Reading guide closed: locale=$locale armed=$armed action=${page.intent.getStringExtra("activation_action")} ready=${WorkerConnection.ready} busy=${LocalActivationState.busy}",page.isFinishing)
+                        assertFalse("Reading the guide must not start pairing",LocalActivationState.busy)
+                        assertFalse("Reading guide closed: locale=$locale",page.isFinishing)
+                        repeat(3) {
+                            views(page.window.decorView).filterIsInstance<android.widget.TextView>().first { it.isClickable && it.text==page.getString(R.string.next) }.performClick()
+                        }
                         views(page.window.decorView).first { it.tag=="guide_picture_wireless" }.performClick()
                     }
                     val pictureDeadline=SystemClock.elapsedRealtime()+3000

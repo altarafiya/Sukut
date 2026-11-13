@@ -56,6 +56,7 @@ public sealed partial class ShellView : UserControl
         _settings = new SettingsStore(_settingsFile);
         _settings.Failed += error => DispatcherQueue.TryEnqueue(() => Error(error.Message));
         InitializeComponent();
+        InitializeAdvancedMixHold();
         _restartTimer.Tick += async (_, _) => await RunAutomaticRestart();
         if (previousBackground != _preferences.OptimizedBackgroundDb) Save();
     }
@@ -209,14 +210,16 @@ public sealed partial class ShellView : UserControl
     private void RenderModeDetails(int mode)
     {
         if (OptimizedBackgroundPanel == null) return;
-        var preset = AudioModePreset.ForMode(mode, _preferences.OptimizedBackgroundDb);
+        var preset = AudioModePreset.ForMode(mode, _preferences.OptimizedBackgroundDb,_preferences.AdvancedOptimized,_preferences.AdvancedVoiceDb,_preferences.AdvancedMusicDb,_preferences.AdvancedBackgroundDb);
         string Gain(float db, bool muted) => muted ? L("Muted", "مكتوم") : (db > 0 ? "+" : "") + db.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " dB";
-        OptimizedBackgroundPanel.Visibility = mode == 2 ? Visibility.Visible : Visibility.Collapsed;
+        OptimizedBackgroundPanel.Visibility = mode == 2 && !_preferences.AdvancedOptimized ? Visibility.Visible : Visibility.Collapsed;
         OptimizedBackgroundHeading.Text = L("Background level", "مستوى الخلفية");
-        OptimizedBackgroundValue.Text = Gain(preset.BackgroundDb, preset.MuteBackground);
+
         AutomationProperties.SetName(OptimizedBackgroundSlider, OptimizedBackgroundHeading.Text);
         bool applying = _applying; _applying = true;
         if (!OptimizedBackgroundSlider.IsInteracting) OptimizedBackgroundSlider.Value = Math.Clamp(_preferences.OptimizedBackgroundDb, -20, 10);
+        OptimizedBackgroundValue.Text = Gain((float)OptimizedBackgroundSlider.Value, false);
+        RenderAdvancedMix(mode);
         _applying = applying;
     }
 
@@ -341,6 +344,7 @@ public sealed partial class ShellView : UserControl
         if (RestartErrorButton != null) RestartErrorButton.IsEnabled = enabled && _mode != 0;
         if (RestartOverloadButton != null) RestartOverloadButton.IsEnabled = enabled && _mode != 0;
         if (OptimizedBackgroundSlider != null) OptimizedBackgroundSlider.IsEnabled = enabled;
+        foreach(var slider in _advancedSliders) slider.IsEnabled = enabled;
         if (force || _modesEnabled != modesEnabled)
         {
             _modesEnabled = modesEnabled;
@@ -532,7 +536,7 @@ public sealed partial class ShellView : UserControl
         try
         {
             if (!await SaveNow()) return false;
-            await _engine.Select(mode, _preferences.Source, _preferences.Capture, _preferences.Output, _preferences.SourcePid, Math.Clamp(_preferences.Buffering, 0, 2), _preferences.CableVolumeDisabledConfirmed, _preferences.OptimizedBackgroundDb, restart);
+            await _engine.Select(mode, _preferences.Source, _preferences.Capture, _preferences.Output, _preferences.SourcePid, Math.Clamp(_preferences.Buffering, 0, 2), _preferences.CableVolumeDisabledConfirmed, _preferences.OptimizedBackgroundDb, restart,_preferences.AdvancedOptimized,_preferences.AdvancedVoiceDb,_preferences.AdvancedMusicDb,_preferences.AdvancedBackgroundDb);
             _mode = mode; success = true;
         }
         catch (Exception error) { if (_quitting) RecordShutdownError(error.Message); else if (automatic) _automaticFailure = error.Message; else Error(error.Message); }

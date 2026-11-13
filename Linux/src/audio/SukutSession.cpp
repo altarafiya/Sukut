@@ -10,9 +10,9 @@ namespace sukut::linux_audio {
 SukutSession::SukutSession() = default;
 SukutSession::~SukutSession() { Stop(); }
 
-cleanwave::RealtimeMix SukutSession::MixFor(int mode, int optimized_background_db) {
-  const int background = mode == 3 ? -100 : mode == 2 ? std::clamp(optimized_background_db, -20, 10) : 0;
-  return {0, -100, background, 100, 0};
+cleanwave::RealtimeMix SukutSession::MixFor(int mode, int optimized_background_db, cleanwave::OptimizedMix mix) {
+  const auto gains = cleanwave::ModeGains(mode, optimized_background_db, mix);
+  return {gains.voice_db, gains.music_db, gains.background_db, 100, 0};
 }
 
 bool SukutSession::Start(const SessionSettings& settings, std::string& error) {
@@ -26,7 +26,7 @@ bool SukutSession::Start(const SessionSettings& settings, std::string& error) {
         dir / "separator.tflite", dir / "window_576_q15.bin", dir / "window_960_q15.bin",
         true, std::chrono::milliseconds(buffering.burst_ms), settings.diagnostics);
     cleaner_->EnableEfficiency(true);  // Standby after 5 s of digital silence, >16 kHz guard
-    cleaner_->Configure(MixFor(settings.mode, settings.optimized_background_db), true);
+    cleaner_->Configure(MixFor(settings.mode, settings.optimized_background_db, settings.optimized_mix), true);
 
     // Buffering levels map onto the rings exactly as onto the Windows endpoints:
     // capture buffer, render buffer and render prefill.
@@ -61,8 +61,8 @@ bool SukutSession::Start(const SessionSettings& settings, std::string& error) {
   }
 }
 
-void SukutSession::SetMode(int mode, int optimized_background_db) {
-  if (cleaner_ && mode >= 1 && mode <= 3) cleaner_->Configure(MixFor(mode, optimized_background_db), true);
+void SukutSession::SetMode(int mode, int optimized_background_db, cleanwave::OptimizedMix mix) {
+  if (cleaner_ && mode >= 1 && mode <= 3) cleaner_->Configure(MixFor(mode, optimized_background_db, mix), true);
 }
 
 void SukutSession::Stop() {

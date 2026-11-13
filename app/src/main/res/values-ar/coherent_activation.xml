@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="setup_activation_progress">الخطوة %1$d من %2$d · التفعيل %3$d من %4$d</string>
+    <string name="status_wireless">تصحيح الأخطاء اللاسلكي</string>
+    <string name="dev_ready_detail">مفعّلة بالفعل — لا تحتاج إلى أي إجراء هنا. تابع إلى الخطوة التالية.</string>
+    <string name="usb_ready_detail">مفعّل بالفعل — وصّل الهاتف بالكمبيوتر عبر USB.</string>
+    <string name="worker_ready_detail">جاهز — يستطيع سُكوت معالجة الصوت. لا حاجة إلى التفعيل.</string>
+    <string name="wireless_ready_detail">مفعّل بالفعل — يمكنك تفعيل سُكوت على هذا الهاتف.</string>
+    <string name="dev_needed_detail">فعّل خيارات المطوّر للسماح بالتفعيل. هذه الخطوة وحدها لا تشغّل عامل الصوت.</string>
+    <string name="usb_needed_detail">فعّل تصحيح أخطاء USB قبل التفعيل من الكمبيوتر.</string>
+    <string name="worker_needed_detail">التفعيل مطلوب — شغّل عامل الصوت لاستخدام سُكوت.</string>
+    <string name="wireless_needed_detail">فعّل تصحيح الأخطاء اللاسلكي للتفعيل من الهاتف. قد يطلب أندرويد موافقتك على شبكة Wi-Fi هذه.</string>
+    <string name="reactivate_now">تفعيل سُكوت</string>
+    <string name="reactivate_explanation">عامل الصوت لا يعمل. فعّله مجددًا، أو افتح الدليل المفصّل إذا احتجت إلى مساعدة. إعداداتك ووضع الصوت المختار محفوظان.</string>
+    <string name="show_activation_guide">عرض دليل التفعيل</string>
+    <string name="dev_wireless_on">خيارات المطوّر وتصحيح الأخطاء اللاسلكي مفعّلان.</string>
+    <string name="dev_tile_wireless_on">تصحيح الأخطاء اللاسلكي مفعّل</string>
+    <string name="shortcut_optional_title">اختصار اختياري لتصحيح الأخطاء</string>
+    <string name="shortcut_optional_detail">اختياري: أضف زر «تصحيح الأخطاء» إلى الإعدادات السريعة. يبدّل خيارات المطوّر واتصال التفعيل، وقد يتوقف سُكوت عند إيقافه.</string>
+</resources>

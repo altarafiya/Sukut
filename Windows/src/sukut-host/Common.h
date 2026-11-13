@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include "live/OptimizedMix.h"
 #include <string_view>
 
 namespace sukut::host {
@@ -32,6 +33,7 @@ struct Preferences {
   std::uint32_t source_pid = 0;
   std::uint64_t settings_version = 0;
   int buffering = 0, amplification_db = 0, optimized_background_db = 0;
+  cleanwave::OptimizedMix optimized_mix;
   int preferred_mode = 1;
   bool setup_completed = false, close_to_tray = true, cable_confirmed = false, volume_guide_dismissed = false;
   [[nodiscard]] bool Arabic() const { return language == "ar"; }

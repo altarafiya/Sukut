@@ -1,5 +1,29 @@
 # What’s new
 
+## 0.5.1 (Android, Linux; Windows to follow)
+
+**All platforms**
+
+- New app icon. The tray, the Android Quick Settings tile and the notification keep the س icon.
+
+**Android**
+
+- Activation one step at a time: choose Computer (recommended) or this phone.
+- Clearer recovery when the audio worker stops, with an optional Debugging tile (new icon).
+- Fixed filtering on Android 12 and 13 ([#1](https://github.com/altarafiya/Sukut/issues/1)).
+- The Quick Settings tile now starts Sukut while the app is closed.
+- Corrected Arabic wording and grammar.
+
+**Linux**
+
+- Stable 0.5.1 as `.deb` (Ubuntu 26.04+, PikaOS 4), Flatpak and snap.
+- Right-click the tray icon for a quick panel with power, modes, mix, buffering, output and source app (on supported Wayland desktops; GNOME uses its own tray menu).
+- Bundles Android 0.5.1 for the Phone page.
+
+## Linux 0.4.0 beta 11 (Snap)
+
+- Icons now show on KDE Plasma and other desktops whose icon theme isn't in the snap.
+
 ## Linux 0.4.0 beta 10 (Snap)
 
 - Sukut is on the Snap Store, in the beta channel. It brings its own libraries, so it doesn't depend on your system's PipeWire version.

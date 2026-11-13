@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 # Sukut for Linux. Stage 1 (Linux/PLAN.md section 12): the engine without audio,
 # built from the same sources as Windows so both platforms run identical code.
-project(SukutLinux VERSION 0.4.0 LANGUAGES C CXX)
+project(SukutLinux VERSION 0.5.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -153,13 +153,22 @@ option(SUKUT_WINDOW "Build the GTK window" ON)
 if(SUKUT_WINDOW)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(ADW REQUIRED IMPORTED_TARGET libadwaita-1>=1.7 gtk4>=4.18 gio-unix-2.0 fontconfig)
+    pkg_check_modules(LAYERSHELL QUIET IMPORTED_TARGET gtk4-layer-shell-0>=1.2)
     add_executable(sukut
         src/window/Main.cpp src/window/HostLink.cpp src/window/Style.cpp src/window/Widgets.cpp
         src/window/Window.cpp src/window/Setup.cpp src/window/Capture.cpp
-        src/window/PhoneTools.cpp src/window/PhonePage.cpp)
+        src/window/PhoneTools.cpp src/window/PhonePage.cpp src/window/AdvancedMix.cpp src/window/TrayPopup.cpp)
     target_include_directories(sukut PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_libraries(sukut PRIVATE PkgConfig::ADW)
-    set(SUKUT_VERSION_LABEL "${PROJECT_VERSION}-preview" CACHE STRING "The version shown in About (the package sets its own)")
+    if(LAYERSHELL_FOUND)
+        # Layer shell must precede Wayland in the link order for its interposition.
+        target_link_libraries(sukut PRIVATE PkgConfig::LAYERSHELL)
+        target_compile_definitions(sukut PRIVATE SUKUT_HAS_LAYER_SHELL=1)
+        if(TARGET sukut-host)
+            target_compile_definitions(sukut-host PRIVATE SUKUT_TRAY_FLYOUT=1)
+        endif()
+    endif()
+    set(SUKUT_VERSION_LABEL "${PROJECT_VERSION}" CACHE STRING "The version shown in About (the package sets its own)")
     target_compile_definitions(sukut PRIVATE SUKUT_VERSION="${SUKUT_VERSION_LABEL}")
     target_compile_options(sukut PRIVATE -Wall -Wextra)
 

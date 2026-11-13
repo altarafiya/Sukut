@@ -25,7 +25,7 @@ internal object StartupMotion {
         view.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(240)
             .setInterpolator(DecelerateInterpolator()).start()
     }
-    fun slidePage(container: FrameLayout, page: View, direction: Int) {
+    fun slidePage(container: FrameLayout, page: View, direction: Int, wrapContent: Boolean = false) {
         val previous = if (container.childCount == 0) null else container.getChildAt(container.childCount - 1)
         // Finish interrupted transitions before starting a new one; retain at most two pages.
         for (i in container.childCount - 1 downTo 0) {
@@ -33,7 +33,7 @@ internal object StartupMotion {
             child.animate().cancel()
             if (child !== previous) container.removeView(child)
         }
-        container.addView(page, FrameLayout.LayoutParams(-1, -1))
+        container.addView(page, FrameLayout.LayoutParams(-1, if(wrapContent)-2 else -1))
         if (previous == null || direction == 0 || !ValueAnimator.areAnimatorsEnabled()) {
             previous?.let { container.removeView(it) }
             return
@@ -46,8 +46,8 @@ internal object StartupMotion {
         previous.alpha = 1f // Interrupted incoming pages must not leave a blank background.
         previous.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         val easing = android.view.animation.PathInterpolator(.4f, 0f, .2f, 1f)
-        previous.animate().translationX(-distance.toFloat()).setDuration(260)
+        previous.animate().translationX(-distance.toFloat()).setDuration(200)
             .setInterpolator(easing).withEndAction { container.removeView(previous) }.start()
-        page.animate().translationX(0f).setDuration(260).setInterpolator(easing).start()
+        page.animate().translationX(0f).setDuration(200).setInterpolator(easing).start()
     }
 }

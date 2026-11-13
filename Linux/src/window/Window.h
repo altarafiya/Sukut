@@ -41,6 +41,7 @@ class SukutWindow {
   void Apply(const Catalog& catalog);
   void SetSelectedMode(int mode) { selected_mode_ = mode; Render(); }
   void SetError(const std::string& error) { error_ = error; Render(); }
+  void VerifyMixSlidersForTest();  // offline capture regression; refuses a live host
 
   // Navigation, also used by the --capture test.
   void ShowPage(Page page);
@@ -104,6 +105,10 @@ class SukutWindow {
   void ChooseApp(std::uint32_t pid);
   void ChooseBuffering(int level);
   void CommitBackground(int db);
+  void OpenAdvancedMix();
+  void EnsureAdvancedMixControls();
+  void SetAdvancedMix(bool enabled);
+  void CommitAdvancedGain(int stem, int db);
   void CommitAmplification(int db);
   void SetLanguage(bool arabic);
   void SetTheme(const std::string& theme);
@@ -163,6 +168,9 @@ class SukutWindow {
   GtkWidget* power_label_ = nullptr;
   std::array<GtkWidget*, 3> mode_checks_{};
   GtkWidget* modes_list_ = nullptr;
+  GtkWidget* advanced_mix_card_ = nullptr;
+  std::array<GtkWidget*, 3> advanced_mix_values_{}, advanced_mix_scales_{};
+  GtkWidget* advanced_mix_dialog_ = nullptr;
   GtkWidget* background_card_ = nullptr;
   GtkWidget* background_value_ = nullptr;
   GtkWidget* background_scale_ = nullptr;

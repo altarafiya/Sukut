@@ -27,6 +27,8 @@ struct HostState {
   std::uint32_t source_pid = 0;
   int preferred_mode = 1, buffering = 1, amplification_db = 0, background_db = 0;
   bool setup_completed = true, close_to_tray = true, start_with_system = false;
+  bool advanced_optimized = false;
+  int advanced_voice_db = 0, advanced_music_db = -20, advanced_background_db = 0;
   std::uint64_t settings_version = 0, raise_requests = 0;
 
   [[nodiscard]] bool Arabic() const { return language == "ar"; }
@@ -57,6 +59,10 @@ struct HostState {
     s.buffering = static_cast<int>(j.Int("buffering"));
     s.amplification_db = static_cast<int>(j.Int("amplificationDb"));
     s.background_db = static_cast<int>(j.Int("optimizedBackgroundDb"));
+    s.advanced_optimized = j.Bool("advancedOptimized");
+    s.advanced_voice_db = static_cast<int>(j.Int("advancedVoiceDb"));
+    s.advanced_music_db = static_cast<int>(j.Int("advancedMusicDb"));
+    s.advanced_background_db = static_cast<int>(j.Int("advancedBackgroundDb"));
     s.setup_completed = j.Bool("setupCompleted");
     s.close_to_tray = j.Bool("closeToTray");
     s.start_with_system = j.Bool("startWithSystem");

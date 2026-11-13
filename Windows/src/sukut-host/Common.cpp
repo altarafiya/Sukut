@@ -76,6 +76,10 @@ Preferences Preferences::Load(const fs::path& path) {
   p.preferred_mode = std::clamp(static_cast<int>(v.Num("PreferredMode",1)),1,3);
   p.amplification_db = std::clamp(static_cast<int>(v.Num("AmplificationDb")), 0, 12);
   p.optimized_background_db = std::clamp(static_cast<int>(v.Num("OptimizedBackgroundDb")), -20, 10);
+  p.optimized_mix.advanced = v.Bool("AdvancedOptimized");
+  p.optimized_mix.voice_db=std::clamp(static_cast<int>(v.Num("AdvancedVoiceDb")),-20,10);
+  p.optimized_mix.music_db=std::clamp(static_cast<int>(v.Num("AdvancedMusicDb",-20)),-20,10);
+  p.optimized_mix.background_db=std::clamp(static_cast<int>(v.Num("AdvancedBackgroundDb",p.optimized_background_db)),-20,10);
   p.setup_completed = v.Bool("SetupCompleted");
   p.close_to_tray = v.Bool("CloseToTray", true);
   p.cable_confirmed = v.Bool("CableVolumeDisabledConfirmed");
@@ -94,6 +98,9 @@ bool Preferences::Save(const fs::path& path) const {
     << ",\n  \"PreferredMode\": " << preferred_mode << ",\n  \"HostSettingsVersion\": " << settings_version << ",\n  \"Buffering\": " << buffering << ",\n  \"AmplificationDb\": " << amplification_db
     << ",\n  \"OptimizedBackgroundDb\": " << optimized_background_db << ",\n  \"SetupCompleted\": " << b(setup_completed)
     << ",\n  \"CloseToTray\": " << b(close_to_tray) << ",\n  \"CableVolumeDisabledConfirmed\": " << b(cable_confirmed)
+    << ",\n  \"AdvancedOptimized\": " << b(optimized_mix.advanced)
+    << ",\n  \"AdvancedVoiceDb\": " << optimized_mix.voice_db << ",\n  \"AdvancedMusicDb\": " << optimized_mix.music_db
+    << ",\n  \"AdvancedBackgroundDb\": " << optimized_mix.background_db
     << ",\n  \"VolumeGuideDismissed\": " << b(volume_guide_dismissed) << "\n}";
   std::error_code ignored;
   fs::create_directories(path.parent_path(), ignored);

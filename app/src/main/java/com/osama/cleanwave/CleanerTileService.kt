@@ -55,8 +55,8 @@ class CleanerTileService : TileService() {
         } else if (!UiPrefs.setupCompleted(this) || !ready()) {
             openGuide()
         } else if (isLocked) {
-            unlockAndRun { if (ready()) PlaybackController.enable(this) else openGuide() }
-        } else PlaybackController.enable(this)
+            unlockAndRun { if (ready()) PlaybackController.enable(this) { startFromActivity() } else openGuide() }
+        } else PlaybackController.enable(this) { startFromActivity() }
         refresh()
     }
     private fun ready() = when (WorkerBackend.availabilityState()) {
@@ -72,6 +72,16 @@ class CleanerTileService : TileService() {
             .putExtra("reconnect", completed)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         if (Build.VERSION.SDK_INT >= 34) startActivityAndCollapse(PendingIntent.getActivity(this, 37, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+        else startActivityAndCollapse(intent)
+    }
+    // With Sukut closed, Android 12+ refuses to start the filter's foreground
+    // service from the tile; an invisible activity in the foreground may.
+    @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
+    @Suppress("DEPRECATION") private fun startFromActivity() {
+        val intent = Intent(this, TileStartActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+        if (Build.VERSION.SDK_INT >= 34) startActivityAndCollapse(PendingIntent.getActivity(this, 38, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         else startActivityAndCollapse(intent)
     }

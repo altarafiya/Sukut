@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "sukut-host/Json.h"
+#include "live/OptimizedMix.h"
 
 namespace sukut::host {
 
@@ -32,6 +33,7 @@ class Engine {
     int buffering = 0;
     bool cable_confirmed = false;
     int optimized_background_db = 0;
+    cleanwave::OptimizedMix optimized_mix;
     bool restart = false;
   };
 

@@ -1,25 +1,12 @@
 <resources>
- <string name="guide_choose_method">Choose one method — you do not need both.</string>
- <string name="guide_method_phone">Phone</string>
+ <string name="guide_method_phone">On this phone</string>
  <string name="guide_watch_video">Watch tutorial video</string>
  <string name="guide_method_windows">Computer</string>
- <string name="guide_developer_1">1 · Enable Developer options</string>
  <string name="guide_developer_body">Open About phone. Tap Build number seven times. On Xiaomi, tap OS version instead. Enter your screen lock if asked.</string>
- <string name="guide_picture_developer_mode">See where to enable Developer options</string>
- <string name="guide_open_home">Go to Home</string>
- <string name="guide_phone_1">2 · Read before pairing</string>
  <string name="guide_phone_1_body">Connect to Wi-Fi. You will enter Android’s six-digit code through Sukut’s notification. Keep the pairing-code window open, pull down notifications, expand Sukut’s notification, then tap Enter pairing code and send the code.</string>
- <string name="guide_phone_2">3 · Pair this phone</string>
  <string name="guide_phone_2_body">Tap below and allow notifications. In Android settings, enable Wireless debugging and choose Pair device with pairing code. Follow step 2; Sukut returns here when ready.</string>
- <string name="guide_phone_3">4 · Return and start</string>
- <string name="guide_phone_3_body">Sukut returns when ready. If you began with the power button, filtering starts too. Later, press power to use the saved pairing.</string>
- <string name="guide_windows_1">2 · Enable USB debugging</string>
  <string name="guide_windows_1_body">In Developer options, turn on USB debugging.</string>
- <string name="guide_windows_2">3 · Connect your phone</string>
  <string name="guide_windows_2_body">Use a USB data cable. Unlock the phone and approve Allow USB debugging for your computer.</string>
- <string name="guide_windows_3">4 · Activate over USB</string>
- <string name="guide_windows_3_body">Windows: Sukut → Phone → Activate Sukut.\nLinux: run activate-sukut.sh.\nWait for Ready on this phone.</string>
- <string name="guide_after_activation">Once ready, you can turn Wireless debugging off or unplug USB. Android keeps Sukut in Paired devices; this is saved permission, not the worker’s status. If activation is lost, enable Wireless debugging and press power to reconnect. Pair again only if Android forgot the permission.</string>
  <string name="guide_picture_usb">See USB debugging screen</string>
  <string name="guide_picture_wireless">See Wireless debugging screen</string>
  <string name="guide_picture_pairing">See pairing code screen</string>

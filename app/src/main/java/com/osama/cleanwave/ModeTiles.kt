@@ -17,6 +17,7 @@ import android.widget.TextView
 internal class ModeTiles(
     activity: Activity,
     modes: List<AudioModes.Mode>,
+    private val onAdvanced: (() -> Unit)? = null,
     private val onSelect: (Int) -> Unit,
 ) : LinearLayout(activity) {
     private val ui = MobileUi(activity)
@@ -37,7 +38,7 @@ internal class ModeTiles(
                 gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER
                 importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
             }
-            val view = LinearLayout(activity).apply {
+            val view = (if(mode.id == CleanerPrefs.SOURCE_OPTIMIZED && onAdvanced != null) OptimizedHoldLayout(activity, onAdvanced) else LinearLayout(activity)).apply {
                 orientation = if (ui.compact) HORIZONTAL else VERTICAL
                 gravity = Gravity.CENTER
                 tag = "mode_${mode.id}"

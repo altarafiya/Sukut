@@ -39,6 +39,7 @@ class Tray {
     std::function<void()> refresh;                  // the menu is about to show: refresh outputs and apps
     std::function<void(const std::string&)> activation_token;
     std::function<void(bool)> availability;         // a tray host appeared or went away
+    std::function<void(int,int)> popup;
   };
 
   Tray(Actions actions, std::string icon_theme_path);
@@ -58,6 +59,7 @@ class Tray {
   GVariant* OnMenuProperty(const gchar* property);
   void OnWatcher(bool present);
   void OnRegistered(bool ok);
+  void SetCustomMenu(bool enabled);
 
  private:
   struct Item {
@@ -80,6 +82,7 @@ class Tray {
   GDBusNodeInfo* item_info_ = nullptr;
   GDBusNodeInfo* menu_info_ = nullptr;
   bool registered_ = false;
+  bool custom_menu_ = false;
   State state_;
   std::map<int, Item> items_;
   guint revision_ = 1;

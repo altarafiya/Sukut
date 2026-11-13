@@ -80,6 +80,11 @@ HostSettings HostSettings::Load() {
   if (auto v = Number(json, "Buffering")) s.buffering = std::clamp(static_cast<int>(*v), 0, 2);
   if (auto v = Number(json, "AmplificationDb")) s.amplification_db = std::clamp(static_cast<int>(*v), 0, 12);
   if (auto v = Number(json, "OptimizedBackgroundDb")) s.optimized_background_db = std::clamp(static_cast<int>(*v), -20, 10);
+  if (auto v = Bool(json, "AdvancedOptimized")) s.optimized_mix.advanced = *v;
+  if (auto v = Number(json, "AdvancedVoiceDb")) s.optimized_mix.voice_db = std::clamp(static_cast<int>(*v), -20, 10);
+  if (auto v = Number(json, "AdvancedMusicDb")) s.optimized_mix.music_db = std::clamp(static_cast<int>(*v), -20, 10);
+  s.optimized_mix.background_db = s.optimized_background_db;
+  if (auto v = Number(json, "AdvancedBackgroundDb")) s.optimized_mix.background_db = std::clamp(static_cast<int>(*v), -20, 10);
   if (auto v = Bool(json, "SetupCompleted")) s.setup_completed = *v;
   if (auto v = Bool(json, "CloseToTray")) s.close_to_tray = *v;
   if (auto v = Bool(json, "StartWithSystem")) s.start_with_system = *v;
@@ -106,6 +111,10 @@ bool HostSettings::Save(std::string& error) const {
         << "  \"Buffering\": " << buffering << ",\n"
         << "  \"AmplificationDb\": " << amplification_db << ",\n"
         << "  \"OptimizedBackgroundDb\": " << optimized_background_db << ",\n"
+    << "  \"AdvancedOptimized\": " << b(optimized_mix.advanced) << ",\n"
+    << "  \"AdvancedVoiceDb\": " << optimized_mix.voice_db << ",\n"
+    << "  \"AdvancedMusicDb\": " << optimized_mix.music_db << ",\n"
+    << "  \"AdvancedBackgroundDb\": " << optimized_mix.background_db << ",\n"
         << "  \"SetupCompleted\": " << b(setup_completed) << ",\n"
         << "  \"CloseToTray\": " << b(close_to_tray) << ",\n"
         << "  \"StartWithSystem\": " << b(start_with_system) << "\n"

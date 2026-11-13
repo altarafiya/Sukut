@@ -3,6 +3,7 @@ Section: sound
 Priority: optional
 Maintainer: الطرفية <altarafiyah@gmail.com>
 Build-Depends: debhelper-compat (= 13),
+               libgtk4-layer-shell-dev (>= 1.2),
                cmake,
                ninja-build,
                g++ (>= 4:14),
@@ -26,8 +27,8 @@ Depends: ${shlibs:Depends},
          adwaita-icon-theme,
          adb,
          pkexec
-Recommends: gnome-shell-extension-appindicator,
-            rtkit
+Recommends: rtkit
+Suggests: gnome-shell-extension-appindicator
 Description: removes music from your computer's audio
  Sukut filters what your computer plays and removes the music, while
  keeping speech and other sounds. Everything is processed locally.

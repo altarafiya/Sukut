@@ -537,7 +537,9 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
                 // Standard media is opt-in: some OEM effects bypass fast tracks.
                 // Keep the previous low-latency request for the default profile.
                 .setPerformanceMode(effectsCompatibility ? AudioTrack.PERFORMANCE_MODE_NONE : AudioTrack.PERFORMANCE_MODE_LOW_LATENCY);
-        if (Build.VERSION.SDK_INT >= 31) {
+        // AudioTrack.Builder.setContext only exists from API 34 (AudioRecord.Builder
+        // has it from 31). Calling it on Android 12-13 failed every mode (GitHub #1).
+        if (Build.VERSION.SDK_INT >= 34) {
             HiddenApiBypass.invoke(AudioTrack.Builder.class, trackBuilder, "setContext", audioContext);
         }
         audioTrack = trackBuilder.build();

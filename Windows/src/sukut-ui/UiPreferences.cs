@@ -13,6 +13,10 @@ public sealed class UiPreferences
     public int PreferredMode { get; set; } = 1;
     public int AmplificationDb { get; set; }
     public int OptimizedBackgroundDb { get; set; }
+    public bool AdvancedOptimized { get; set; }
+    public int AdvancedVoiceDb { get; set; }
+    public int AdvancedMusicDb { get; set; } = -20;
+    public int AdvancedBackgroundDb { get; set; }
     public bool SetupCompleted { get; set; }
     public bool CloseToTray { get; set; } = true;
     public bool CableVolumeDisabledConfirmed { get; set; }
@@ -26,6 +30,8 @@ public sealed class UiPreferences
         HostSettingsVersion = HostSettingsVersion,
         PreferredMode = Math.Clamp(PreferredMode,1,3),
         VolumeGuideDismissed = VolumeGuideDismissed,
-        OptimizedBackgroundDb = Math.Clamp(OptimizedBackgroundDb, -20, 10)
+        OptimizedBackgroundDb = Math.Clamp(OptimizedBackgroundDb, -20, 10),
+        AdvancedOptimized = AdvancedOptimized, AdvancedVoiceDb = Math.Clamp(AdvancedVoiceDb,-20,10),
+        AdvancedMusicDb = Math.Clamp(AdvancedMusicDb,-20,10), AdvancedBackgroundDb = Math.Clamp(AdvancedBackgroundDb,-20,10)
     };
 }

@@ -19,7 +19,7 @@ cp -a "$ROOT/Linux/debian" "$TREE/debian"
 # Files on the Windows drive look executable in WSL; debhelper would run them as scripts.
 find "$TREE/debian" -type f -exec chmod 0644 {} + && chmod 0755 "$TREE/debian/rules"
 for part in model dsp offline realtime; do cp -a "$ROOT/Windows/src/$part" "$TREE/Windows/src/"; done
-mkdir -p "$TREE/Windows/src/live" && cp -a "$ROOT/Windows/src/live/AudioBuffering.h" "$TREE/Windows/src/live/"  # the buffering table
+mkdir -p "$TREE/Windows/src/live" && cp -a "$ROOT/Windows/src/live/AudioBuffering.h" "$ROOT/Windows/src/live/OptimizedMix.h" "$TREE/Windows/src/live/"  # the buffering table
 cp -a "$ROOT/Windows/src/sukut-ui/Assets/"*.ttf "$TREE/Windows/src/sukut-ui/Assets/"
 cp -a "$ROOT/Windows/src/sukut-ui/Assets/Phone" "$TREE/Windows/src/sukut-ui/Assets/"
 cp -a "$ROOT/Windows/src/sukut-ui/Assets/Setup/"phone-*.png "$TREE/Windows/src/sukut-ui/Assets/Setup/"

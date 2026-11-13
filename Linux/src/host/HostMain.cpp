@@ -10,6 +10,7 @@
 //   hello                                    a window connected; the tray offers only Open and Exit
 //   read                                     engine state and settings (JSON)
 //   apps                                     real outputs and playing apps (JSON)
+//   tray-catalog                             cached catalog; no discovery before showing the tray
 //   select MODE OUTPUT PID BUFFERING BG_DB   apply a mode (0 = Off) with that route and save it; from Off,
 //                                            the output follows a system choice made while Off (PrepareStart)
 //   amp DB                                   amplification, 0 to 12 dB
@@ -165,6 +166,7 @@ class Host {
   void NotifyOutput(const std::string& description);
   void NotifyNotice(const std::string& notice);
   void OpenWindow();
+  void OpenTray(int x,int y);
   void BeginExit();
   void TrimIfOff();
   // Any thread.
@@ -185,6 +187,7 @@ class Host {
 
   // Main thread only.
   int windows_ = 0;
+  GPid tray_popup_pid_ = 0;
   std::string token_;
   std::uint64_t shown_revision_ = ~0ULL;
   int last_mode_ = 0;
@@ -277,6 +280,7 @@ Tray::Actions Host::TrayActions() {
   Tray::Actions a;
   a.activate = [this] { OpenWindow(); };
   a.open = [this] { OpenWindow(); };
+  a.popup = [this](int x,int y){OpenTray(x,y);};
   a.exit = [this] { Later([this] { BeginExit(); }); };
   a.power = [this](bool on) { Select(on ? Settings().preferred_mode : 0); };
   a.select_mode = [this](int mode) { Select(mode); };
@@ -424,6 +428,20 @@ void Host::Reapply() {
   else Refresh();
 }
 
+void Host::OpenTray(int x,int y) {
+  if(exiting_)return;
+  if(tray_popup_pid_>0){::kill(tray_popup_pid_,SIGTERM);return;}
+  gchar** parsed=nullptr;GError* error=nullptr;
+  if(!g_shell_parse_argv(options_.window_command.c_str(),nullptr,&parsed,&error)){if(error)g_error_free(error);return;}
+  std::vector<gchar*> args;for(auto**p=parsed;*p;++p)args.push_back(*p);
+  std::string sx=std::to_string(x),sy=std::to_string(y),snapshot=ReadJson();
+  args.push_back(const_cast<gchar*>("--tray-popup"));args.push_back(sx.data());args.push_back(sy.data());args.push_back(const_cast<gchar*>("--tray-state"));args.push_back(snapshot.data());args.push_back(nullptr);
+  if(g_spawn_async(nullptr,args.data(),nullptr,static_cast<GSpawnFlags>(G_SPAWN_SEARCH_PATH|G_SPAWN_DO_NOT_REAP_CHILD),nullptr,nullptr,&tray_popup_pid_,&error)) {
+    g_child_watch_add(tray_popup_pid_,+[](GPid pid,gint status,gpointer data){auto*self=static_cast<Host*>(data);self->tray_popup_pid_=0;g_spawn_close_pid(pid);if(WIFEXITED(status)&&WEXITSTATUS(status)==77)self->tray_->SetCustomMenu(false);},this);
+  }else {if(error){Log(error->message);g_error_free(error);}tray_->SetCustomMenu(false);}
+  g_strfreev(parsed);
+}
+
 void Host::OpenWindow() {
   if (exiting_) return;
   gchar** argv = nullptr;
@@ -503,6 +521,9 @@ std::string Host::ReadJson() {
     << "\",\"theme\":\"" << JsonEscape(s.theme) << "\",\"chosenOutput\":\"" << JsonEscape(s.output)
     << "\",\"sourcePid\":" << s.source_pid << ",\"preferredMode\":" << s.preferred_mode << ",\"buffering\":" << s.buffering
     << ",\"amplificationDb\":" << s.amplification_db << ",\"optimizedBackgroundDb\":" << s.optimized_background_db
+    << ",\"advancedOptimized\":" << Flag(s.optimized_mix.advanced)
+    << ",\"advancedVoiceDb\":" << s.optimized_mix.voice_db << ",\"advancedMusicDb\":" << s.optimized_mix.music_db
+    << ",\"advancedBackgroundDb\":" << s.optimized_mix.background_db
     << ",\"setupCompleted\":" << Flag(s.setup_completed) << ",\"closeToTray\":" << Flag(s.close_to_tray)
     << ",\"startWithSystem\":" << Flag(s.start_with_system) << "}";
   return j.str();
@@ -518,6 +539,10 @@ std::string Host::Handle(const std::vector<std::string>& f) {
   if (verb == "hello") return ok("{\"host\":1}");
   if (verb == "raise") { ++raise_requests_; return ok(""); }
   if (verb == "read") return ok(ReadJson());
+  if(verb=="tray-catalog") {
+    std::lock_guard lock(mutex_);
+    return ok(CatalogJson(catalog_));
+  }
   if (verb == "apps" || verb == "refresh") {
     PipeWireBridge::Catalog catalog;
     if (!ReadCatalog(&catalog)) return fail("cannot read outputs and apps");
@@ -534,6 +559,12 @@ std::string Host::Handle(const std::vector<std::string>& f) {
         s.source_pid = static_cast<std::uint32_t>(std::max(0LL, number(3)));
         s.buffering = std::clamp(static_cast<int>(number(4)), 0, 2);
         s.optimized_background_db = std::clamp(static_cast<int>(number(5)), -20, 10);
+      }
+      if (f.size() >= 10) {
+        s.optimized_mix.advanced = number(6) != 0;
+        s.optimized_mix.voice_db = std::clamp(static_cast<int>(number(7)), -20, 10);
+        s.optimized_mix.music_db = std::clamp(static_cast<int>(number(8)), -20, 10);
+        s.optimized_mix.background_db = std::clamp(static_cast<int>(number(9)), -20, 10);
       }
       if (mode > 0) s.preferred_mode = mode;
     }, true);
@@ -568,6 +599,10 @@ std::string Host::Handle(const std::vector<std::string>& f) {
       else if (key == "Buffering") Change([&](HostSettings& s) { s.buffering = std::clamp(std::atoi(value.c_str()), 0, 2); }, true);
       else if (key == "OptimizedBackgroundDb")
         Change([&](HostSettings& s) { s.optimized_background_db = std::clamp(std::atoi(value.c_str()), -20, 10); }, false);
+      else if (key == "AdvancedOptimized") Change([&](HostSettings& s) { s.optimized_mix.advanced = on; }, false);
+      else if (key == "AdvancedVoiceDb") Change([&](HostSettings& s) { s.optimized_mix.voice_db = std::clamp(std::atoi(value.c_str()), -20, 10); }, false);
+      else if (key == "AdvancedMusicDb") Change([&](HostSettings& s) { s.optimized_mix.music_db = std::clamp(std::atoi(value.c_str()), -20, 10); }, false);
+      else if (key == "AdvancedBackgroundDb") Change([&](HostSettings& s) { s.optimized_mix.background_db = std::clamp(std::atoi(value.c_str()), -20, 10); }, false);
       else if (key == "StartWithSystem") {
         std::string error;
         if (!SetAutostart(on, options_.autostart_command, error)) return fail(error);

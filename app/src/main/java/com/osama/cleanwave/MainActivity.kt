@@ -50,6 +50,11 @@ class MainActivity : Activity() {
     private lateinit var qualityRow: View
     private var paintedBuffer = -1
     private var trackingBackground = false
+    private lateinit var advancedPanel: LinearLayout
+    private val advancedSliders = mutableListOf<SeekBar>()
+    private val advancedValues = mutableListOf<TextView>()
+    private val trackingAdvanced = BooleanArray(3)
+    private var advancedDialog: Dialog? = null
     private var modeHelpDialog: Dialog? = null
     private var performanceDialog: Dialog? = null
     private var reconnectDialog: Dialog? = null
@@ -79,6 +84,7 @@ class MainActivity : Activity() {
         home = buildUi(); setContentView(home)
         WorkerConnection.addListener(binderReceived); WorkerConnection.addListener(binderDead)
         
+        if (state == null && !UiPrefs.setupCompleted(this) && AppNavigation.resumeActivationHost(this)) { if(!isTaskRoot) finish(); return }
         if (!UiPrefs.setupCompleted(this) && state == null) AppNavigation.openSetup(this)
         else if (intent.getBooleanExtra("reconnect", false)) {
             intent.removeExtra("reconnect"); home.post { reconnect() }
@@ -86,12 +92,13 @@ class MainActivity : Activity() {
     }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent); setIntent(intent)
-        if(PowerActivationRequest.consumeIfReady()) PlaybackController.enable(this)
+        if(!UiPrefs.setupCompleted(this) && AppNavigation.resumeActivationHost(this)) return
+        if(!AppNavigation.hasActivationHost() && PowerActivationRequest.consumeIfReady()) PlaybackController.enable(this)
         if (intent.getBooleanExtra("reconnect", false)) { intent.removeExtra("reconnect"); reconnect() }
     }
     override fun onResume() {
         super.onResume()
-        if(PowerActivationRequest.consumeIfReady()) PlaybackController.enable(this)
+        if(!AppNavigation.hasActivationHost() && PowerActivationRequest.consumeIfReady()) PlaybackController.enable(this)
         resumed = true
         if (appearance != UiPrefs.signature(this)) {
             // Let the Settings pop complete before replacing Home for a new locale/theme.
@@ -99,7 +106,7 @@ class MainActivity : Activity() {
         }
         CleanerPrefs.registerListener(this, preferencesListener)
         handler.removeCallbacks(expiry); handler.post(updateUi)
-        if (UiPrefs.setupCompleted(this)) handler.postDelayed({ offerPermissionsAndTile() }, 700)
+        if (UiPrefs.setupCompleted(this)) handler.postDelayed({ if(resumed) offerPermissionsAndTile() }, 700)
     }
     override fun onPause() {
         resumed = false
@@ -109,6 +116,7 @@ class MainActivity : Activity() {
         super.onPause()
     }
     override fun onDestroy() {
+        advancedDialog?.dismiss(); advancedDialog = null
         modeHelpDialog?.dismiss(); modeHelpDialog = null
         performanceDialog?.dismiss(); performanceDialog = null
         reconnectDialog?.dismiss(); reconnectDialog = null
@@ -212,9 +220,20 @@ class MainActivity : Activity() {
     private fun modesSection(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; tag = "audio_modes_card"
         addView(ui.sectionLabel(R.string.audio_mode))
-        modeTiles = ModeTiles(this@MainActivity, AudioModes.filtering) { selectMode(it) }
+        modeTiles = ModeTiles(this@MainActivity, AudioModes.filtering, onAdvanced = advanced@{
+            if (advancedDialog?.isShowing != true && !isFinishing && !isDestroyed) {
+                if(CleanerPrefs.advancedMix(this@MainActivity)) {
+                    CleanerPrefs.setAdvancedMix(this@MainActivity,false)
+                    if(CleanerPrefs.sourcePreset(this@MainActivity)==CleanerPrefs.SOURCE_OPTIMIZED)refresh() else selectMode(CleanerPrefs.SOURCE_OPTIMIZED)
+                    return@advanced
+                }
+                advancedDialog = AdvancedMixDialog.show(this@MainActivity) { if(CleanerPrefs.sourcePreset(this@MainActivity)==CleanerPrefs.SOURCE_OPTIMIZED)refresh() else selectMode(CleanerPrefs.SOURCE_OPTIMIZED) }
+                advancedDialog?.setOnDismissListener { advancedDialog = null }
+            }
+        }) { selectMode(it) }
         addView(modeTiles, LinearLayout.LayoutParams(-1, -2))
         addView(backgroundControl(), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(10) })
+        addView(advancedMixControl(), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(10) })
     }
 
     private fun backgroundControl(): View {
@@ -237,7 +256,7 @@ class MainActivity : Activity() {
                     override fun onStartTrackingTouch(bar: SeekBar?) { trackingBackground = true }
                     override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
                         backgroundValue.text = db(progress - 20)
-                        if (fromUser && progress == 20) bar?.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                        if (fromUser) bar?.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                         // Keyboard and accessibility steps are completed actions.
                         if (fromUser && !trackingBackground) CleanerPrefs.setOptimizedBackground(this@MainActivity, progress - 20)
                     }
@@ -251,6 +270,45 @@ class MainActivity : Activity() {
             addView(backgroundSlider, LinearLayout.LayoutParams(-1, ui.dp(64)))
         }
         return backgroundPanel
+    }
+
+    private fun advancedMixControl(): View {
+        advancedPanel = ui.card(14).apply { tag="advanced_mix_panel"; visibility=View.GONE }
+        return advancedPanel
+    }
+    private fun ensureAdvancedMixControls() {
+        if(advancedSliders.isNotEmpty())return
+        val labels=intArrayOf(R.string.voice, R.string.music, R.string.background)
+        val icons=intArrayOf(R.drawable.ic_mix_voice, R.drawable.ic_mix_music, R.drawable.ic_mix_background)
+        val colors=intArrayOf(ui.accent, ModeStyle.buffer(2,ui.dark), ModeStyle.buffer(1,ui.dark))
+        repeat(3) { stem ->
+            val value=ui.text("",14f,true,colors[stem]).apply { textDirection=View.TEXT_DIRECTION_LTR }
+            advancedValues.add(value)
+            advancedPanel.addView(LinearLayout(this).apply {
+                gravity=Gravity.CENTER_VERTICAL
+                addView(ui.icon(icons[stem],colors[stem],22))
+                addView(ui.text(labels[stem],15f,true,colors[stem]),LinearLayout.LayoutParams(0,-2,1f).apply { marginStart=ui.dp(10) })
+                addView(value)
+            })
+            val slider=TouchSeekBar(this).apply {
+                max=30; setKeyProgressIncrement(1); tag="advanced_mix_$stem"; contentDescription=getString(labels[stem]); minimumHeight=ui.dp(56)
+                setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener {
+                    override fun onStartTrackingTouch(bar:SeekBar?) { trackingAdvanced[stem]=true }
+                    override fun onProgressChanged(bar:SeekBar?,progress:Int,fromUser:Boolean) {
+                        value.text=db(progress-20)
+                        if(fromUser) bar?.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                        if(fromUser && !trackingAdvanced[stem]) CleanerPrefs.setAdvancedGain(this@MainActivity,stem,progress-20)
+                    }
+                    override fun onStopTrackingTouch(bar:SeekBar?) {
+                        trackingAdvanced[stem]=false; CleanerPrefs.setAdvancedGain(this@MainActivity,stem,(bar?.progress?:20)-20)
+                    }
+                })
+            }
+            SliderStyle.apply(slider,ui,colors[stem])
+            slider.tickMark=ui.circle(ThemeColors.mix(ui.cardColor,colors[stem],.35f)).apply { setSize(ui.dp(2),ui.dp(2)) }
+            advancedSliders.add(slider)
+            advancedPanel.addView(slider,LinearLayout.LayoutParams(-1,ui.dp(56)))
+        }
     }
 
     private fun db(value: Int) = "${if (value > 0) "+" else ""}$value dB"
@@ -278,7 +336,7 @@ class MainActivity : Activity() {
         if (CleanerPrefs.isEnabled(this) || CleanerPrefs.startPending(this)) PlaybackController.disable(this)
         else if (!ready()) {
             PowerActivationRequest.request()
-            AppNavigation.openActivation(this,UiPrefs.activationMethod(this),LocalActivationService.ACTIVATE)
+            reconnect()
         }
         else {
             CleanerPrefs.setStatus(this, "Off")
@@ -298,7 +356,9 @@ class MainActivity : Activity() {
     private fun reconnect() {
         if (ready() || isFinishing || isDestroyed || reconnectDialog?.isShowing == true) return
         if (!UiPrefs.setupCompleted(this)) { AppNavigation.openSetup(this); return }
-        AppNavigation.openActivation(this)
+        reconnectDialog = WorkerReconnect.show(this).also { dialog ->
+            dialog.setOnDismissListener { if(reconnectDialog === dialog) reconnectDialog = null }
+        }
     }
     private fun ready(): Boolean = when (WorkerBackend.availabilityState()) {
         WorkerBackend.Companion.Availability.READY -> true
@@ -390,7 +450,17 @@ class MainActivity : Activity() {
         bufferingAction.setText(if (CleanerPrefs.buffering(this) == 0) R.string.use_balanced else R.string.use_maximum)
         bufferingAction.contentDescription = bufferingAction.text
 
-        backgroundPanel.visibility = if (preset == CleanerPrefs.SOURCE_OPTIMIZED) View.VISIBLE else View.GONE
+        val advanced=CleanerPrefs.advancedMix(this)
+        backgroundPanel.visibility = if (preset == CleanerPrefs.SOURCE_OPTIMIZED && !advanced) View.VISIBLE else View.GONE
+        advancedPanel.visibility = if (preset == CleanerPrefs.SOURCE_OPTIMIZED && advanced) View.VISIBLE else View.GONE
+        if (advanced) ensureAdvancedMixControls()
+        if (advanced) repeat(3) { stem ->
+            if(!trackingAdvanced[stem]) {
+                val gain=CleanerPrefs.advancedGain(this,stem)
+                advancedSliders[stem].progress=gain+20
+                advancedValues[stem].text=db(gain)
+            }
+        }
         if (!trackingBackground) {
             val background = CleanerPrefs.optimizedBackground(this)
             backgroundSlider.progress = background + 20

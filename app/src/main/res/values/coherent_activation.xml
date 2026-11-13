@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="setup_activation_progress">Step %1$d of %2$d · Activation %3$d of %4$d</string>
+    <string name="status_wireless">Wireless debugging</string>
+    <string name="dev_ready_detail">Already on — no action needed here. Continue to the next step.</string>
+    <string name="usb_ready_detail">Already on — connect the phone to your computer by USB.</string>
+    <string name="worker_ready_detail">Ready — Sukut can process audio. No activation needed.</string>
+    <string name="wireless_ready_detail">Already on — you can activate Sukut on this phone.</string>
+    <string name="dev_needed_detail">Turn on Developer options to allow activation. This does not activate the audio worker by itself.</string>
+    <string name="usb_needed_detail">Turn on USB debugging before activating from your computer.</string>
+    <string name="worker_needed_detail">Activation needed — start the audio worker to use Sukut.</string>
+    <string name="wireless_needed_detail">Turn on Wireless debugging to activate on this phone. Android may ask you to approve this Wi-Fi network.</string>
+    <string name="reactivate_now">Activate Sukut</string>
+    <string name="reactivate_explanation">The audio worker is not running. Activate it again, or open the step-by-step guide if you need help. Your setup and mode choices are saved.</string>
+    <string name="show_activation_guide">Show activation guide</string>
+    <string name="dev_wireless_on">Developer options and Wireless debugging are on.</string>
+    <string name="dev_tile_wireless_on">Wireless debugging on</string>
+    <string name="shortcut_optional_title">Optional debugging shortcut</string>
+    <string name="shortcut_optional_detail">Optional: add the Debugging tile. It switches Developer options and your activation connection. Turning it off can stop Sukut.</string>
+</resources>

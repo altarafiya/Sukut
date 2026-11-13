@@ -37,7 +37,7 @@ New-Item -ItemType Directory -Force -Path $inputRoot,(Join-Path $inputRoot 'logo
 # Standard Windows resource generation from the existing approved app icon.
 # This preserves the design; no new or generative icon replaces the brand.
 Add-Type -AssemblyName System.Drawing
-$sourceIcon = [Drawing.Image]::FromFile((Join-Path $windowsRoot 'src\sukut-ui\Assets\Sukut.png'))
+$sourceIcon = [Drawing.Image]::FromFile((Join-Path $repositoryRoot 'assets\branding\sukut-app-icon.png'))
 try {
     foreach ($resource in @(@('Square44x44Logo.png',44),@('Square150x150Logo.png',150),@('StoreLogo.png',50),@('AppTile-300.png',300),@('AppIcon-512.png',512))) {
         $bitmap = [Drawing.Bitmap]::new([int]$resource[1],[int]$resource[1],[Drawing.Imaging.PixelFormat]::Format32bppArgb)

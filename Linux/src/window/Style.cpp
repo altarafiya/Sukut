@@ -40,7 +40,7 @@ window.sukut.arabic { font-family: "IBM Plex Sans Arabic", sans-serif; font-size
 // The Windows palette (App.xaml): accent, accent container, warning, modes.
 constexpr const char* kDark = R"css(
 :root { --accent-bg-color: #80BFEA; --accent-fg-color: #000000; --accent-color: #80BFEA; }
-.mode-off { color: #ACBBD5; } .mode-1 { color: #AAA5FF; } .mode-2 { color: #E7C48E; } .mode-3 { color: #F2A7AB; }
+.mode-off { color: #ACBBD5; } .mode-1 { color: #AAA5FF; } .mode-2 { color: #E7C48E; } .mode-3 { color: #F2A7AB; } scale.mode-3 highlight { background-color: #F2A7AB; } scale.mode-2 highlight { background-color: #E7C48E; }
 .accent-text { color: #80BFEA; } .ready-text { color: #8BE0B0; } .warning-text { color: #E3C184; }
 .dot.ready { background: #8BE0B0; } .dot.missing { background: #E3C184; }
 .power-button.off { background: #303D45; color: #80BFEA; box-shadow: inset 0 0 0 1.5px #80BFEA; }
@@ -55,7 +55,7 @@ constexpr const char* kDark = R"css(
 
 constexpr const char* kLight = R"css(
 :root { --accent-bg-color: #17659B; --accent-fg-color: #FFFFFF; --accent-color: #17659B; }
-.mode-off { color: #4F607D; } .mode-1 { color: #5B52C7; } .mode-2 { color: #795315; } .mode-3 { color: #A02C3B; }
+.mode-off { color: #4F607D; } .mode-1 { color: #5B52C7; } .mode-2 { color: #795315; } .mode-3 { color: #A02C3B; } scale.mode-3 highlight { background-color: #A02C3B; } scale.mode-2 highlight { background-color: #795315; }
 .accent-text { color: #17659B; } .ready-text { color: #17613C; } .warning-text { color: #805B20; }
 .dot.ready { background: #17613C; } .dot.missing { background: #805B20; }
 .power-button.off { background: #DEE6EB; color: #17659B; box-shadow: inset 0 0 0 1.5px #17659B; }

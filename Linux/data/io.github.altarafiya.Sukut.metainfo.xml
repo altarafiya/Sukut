@@ -59,6 +59,8 @@
   </supports>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.5.1" date="2026-11-13" type="stable"><description><p>New hand app icon, the original Seen in the tray, and Android polish: a clearer Debugging tile and corrected Arabic.</p></description></release>
+    <release version="0.5.0" date="2026-11-13" type="stable"><description><p>Stable Linux release with refreshed branding, a lighter tray and polished Android activation.</p></description></release>
     <release version="0.4.0~beta.8" date="2026-11-08">
       <description>
         <p>The first Flatpak build. On phones that USB can't reach from the sandbox, the Phone page points to Wireless debugging.</p>

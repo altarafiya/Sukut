@@ -97,7 +97,10 @@ internal class LocalAdb : Closeable {
         // Keep its launcher alive until app_process has actually started; a bare
         // background fork can otherwise receive the shell's hangup before setsid.
         val settle = "\nfor sukut_try in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do [ -s /data/local/tmp/sukut-altarafiyah-worker-u$user.log ] && break; sleep 0.1; done\n"
-        val command = "shell,raw:set -- $user; : > /data/local/tmp/sukut-altarafiyah-worker-u$user.log;\n$script\n$settle"
+        // Optional shortcut provisioning stays in this authenticated, fixed shell session.
+        // Provider acknowledgement independently verifies the live worker and shell UID.
+        val shortcut = "\nfor sukut_shortcut in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do\ncase \"\$(content call --user $user --uri ${BuildConfig.APPLICATION_ID}.worker --method status 2>/dev/null)\" in *state=READY*)\npm grant --user $user ${BuildConfig.APPLICATION_ID} android.permission.WRITE_SECURE_SETTINGS >/dev/null 2>&1\ncontent call --user $user --uri ${BuildConfig.APPLICATION_ID}.worker --method phone-setup >/dev/null 2>&1\nbreak;; esac\nsleep 0.1\ndone\n"
+        val command = "shell,raw:set -- $user; : > /data/local/tmp/sukut-altarafiyah-worker-u$user.log;\n$script\n$settle\n$shortcut"
         AdbWire.write(output, AdbWire.OPEN, 1, 0, (command + '\u0000').toByteArray())
         var remote = 0; var total = 0; var closed = false
         val response = java.io.ByteArrayOutputStream()

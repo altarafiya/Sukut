@@ -287,7 +287,10 @@ std::string PhoneTools::Install(const PhoneDevice& device, bool update) {
 
 std::string PhoneTools::Open(const PhoneDevice& device) {
   EnsureAuthorized(device);
-  const std::string result = RunOn(device, {"shell", "am", "start", "-W", "-n", std::string(kPackage) + "/com.osama.cleanwave.MainActivity"});
+  // Match a normal launcher tap: restore the task's current guide, including
+  // after Android has reclaimed its process, instead of stacking a new Home.
+  const std::string result = RunOn(device, {"shell", "am", "start", "-W", "-a", "android.intent.action.MAIN",
+      "-c", "android.intent.category.LAUNCHER", "-f", "0x10200000", "-n", std::string(kPackage) + "/com.osama.cleanwave.MainActivity"});
   if (Lower(result).find("error:") != std::string::npos) throw PhoneError(Trim(result));
   return "Sukut opened. Activate its audio worker, then press Start on the phone.";
 }
@@ -303,14 +306,39 @@ std::string PhoneTools::Setup(const PhoneDevice& device) {
   return "Sukut is installed and ready for activation.";
 }
 
+// Only a successful computer activation provisions the user-operated shortcut.
+// The grant is optional: a restricted phone must still keep its ready worker.
+std::string PhoneTools::FinishActivation(const PhoneDevice& device, int user, long long version, bool already_ready) {
+  if (version < 58) return already_ready
+      ? "Sukut audio worker is already ready. Press Start on the phone."
+      : "Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart.";
+  if (!WorkerIsReady(WorkerState(device, user), version))
+    throw PhoneError("Sukut worker is no longer ready. Keep the phone unlocked and activate again.");
+  try {
+    RunOn(device, {"shell", "pm", "grant", "--user", std::to_string(user), kPackage, "android.permission.WRITE_SECURE_SETTINGS"}, 15);
+    const std::string result = RunOn(device, {"shell", "content", "call", "--user", std::to_string(user),
+        "--uri", "content://com.altarafiyah.sukut.worker", "--method", "computer-setup"}, 15);
+    if (!Field(result, "state=COMPUTER_SETUP_READY")) throw PhoneError("Shortcut setup was not confirmed.");
+    return already_ready
+        ? "Sukut audio worker is already ready. Choose a mode and press Start on the phone. You can unplug USB."
+        : "Sukut audio worker is ready. Choose a mode and press Start on the phone. You can unplug USB.";
+  } catch (const PhoneError&) {
+    if (!WorkerIsReady(WorkerState(device, user), version))
+      throw PhoneError("Sukut worker is no longer ready. Keep the phone unlocked and activate again.");
+    return "Sukut audio worker is ready. Developer options shortcut setup was not allowed. The worker can be used without the shortcut.";
+  }
+}
+
 std::string PhoneTools::Activate(const PhoneDevice& device) {
   EnsureAuthorized(device);
   const auto installation = Status(device);
-  if (!installation.IsCurrent()) Install(device, installation.installed_code.has_value());
+  // Activating a supported install must not try to replace Play-signed apps
+  // with the differently signed bundled APK. Updates remain an explicit action.
+  if (!installation.installed_code || *installation.installed_code < 49) Install(device, installation.installed_code.has_value());
   const long long version = Status(device).installed_code.value_or(0);
-  if (version < 49) throw PhoneError("Install Sukut beta.12 or later before activation.");
+  if (version < 49) throw PhoneError("Update Sukut on your phone before activation.");
   const int user = CurrentUser(device);
-  if (WorkerIsReady(WorkerState(device, user), version)) return "Sukut audio worker is already ready. Press Start on the phone.";
+  if (WorkerIsReady(WorkerState(device, user), version)) return FinishActivation(device, user, version, true);
   Open(device);
   const auto script = Verified("activate-worker.sh", "Sukut activation script");
   RunOn(device, {"push", script.string(), "/data/local/tmp/sukut-activate-worker.sh"});
@@ -319,7 +347,7 @@ std::string PhoneTools::Activate(const PhoneDevice& device) {
     if (output.find("SUKUT_WORKER_LAUNCHED") == std::string::npos) throw PhoneError("Could not launch Sukut worker: " + Trim(output));
     for (int attempt = 0; attempt < 12; ++attempt) {
       if (WorkerIsReady(WorkerState(device, user), version))
-        return "Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart.";
+        return FinishActivation(device, user, version, false);
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
   }

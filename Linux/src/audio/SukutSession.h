@@ -13,6 +13,7 @@
 #include "audio/PipeWireAdapters.h"
 #include "audio/PipeWireBridge.h"
 #include "realtime/RealtimeCleaner.h"
+#include "live/OptimizedMix.h"
 
 namespace sukut::linux_audio {
 
@@ -20,7 +21,8 @@ struct SessionSettings {
   std::filesystem::path engine_dir;  // sealed separator.tflite, window_576_q15.bin, window_960_q15.bin
   int mode = 1;                      // 1 Music Filter, 2 Optimized, 3 Strict
   int buffering = 1;                 // 0 Lowest, 1 Balanced, 2 Maximum
-  int optimized_background_db = 0;   // -20..+10, Optimized only
+  int optimized_background_db = 0;   // -20..+10, standard Optimized only
+  cleanwave::OptimizedMix optimized_mix;
   int amplification_db = 0;          // 0..12
   std::string output;                // real output node.name; empty = current default
   bool fallback_output = false;      // a missing output: play on the default until it appears (the host)
@@ -44,7 +46,7 @@ class SukutSession {
   SukutSession& operator=(const SukutSession&) = delete;
 
   bool Start(const SessionSettings& settings, std::string& error);
-  void SetMode(int mode, int optimized_background_db);  // live, no restart
+  void SetMode(int mode, int optimized_background_db, cleanwave::OptimizedMix mix = {});  // live, no restart
   void SetAmplification(int db) { amplification_db_->store(std::clamp(db, 0, 12)); }  // live
   void Stop();
   [[nodiscard]] SessionSnapshot Snapshot(bool timing = false) const;
@@ -55,7 +57,7 @@ class SukutSession {
 
   // Windows host presets: voice 0 dB, music -100 dB in every filtering mode;
   // background 0 (Music Filter), -20..+10 (Optimized) or -100 (Strict).
-  static cleanwave::RealtimeMix MixFor(int mode, int optimized_background_db);
+  static cleanwave::RealtimeMix MixFor(int mode, int optimized_background_db, cleanwave::OptimizedMix mix = {});
 
  private:
   PipeWireBridge bridge_;

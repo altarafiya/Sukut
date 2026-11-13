@@ -35,9 +35,10 @@ class Release04UiTest {
                 views(page.window.decorView).filterIsInstance<TextView>().first { it.text==page.getString(R.string.next) }.performClick()
                 assertSame(header,views(page.window.decorView).first { it.tag=="setup_progress_header" })
                 assertEquals(0f,header.translationX); assertEquals(1f,header.alpha)
-                assertEquals(page.getString(R.string.setup_step,2,4),(views(page.window.decorView).first { it.tag=="setup_step_counter" } as TextView).text)
+                assertEquals(page.getString(R.string.setup_worker_title),(views(page.window.decorView).first { it.tag=="setup_step_counter" } as TextView).text)
                 assertFalse(views(page.window.decorView).any { it.tag=="guide_more_options" })
-                assertTrue(views(page.window.decorView).first { it.tag=="guide_watch_video" }.isEnabled)
+                assertTrue(views(page.window.decorView).first { it.tag=="guide_choose_phone" }.isSelected)
+                assertFalse(views(page.window.decorView).any { it.tag=="guide_step_counter" })
             }
             SystemClock.sleep(350)
             ins.runOnMainSync { assertEquals(0f,header.translationX); assertEquals(0f,slides.translationX) }

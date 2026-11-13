@@ -95,7 +95,7 @@ class LocalActivationService : Service() {
         }
     }
     private fun notification(text: Int): Notification {
-        val open = PendingIntent.getActivity(this, 0, Intent(this, LocalActivationActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val open = PendingIntent.getActivity(this, 0, Intent(this, ReactivationActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val reply = PendingIntent.getService(this, 1, Intent(this, LocalActivationService::class.java).setAction(PAIR), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
         val cancel = PendingIntent.getService(this, 2, Intent(this, LocalActivationService::class.java).setAction(CANCEL), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         return Notification.Builder(this, CHANNEL).apply {

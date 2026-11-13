@@ -73,6 +73,8 @@
    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center"><TextBlock Loaded="Typography_Loaded" x:Name="StrictLabel" Text="Strict" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}"/><TextBlock Loaded="Typography_Loaded" x:Name="StrictDescription" Text="Focus on speech" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel>
   </Grid></RadioButton></RadioButtons></Grid>
     <Border x:Name="OptimizedBackgroundPanel" Visibility="Collapsed" Margin="0,8,0,0"><StackPanel Spacing="6"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Loaded="Typography_Loaded" x:Name="OptimizedBackgroundHeading" Style="{StaticResource BodyStrongTextBlockStyle}"/><TextBlock Loaded="Typography_Loaded" x:Name="OptimizedBackgroundValue" Grid.Column="1" FlowDirection="LeftToRight" FontWeight="SemiBold" Foreground="{ThemeResource SukutAccentBrush}"/></Grid><local:ReleasedSlider x:Name="OptimizedBackgroundSlider" Minimum="-20" Maximum="10" StepFrequency="1" ValueChanged="OptimizedBackground_Changed" ValueCommitted="OptimizedBackground_Committed" AutomationProperties.AutomationId="OptimizedBackgroundSlider"/></StackPanel></Border>
+    <InfoBar x:Name="AdvancedAccessNotice" IsOpen="False" IsClosable="True" Visibility="Collapsed" Severity="Informational"/>
+    <StackPanel x:Name="AdvancedMixPanel" Visibility="Collapsed" Spacing="6" Margin="0,8,0,0"/>
    </StackPanel>
    </Border>
   </StackPanel>

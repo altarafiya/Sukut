@@ -1,12 +1,21 @@
 <resources>
- <string name="local_returning_title">سبق إقران الهاتف؟</string>
- <string name="local_returning_note">شغّل التصحيح اللاسلكي ثم اضغط «تفعيل». لا تحتاج رمزًا جديدًا عادةً.</string>
- <string name="local_first_time">أول مرة · إقران هذا الهاتف</string>
- <string name="local_step_enable">افتح التصحيح اللاسلكي</string>
- <string name="local_step_enable_detail">اضغط «إقران»، ثم فعّل التصحيح اللاسلكي في خيارات المطوّر.</string>
- <string name="local_step_code">أظهر الرمز المكوّن من ستة أرقام</string>
- <string name="local_step_code_detail">اختر «إقران الجهاز باستخدام رمز الإقران» وأبقِ نافذته مفتوحة.</string>
- <string name="local_step_notification">أرسل الرمز من إشعار سُكوت</string>
- <string name="local_step_notification_detail">اسحب الإشعارات، واضغط «إدخال رمز الإقران» وأرسل الأرقام الستة. يكتمل التفعيل تلقائيًا بعدها.</string>
- <string name="local_short_privacy">كل شيء يبقى على هاتفك. بعد التفعيل يمكنك إيقاف التصحيح اللاسلكي والضغط على تشغيل في الرئيسية.</string>
+ <string name="status_developer">خيارات المطوّر</string>
+ <string name="status_usb">تصحيح أخطاء USB</string>
+ <string name="status_worker">عامل الصوت</string>
+ <string name="status_ready">جاهز</string>
+ <string name="status_activation_needed">يلزم التفعيل</string>
+ <string name="status_on">مفعّل</string>
+ <string name="status_off">معطّل</string>
+ <string name="status_on_plural">مفعّلة</string>
+ <string name="status_off_plural">معطّلة</string>
+ <string name="route_open_computer">افتح سُكوت على الكمبيوتر</string>
+ <string name="route_open_computer_body">ويندوز أو لينكس · أبقِ الهاتف متصلًا عبر USB.</string>
+ <string name="route_phone">الهاتف</string>
+ <string name="route_phone_body">اختر «الهاتف» من القائمة الجانبية في تطبيق الكمبيوتر.</string>
+ <string name="route_activate">تفعيل سُكوت</string>
+ <string name="route_activate_body">اختر «تفعيل سُكوت»، وانتظر ظهور حالة «جاهز» أعلاه.</string>
+ <string name="ready_start">شغّل من الرئيسية</string>
+ <string name="ready_start_body">اختر وضع الصوت، ثم اضغط زر التشغيل. يمكنك فصل كابل USB.</string>
+ <string name="ready_reconnect">عندما تحتاج إلى التفعيل مجددًا</string>
+ <string name="ready_reconnect_body">فعّل تصحيح الأخطاء اللاسلكي، ثم اختر «تفعيل سُكوت». لا تُعد الإقران إلا إذا نسيه أندرويد.</string>
 </resources>

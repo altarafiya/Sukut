@@ -2,7 +2,58 @@
 
 The plan is in [PLAN.md](PLAN.md): Debian 13 first, with stages and owner gates.
 
-Current version: **0.4.0~beta.7**. Stage 9, validation on real hardware, is in progress on PikaOS 4 (KDE). The package is built there and needs its newer system libraries; a Debian 13 build will follow.
+Current version: **0.5.1** as snap, Flatpak and `.deb`.
+
+## Packages
+
+Three builds of the same Sukut. Pick one; they don't share settings.
+
+| Package | Version | Where | Works on |
+|---|---|---|---|
+| Snap | 0.5.1 | [Snap Store](https://snapcraft.io/sukut) | Ubuntu 24.04 and 26.04 (tested), other distributions with snapd |
+| Flatpak | 0.5.1 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.1) (`.flatpak` file) | Most distributions with Flatpak; it uses the GNOME 51 runtime from Flathub |
+| `.deb` | 0.5.1 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.1) | Ubuntu 26.04 or newer, PikaOS 4: it needs `libc6` 2.43. On older Ubuntu, use the snap |
+
+All three need PipeWire and an x86-64 PC.
+
+**Snap**
+
+```bash
+sudo snap install sukut --beta
+```
+
+Until the Snap Store connects them automatically, the snap can't use audio or USB on its own. Setup and the main window show one command to copy into Terminal, once:
+
+```bash
+sudo snap connect sukut:pipewire && sudo snap connect sukut:audio-record && sudo snap connect sukut:raw-usb
+```
+
+`raw-usb` is only for the Phone page (activating Android over USB). Updates arrive with your other snaps.
+
+**Flatpak**
+
+```bash
+flatpak install --user ./Sukut-0.5.1-Linux-x86_64.flatpak
+```
+
+- The first time the Phone page needs it, Sukut downloads Google's adb and checks it.
+- Start with system isn't available in the Flatpak yet.
+- If USB can't be opened from the sandbox, the Phone page points to Wireless debugging (Android 11+).
+- Not on Flathub.
+
+**`.deb` (Ubuntu 26.04+, PikaOS 4)**
+
+Open it with your software installer, or:
+
+```bash
+sudo apt install ./Sukut-0.5.1-Linux-amd64.deb
+```
+
+It brings `adb`, and **Allow access** on the Phone page sets up USB access to the phone.
+
+**Android phones**
+
+The Phone page installs and activates Sukut on Android 10 and later over USB. Android 11 and later can also activate on the phone itself through Wireless debugging.
 
 ## Sukut with EasyEffects
 

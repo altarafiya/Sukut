@@ -138,14 +138,14 @@ public sealed class Engine : IAsyncDisposable
     public Task<List<SourceApp>> Apps() => Work(() =>
         JsonSerializer.Deserialize(Request("apps"), SukutJsonContext.Default.ListSourceApp)!);
 
-    public Task Select(int mode, string source, string capture, string output, uint pid, int buffering = 0, bool cablePassthroughConfirmed = false, int optimizedBackgroundDb = 0, bool restart = false) => Work(() =>
+    public Task Select(int mode, string source, string capture, string output, uint pid, int buffering = 0, bool cablePassthroughConfirmed = false, int optimizedBackgroundDb = 0, bool restart = false, bool advanced = false, int voiceDb = 0, int musicDb = -20, int backgroundDb = 0) => Work(() =>
     {
         string I(long value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         // The host applies the same stem gains as AudioModePreset, publishing
         // routing, mode and mix together before audio starts.
         Request("select", I(mode), source, capture, output, I(pid), I(Math.Clamp(buffering, 0, 2)),
-            cablePassthroughConfirmed ? "1" : "0", I(Math.Clamp(optimizedBackgroundDb, -20, 10)), restart ? "1" : "0");
-        WritePresetConfig(AudioModePreset.ForMode(mode, optimizedBackgroundDb));
+            cablePassthroughConfirmed ? "1" : "0", I(Math.Clamp(optimizedBackgroundDb, -20, 10)), restart ? "1" : "0",advanced?"1":"0",I(Math.Clamp(voiceDb,-20,10)),I(Math.Clamp(musicDb,-20,10)),I(Math.Clamp(backgroundDb,-20,10)));
+        WritePresetConfig(AudioModePreset.ForMode(mode, optimizedBackgroundDb,advanced,voiceDb,musicDb,backgroundDb));
         return true;
     });
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_choose_title">How would you like to activate?</string>
+    <string name="guide_choose_intro">Choose one method. We will guide you one step at a time.</string>
+    <string name="guide_recommended">Recommended · Windows or Linux</string>
+    <string name="guide_computer_benefit">Activate with Windows or Linux using USB. No wireless pairing needed.</string>
+    <string name="guide_phone_benefit">No computer needed. Use Wi-Fi and Android’s Wireless debugging to pair this phone.</string>
+    <string name="guide_progress">Activation · Step %1$d of %2$d</string>
+    <string name="guide_continue">Continue</string>
+    <string name="guide_dev_title">Enable Developer options</string>
+    <string name="guide_usb_title">Allow USB debugging</string>
+    <string name="guide_connect_title">Connect to your computer</string>
+    <string name="guide_activate_title">Activate from your computer</string>
+    <string name="guide_turn_off_title">Turn Developer options off</string>
+    <string name="guide_code_title">Know where to enter the code</string>
+    <string name="guide_pair_title">Pair this phone</string>
+    <string name="guide_phone_ready_title">Ready on this phone</string>
+    <string name="dev_tile_label">Debugging</string>
+    <string name="dev_tile_setup">Activate Sukut once</string>
+    <string name="dev_tile_usb_on">USB debugging on</string>
+    <string name="dev_tile_partial">Tap to enable debugging</string>
+    <string name="dev_enable_usb">Enable Developer options and USB debugging</string>
+    <string name="dev_usb_on">Developer options and USB debugging are on.</string>
+    <string name="dev_options_off">Developer options and debugging are off.</string>
+    <string name="dev_add_tile">Add to Quick Settings</string>
+    <string name="dev_computer_required">Activate through phone pairing or a computer once to prepare this optional shortcut. Android may restrict this permission.</string>
+    <string name="dev_change_failed">Android did not allow the change. Check Developer options in Settings. A device policy or manufacturer restriction may apply.</string>
+    <string name="dev_tile_off">Off</string>
+</resources>

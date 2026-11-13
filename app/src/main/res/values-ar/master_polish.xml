@@ -1,0 +1,6 @@
+<resources>
+<string name="recovery_ready_detail">لا حاجة إلى خطوات تفعيل. ارجع إلى سُكوت لاختيار وضع.</string>
+<string name="recovery_return">العودة إلى سُكوت</string>
+<string name="recovery_pc_route">في الكمبيوتر: سُكوت ← الهاتف ← تفعيل سُكوت</string>
+<string name="recovery_enable_debugging">تفعيل تصحيح الأخطاء</string>
+</resources>

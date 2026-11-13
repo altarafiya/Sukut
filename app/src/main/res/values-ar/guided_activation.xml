@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_choose_title">كيف تريد تفعيل سُكوت؟</string>
+    <string name="guide_choose_intro">اختر طريقة واحدة، وسنرشدك خطوة بخطوة.</string>
+    <string name="guide_recommended">موصى به · ويندوز أو لينكس</string>
+    <string name="guide_computer_benefit">فعّل سُكوت عبر USB باستخدام ويندوز أو لينكس، دون الحاجة إلى إقران لاسلكي.</string>
+    <string name="guide_phone_benefit">دون كمبيوتر. استخدم Wi-Fi وتصحيح الأخطاء اللاسلكي في أندرويد لإقران هذا الهاتف.</string>
+    <string name="guide_progress">التفعيل · الخطوة %1$d من %2$d</string>
+    <string name="guide_continue">متابعة</string>
+    <string name="guide_dev_title">فعّل خيارات المطوّر</string>
+    <string name="guide_usb_title">اسمح بتصحيح أخطاء USB</string>
+    <string name="guide_connect_title">وصّل الهاتف بالكمبيوتر</string>
+    <string name="guide_activate_title">فعّل من الكمبيوتر</string>
+    <string name="guide_turn_off_title">أوقف خيارات المطوّر</string>
+    <string name="guide_code_title">اعرف أين تُدخل الرمز</string>
+    <string name="guide_pair_title">أقرن هذا الهاتف</string>
+    <string name="guide_phone_ready_title">جاهز على هذا الهاتف</string>
+    <string name="dev_tile_label">تصحيح الأخطاء</string>
+    <string name="dev_tile_setup">فعّل سُكوت مرة واحدة</string>
+    <string name="dev_tile_usb_on">تصحيح أخطاء USB مفعّل</string>
+    <string name="dev_tile_partial">اضغط لتفعيل تصحيح الأخطاء</string>
+    <string name="dev_enable_usb">تفعيل خيارات المطوّر وتصحيح أخطاء USB</string>
+    <string name="dev_usb_on">خيارات المطوّر وتصحيح أخطاء USB مفعّلان.</string>
+    <string name="dev_options_off">خيارات المطوّر وتصحيح الأخطاء معطّلان.</string>
+    <string name="dev_add_tile">إضافة إلى الإعدادات السريعة</string>
+    <string name="dev_computer_required">فعّل سُكوت مرة واحدة عبر إقران الهاتف أو عبر الكمبيوتر لإعداد هذا الاختصار الاختياري. قد يقيّد أندرويد هذا الإذن.</string>
+    <string name="dev_change_failed">لم يسمح أندرويد بالتغيير. تحقّق من خيارات المطوّر في الإعدادات. قد توجد قيود من سياسة الجهاز أو الشركة المصنّعة.</string>
+    <string name="dev_tile_off">معطّل</string>
+</resources>

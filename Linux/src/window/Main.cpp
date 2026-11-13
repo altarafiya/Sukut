@@ -29,6 +29,7 @@
 #include "window/PhoneTools.h"
 #include "window/Style.h"
 #include "window/Window.h"
+#include "window/TrayPopup.h"
 
 namespace {
 
@@ -152,10 +153,17 @@ void Activate(GApplication* application, gpointer data) {
 
 int main(int argc, char** argv) {
   std::string capture, capture_set = "main", phone, serial;
-  bool tray = false, restore = false;
+  bool tray = false, restore = false, popup = false, tray_exercise = false;
+  int popup_x=0,popup_y=0;
+  std::string tray_capture, tray_snapshot;
   for (int i = 1; i < argc; ++i) {
     const std::string arg = argv[i];
+    if(arg=="--tray-probe"){const bool supported=TrayPopupSupported();std::cout<<(supported?"supported":"native menu fallback")<<std::endl;return supported?0:77;}
     if (arg == "--tray") tray = true;
+    else if(arg=="--tray-popup" && i+2<argc) {popup=true;popup_x=std::atoi(argv[++i]);popup_y=std::atoi(argv[++i]);}
+    else if(arg=="--tray-state" && i+1<argc)tray_snapshot=argv[++i];
+    else if(arg=="--tray-exercise")tray_exercise=true;
+    else if(arg=="--capture-tray" && i+2<argc) {tray_capture=argv[++i];popup_x=std::atoi(argv[++i]);}
     else if (arg == "--restore-audio") restore = true;
     else if (arg == "--capture" && i + 1 < argc) capture = argv[++i];
     else if (arg == "--capture-set" && i + 1 < argc) capture_set = argv[++i];
@@ -175,6 +183,12 @@ int main(int argc, char** argv) {
     return g_spawn_command_line_async(command.c_str(), nullptr) ? 0 : 1;
   }
 
+  if(popup || !tray_capture.empty()) {
+    // Avoid creating a Vulkan device and shaders for this small temporary UI.
+    g_setenv("GSK_RENDERER","cairo",FALSE);
+    LoadFonts();
+    return RunTrayPopup(HostCommand(),popup_x,popup_y,tray_capture,tray_snapshot,tray_exercise);
+  }
   LoadFonts();
   if (!capture.empty()) {
     AdwApplication* app = adw_application_new("io.github.altarafiya.Sukut.Capture", G_APPLICATION_NON_UNIQUE);

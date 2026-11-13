@@ -25,6 +25,22 @@ class WorkerProvider : ContentProvider() {
                 putInt("protocol", WorkerProtocol.VERSION)
                 putInt("pid", WorkerConnection.workerPid)
             }
+            "computer-setup" -> {
+                if (!WorkerProtocol.trustedBootstrap(caller)) throw SecurityException("ADB shell required")
+                check(WorkerConnection.ready) { "Activate the worker first" }
+                val app = requireNotNull(context)
+                check(DeveloperOptionsControl.available(app)) { "Computer shortcut permission was not granted" }
+                DeveloperOptionsControl.computerReady(app)
+                Bundle().apply { putString("state", "COMPUTER_SETUP_READY") }
+            }
+            "phone-setup" -> {
+                if (!WorkerProtocol.trustedBootstrap(caller)) throw SecurityException("ADB shell required")
+                check(WorkerConnection.ready) { "Activate the worker first" }
+                val app = requireNotNull(context)
+                check(DeveloperOptionsControl.available(app)) { "Shortcut permission was not granted" }
+                DeveloperOptionsControl.phoneReady(app)
+                Bundle().apply { putString("state", "PHONE_SETUP_READY") }
+            }
             "deactivate" -> {
                 val api = WorkerConnection.api
                 // destroy exits after releasing the route; a dead reply is expected.
