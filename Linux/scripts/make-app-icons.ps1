@@ -3,7 +3,7 @@
 # as hicolor PNGs at 16-512 px. Run once on Windows; the PNGs are committed and
 # the build never regenerates them.
 param(
-  [string]$Source = (Join-Path $PSScriptRoot '..\..\app\src\main\res\drawable-nodpi\sukut_app_icon.png'),
+  [string]$Source = (Join-Path $PSScriptRoot '..\..\Android\app\src\main\res\drawable-nodpi\sukut_app_icon.png'),
   [string]$Out = (Join-Path $PSScriptRoot '..\data\icons\hicolor'),
   [double]$Radius = 0.225
 )

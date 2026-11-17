@@ -1,5 +1,17 @@
 # What’s new
 
+## Android 0.5.7 · 18 November 2026
+
+- A calmer set of app icon colours: black, graphite, navy and forest green. If you had picked a colour that is no longer offered, the icon moves to black.
+- Source: the Android project now lives in `Android/` (run Gradle from there), beside `Windows/` and `Linux/`.
+
+<div lang="ar" dir="rtl">
+
+- ألوان أهدأ لأيقونة التطبيق: الأسود والرمادي الداكن والكحلي والأخضر الغامق. إن كنت اخترت لونًا لم يعد متاحًا، تعود الأيقونة إلى الأسود.
+- المصدر: مشروع أندرويد صار في المجلد ‎`Android/`‎، بجانب ‎`Windows/`‎ و‎`Linux/`‎.
+
+</div>
+
 ## Product page · 18 November 2026
 
 - Added dark banners in both languages and Flatpak setup steps for other Linux distributions.

@@ -57,8 +57,8 @@ work/
 *.bin
 !window_576_q15.bin
 !window_960_q15.bin
-app/src/legacy/assets/
-app/src/test/resources/
+Android/app/src/legacy/assets/
+Android/app/src/test/resources/
 Windows/src/sukut-ui/Assets/Phone/Sukut.apk.*
 
 # Diagnostic output

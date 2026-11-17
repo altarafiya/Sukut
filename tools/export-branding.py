@@ -25,6 +25,11 @@ COLORS = [('black', '#000000'), ('graphite', '#2B2E33'), ('navy', '#0E2238'),
           ('forest', '#0F3B2E'), ('burgundy', '#4A1420'), ('plum', '#2E1A47'),
           ('teal', '#0E9F8E'), ('orange', '#E0662B'), ('raspberry', '#C2185B')]
 DEFAULT = ('blue', 'black')
+# Android offers a short, calm set of dark backgrounds. The other colours stay as
+# hidden launcher entries only, so phones that chose one keep an icon until Sukut
+# moves them to black.
+ANDROID_COLORS = [('black', '#000000'), ('graphite', '#2B2E33'), ('navy', '#0E2238'), ('forest', '#0F3B2E')]
+ANDROID_ALL = ANDROID_COLORS + [c for c in COLORS if c[0] not in dict(ANDROID_COLORS)]
 RADIUS = 0.225   # corner radius / side: the rounded square on every platform
 MARK_BOX = 0.72  # the mark fits a centred box this share of the side
 
@@ -58,7 +63,7 @@ default_tile = tile(DEFAULT[0], DEFAULT_HEX, 1024)
 default_tile.save(BRAND / 'sukut-app-icon.png', optimize=True)
 
 # Android -------------------------------------------------------------------
-res = ROOT / 'app/src/main/res'
+res = ROOT / 'Android/app/src/main/res'
 nodpi, drawable = res / 'drawable-nodpi', res / 'drawable'
 for old in ['sukut_app_icon.png', 'sukut_logo_art.png', 'sukut_launcher_mark.png', 'sukut_launcher_mono.png']:
     (nodpi / old).unlink(missing_ok=True)
@@ -80,17 +85,18 @@ for key, _ in MARKS:
         write_if_changed(drawable / f'icon_{kind}_{key}_layer.xml',
             f'<bitmap xmlns:android="http://schemas.android.com/apk/res/android" android:src="@drawable/icon_{kind}_{key}" android:gravity="fill" android:filter="true"/>\n')
 write_if_changed(res / 'values/icon_colors.xml', '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n' +
-    ''.join(f'    <color name="icon_bg_{c}">{v}</color>\n' for c, v in COLORS) + '</resources>\n')
+    ''.join(f'    <color name="icon_bg_{c}">{v}</color>\n' for c, v in ANDROID_ALL) + '</resources>\n')
 for folder in ['mipmap-anydpi', 'mipmap-anydpi-v33']:
     target = res / folder
     for old in target.glob('ic_launcher*.xml'):
         old.unlink()
     for key, _ in MARKS:
-        for color, _ in COLORS:
+        for color, _ in ANDROID_ALL:
             mono = f'\n    <monochrome android:drawable="@drawable/icon_mono_{key}_layer" />' if folder.endswith('v33') else ''
+            front = f'icon_mark_{key}_layer'
             xml = ('<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
                    f'    <background android:drawable="@color/icon_bg_{color}" />\n'
-                   f'    <foreground android:drawable="@drawable/icon_mark_{key}_layer" />{mono}\n</adaptive-icon>\n')
+                   f'    <foreground android:drawable="@drawable/{front}" />{mono}\n</adaptive-icon>\n')
             write_if_changed(target / f'ic_launcher_{key}_{color}.xml', xml)
             if (key, color) == DEFAULT:
                 write_if_changed(target / 'ic_launcher.xml', xml)

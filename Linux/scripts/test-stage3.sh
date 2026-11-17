@@ -22,4 +22,4 @@ mkdir -p "$EVIDENCE" && find "$EVIDENCE" -mindepth 1 -maxdepth 1 ! -name SUMMARY
     echo "cpu: $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | sed 's/^ //')"
 } > "$EVIDENCE/environment.txt"
 python3 -I "$ROOT/Linux/tests/stage3_engine_test.py" "$BUILD/bin" "$ROOT/Windows/assets/engine" \
-    "$ROOT/app/src/test/resources/clean-speech-reference.wav" "$EVIDENCE"
+    "$ROOT/Android/app/src/test/resources/clean-speech-reference.wav" "$EVIDENCE"

@@ -12,9 +12,4 @@
     <string name="icon_color_graphite">Graphite</string>
     <string name="icon_color_navy">Navy</string>
     <string name="icon_color_forest">Forest green</string>
-    <string name="icon_color_burgundy">Burgundy</string>
-    <string name="icon_color_plum">Plum</string>
-    <string name="icon_color_teal">Teal</string>
-    <string name="icon_color_orange">Orange</string>
-    <string name="icon_color_raspberry">Raspberry</string>
 </resources>

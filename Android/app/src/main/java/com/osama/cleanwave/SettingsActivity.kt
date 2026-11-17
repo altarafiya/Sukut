@@ -203,11 +203,11 @@ class SettingsActivity : Activity() {
             }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
         addView(label(R.drawable.ic_palette, R.string.app_icon_color), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(18) })
-        // Nine colours in rows of five, each in an equal cell, so they fit narrow phones.
-        AppIcon.COLORS.chunked(5).forEachIndexed { row, swatches ->
+        // Four colours in one row of equal cells.
+        AppIcon.COLORS.chunked(4).forEachIndexed { row, swatches ->
             addView(LinearLayout(context).apply {
                 tag = if (row == 0) "app_icon_colors" else "app_icon_colors_$row"; gravity = Gravity.CENTER_VERTICAL
-                for (slot in 0 until 5) {
+                for (slot in 0 until 4) {
                     val cell = android.widget.FrameLayout(context)
                     swatches.getOrNull(slot)?.let { (key, value) ->
                         cell.addView(View(context).apply {

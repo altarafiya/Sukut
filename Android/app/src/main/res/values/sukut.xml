@@ -51,7 +51,7 @@
  <string name="next">Next</string>
  <string name="finish_setup">Get started</string>
  <string name="developed_by">Developed by</string>
- <string name="sukut_changelog_latest">0.5.6\n• After activating, Sukut starts filtering by itself.\n• The Debugging tile turns debugging on and reconnects in the background, without opening Sukut.\n• Phone activation returns to Sukut as soon as the code is accepted, retries by itself, and reconnects when Wi-Fi comes back.\n• Clearer error messages, and the activation screen closes by itself when done.\n• Choose the app icon and its background colour in Settings, and fixes for Android 12 and 13.</string>
+ <string name="sukut_changelog_latest">0.5.7\n• A calmer set of app icon colours.\n• After activating, Sukut starts filtering by itself.\n• The Debugging tile turns debugging on and reconnects in the background, without opening Sukut.\n• Phone activation returns to Sukut as soon as the code is accepted, retries by itself, and reconnects when Wi-Fi comes back.\n• Clearer error messages, and the activation screen closes by itself when done.</string>
  <string name="notification_mode">Audio Mode: %1$s</string>
  <string name="home_tap_to_start">Tap to start · %1$s</string>
  <string name="status_filtering">Filtering music</string>

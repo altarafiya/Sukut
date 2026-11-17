@@ -20,7 +20,7 @@ cmake --build "$BUILD" --parallel "$JOBS" --target cleanwave_bootstrap cleanwave
 # The three sealed files must be identical on every platform (PLAN section 4.2).
 for name in separator.tflite window_576_q15.bin window_960_q15.bin; do
     a=$(sha256sum "$ENGINE/$name" | cut -d' ' -f1)
-    b=$(sha256sum "$ROOT/app/src/engine/assets/$name" | cut -d' ' -f1)
+    b=$(sha256sum "$ROOT/Android/app/src/engine/assets/$name" | cut -d' ' -f1)
     [ "$a" = "$b" ] || { echo "sealed $name differs between Windows and Android" >&2; exit 1; }
 done
 echo "sealed engine files identical on Windows and Android"

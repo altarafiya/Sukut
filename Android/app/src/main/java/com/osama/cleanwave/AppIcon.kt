@@ -16,15 +16,18 @@ import android.os.Build
 
 /**
  * The launcher icon the user chose: one of five marks on a rounded square of one of
- * six colours. Mirrors tools/export-branding.py (same ids, same order). Android can't
+ * four calm colours. Mirrors tools/export-branding.py (same ids, same order). Android can't
  * draw a launcher icon at runtime, so each pair is a manifest activity-alias with its
  * own adaptive icon; choosing one enables that alias and disables the rest.
  */
 internal object AppIcon {
     val MARKS = listOf("soft", "wave", "wordmark", "gold", "blue")
+    // The colours offered: a short set of dark backgrounds.
     val COLORS = listOf("black" to 0xFF000000.toInt(), "graphite" to 0xFF2B2E33.toInt(), "navy" to 0xFF0E2238.toInt(),
-        "forest" to 0xFF0F3B2E.toInt(), "burgundy" to 0xFF4A1420.toInt(), "plum" to 0xFF2E1A47.toInt(),
-        "teal" to 0xFF0E9F8E.toInt(), "orange" to 0xFFE0662B.toInt(), "raspberry" to 0xFFC2185B.toInt())
+        "forest" to 0xFF0F3B2E.toInt())
+    // Earlier colours: still launcher entries, so a phone that chose one keeps an icon
+    // until repair() moves it to black.
+    private val LEGACY = listOf("burgundy", "plum", "teal", "orange", "raspberry")
     const val DEFAULT_MARK = "blue"
     const val DEFAULT_COLOR = "black"
     private const val PREFS = "sukut_app_icon"
@@ -40,6 +43,12 @@ internal object AppIcon {
         "gold" -> R.drawable.icon_mark_gold
         else -> R.drawable.icon_mark_blue
     }
+
+    /** A colour that is no longer offered moves to black (applied when the user next leaves Sukut). */
+    fun repair(context: Context) {
+        val stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("color", null) ?: return
+        if (COLORS.none { it.first == stored }) choose(context, mark(context), DEFAULT_COLOR)
+    }
     fun markName(key: String) = when (key) {
         "soft" -> R.string.icon_mark_soft
         "wave" -> R.string.icon_mark_wave
@@ -51,11 +60,6 @@ internal object AppIcon {
         "graphite" -> R.string.icon_color_graphite
         "navy" -> R.string.icon_color_navy
         "forest" -> R.string.icon_color_forest
-        "burgundy" -> R.string.icon_color_burgundy
-        "plum" -> R.string.icon_color_plum
-        "teal" -> R.string.icon_color_teal
-        "orange" -> R.string.icon_color_orange
-        "raspberry" -> R.string.icon_color_raspberry
         else -> R.string.icon_color_black
     }
 
@@ -80,7 +84,7 @@ internal object AppIcon {
         val mark = mark(context); val color = color(context)
         val pm = context.packageManager
         val chosen = alias(context, mark, color)
-        val all = MARKS.flatMap { m -> COLORS.map { alias(context, m, it.first) } }
+        val all = MARKS.flatMap { m -> (COLORS.map { it.first } + LEGACY).map { alias(context, m, it) } }
         // Enable first so there is never a moment without a launcher entry.
         pm.setComponentEnabledSetting(chosen, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
         if (Build.VERSION.SDK_INT >= 33) {

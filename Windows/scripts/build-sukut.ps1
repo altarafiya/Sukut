@@ -26,17 +26,17 @@ try{
     if($LASTEXITCODE -ne 0){throw 'Native audio bridge build failed'}
     if($NativeOnly){return}
     $repository=Split-Path -Parent $projectRoot
-    $gradle=Get-Content -LiteralPath (Join-Path $repository 'app/build.gradle.kts') -Raw
+    $gradle=Get-Content -LiteralPath (Join-Path $repository 'Android/app/build.gradle.kts') -Raw
     $androidVersion=[regex]::Match($gradle,'versionName\s*=\s*"(\d+\.\d+(?:\.\d+)?(?:-beta\.\d+)?)"').Groups[1].Value
-    $apk=Join-Path $repository ('Builds/Sukut-'+$androidVersion+'-android-arm64.apk')
+    $apk=Join-Path $repository ('Android/releases/Sukut-'+$androidVersion+'-android-arm64.apk')
     if(-not (Test-Path -LiteralPath $apk)){
         $code=[regex]::Match($gradle,'versionCode\s*=\s*(\d+)').Groups[1].Value
-        $apk=Join-Path $repository ('Builds/Sukut-'+$androidVersion+'-code'+$code+'-android-arm64.apk')
+        $apk=Join-Path $repository ('Android/releases/Sukut-'+$androidVersion+'-code'+$code+'-android-arm64.apk')
     }
     if(-not (Test-Path -LiteralPath $apk)){throw 'Build Android first'}
     $phoneAssets=Join-Path $projectRoot 'src/sukut-ui/Assets/Phone'
     New-Item -ItemType Directory -Path $phoneAssets -Force | Out-Null
-    $workerScript=Join-Path $repository 'app/src/main/assets/activate-worker.sh'
+    $workerScript=Join-Path $repository 'Android/app/src/main/assets/activate-worker.sh'
     Copy-Item -LiteralPath $workerScript -Destination (Join-Path $phoneAssets 'activate-worker.sh') -Force
     (Get-FileHash -LiteralPath $workerScript -Algorithm SHA256).Hash | Set-Content -LiteralPath (Join-Path $phoneAssets 'activate-worker.sh.sha256') -Encoding ascii
     Copy-Item -LiteralPath $apk -Destination (Join-Path $phoneAssets 'Sukut.apk') -Force

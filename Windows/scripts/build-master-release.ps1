@@ -5,7 +5,7 @@ $windows=Join-Path $repo 'Windows'
 $project=[xml](Get-Content -LiteralPath (Join-Path $windows 'src/sukut-ui/Sukut.csproj') -Raw)
 $version=$project.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()
 if($version -ne '0.5.6'){throw 'This release kit expects source version 0.5.6.'}
-$companion=Join-Path $repo 'Builds/Sukut-0.5.6-code67-android-arm64.apk'
+$companion=Join-Path $repo 'Android/releases/Sukut-0.5.6-code67-android-arm64.apk'
 if(-not(Test-Path -LiteralPath $companion)){throw 'Missing the signed Android 0.5.6/code67 companion from the kit.'}
 & (Join-Path $PSScriptRoot 'build-sukut.ps1')
 if($LASTEXITCODE -ne 0){throw 'Windows build failed'}

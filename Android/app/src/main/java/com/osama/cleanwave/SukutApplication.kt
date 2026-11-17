@@ -17,6 +17,7 @@ class SukutApplication : Application(), Application.ActivityLifecycleCallbacks {
         CleanerPrefs.prepareNewEngine(this)
         registerActivityLifecycleCallbacks(this)
         watchWifi()
+        AppIcon.repair(this)
     }
     // Phone activation runs over Wi-Fi: when Wi-Fi comes back, Sukut turns Wireless
     // debugging on again (if it may) and reconnects. Only while this process lives.

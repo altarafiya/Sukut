@@ -11,11 +11,11 @@ $repositoryRoot = Split-Path -Parent $windowsRoot
 $uiProject = [xml](Get-Content -LiteralPath (Join-Path $windowsRoot 'src\sukut-ui\Sukut.csproj') -Raw)
 $appVersion = $uiProject.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()
 $buildPaths = Get-Content -LiteralPath (Join-Path $windowsRoot 'local.build.json') -Raw | ConvertFrom-Json
-if (-not $KitDirectory) { $KitDirectory = Join-Path $repositoryRoot ('Store\Microsoft-Store-'+$appVersion) }
+if (-not $KitDirectory) { $KitDirectory = Join-Path $repositoryRoot ('Windows\store\releases\Microsoft-Store-'+$appVersion) }
 New-Item -ItemType Directory -Force -Path $KitDirectory,(Join-Path $KitDirectory 'assets'),(Join-Path $KitDirectory 'documents') | Out-Null
 $identityFile = Join-Path $KitDirectory 'identity.json'
 if (-not (Test-Path -LiteralPath $identityFile)) {
-    $previousIdentity = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Store\Microsoft-Store-2026-10-20\identity.json') -Raw | ConvertFrom-Json
+    $previousIdentity = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Windows\store\releases\Microsoft-Store-2026-10-20\identity.json') -Raw | ConvertFrom-Json
     $numericVersion = [version]([regex]::Match($appVersion,'^\d+\.\d+(?:\.\d+)?').Value)
     $previousIdentity.packageVersion = ('{0}.{1}.{2}.0' -f $numericVersion.Major,$numericVersion.Minor,[Math]::Max(0,$numericVersion.Build))
     $previousIdentity | ConvertTo-Json | Set-Content -LiteralPath $identityFile -Encoding utf8

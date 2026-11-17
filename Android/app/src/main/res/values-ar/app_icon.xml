@@ -12,9 +12,4 @@
     <string name="icon_color_graphite">رمادي داكن</string>
     <string name="icon_color_navy">كحلي</string>
     <string name="icon_color_forest">أخضر داكن</string>
-    <string name="icon_color_burgundy">عنّابي</string>
-    <string name="icon_color_plum">بنفسجي</string>
-    <string name="icon_color_teal">فيروزي</string>
-    <string name="icon_color_orange">برتقالي</string>
-    <string name="icon_color_raspberry">توتي</string>
 </resources>

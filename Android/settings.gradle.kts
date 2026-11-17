@@ -18,4 +18,4 @@ rootProject.name = "Sukut"
 include(":app")
 // Standalone measurement tool; never included in Sukut's application APK.
 include(":latencyProbe")
-project(":latencyProbe").projectDir = file("tools/latency-probe")
+project(":latencyProbe").projectDir = file("../tools/latency-probe")

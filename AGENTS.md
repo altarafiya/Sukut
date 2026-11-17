@@ -24,10 +24,10 @@ Don't confuse a published binary with a source-build prerequisite.
 
 | Path | Contents |
 | --- | --- |
-| `app/src/main` | Android UI, setup, worker control plane, preferences |
-| `app/src/engine` | Production separator, streaming DSP, output mixer (build type `engine`) |
-| `app/src/test*`, `app/src/androidTest` | Unit and instrumentation code |
-| `app/vendor` | Runtime AAR provenance and licences. Not models |
+| `Android/app/src/main` | Android UI, setup, worker control plane, preferences |
+| `Android/app/src/engine` | Production separator, streaming DSP, output mixer (build type `engine`) |
+| `Android/app/src/test*`, `Android/app/src/androidTest` | Unit and instrumentation code |
+| `Android/app/vendor` | Runtime AAR provenance and licences. Not models |
 | `Windows/src/sukut-ui` | WinUI pages, phone flow, assets |
 | `Windows/src/sukut-host` | Native tray host, device notifications, tray popup |
 | `Windows/src/{audio,live,realtime,dsp,model,desktop}` | Native pipeline and contracts |
@@ -43,13 +43,13 @@ by the maintainer and must never be committed, invented, downloaded from elsewhe
 or extracted from a release APK, ZIP, MSIX or `.deb`:
 
 - the trained separator and the engine assets (`separator.tflite`,
-  `window_576_q15.bin`, `window_960_q15.bin`) under `app/src/engine/assets` and
+  `window_576_q15.bin`, `window_960_q15.bin`) under `Android/app/src/engine/assets` and
   `Windows/assets/engine`. They ship sealed;
 - the sealing implementation: `Windows/src/model/AssetSeal.h`,
-  `app/src/main/java/com/osama/cleanwave/AssetSeal.kt` (and its test), `tools/seal-assets.py`;
-- `app/vendor/boringssl` (pinned upstream source; see `app/vendor/BORINGSSL-PROVENANCE.md`),
-  prebuilt `app/src/main/jniLibs`, and the LiteRT runtime AARs (see `LITERT-PROVENANCE.json`);
-- the Android setup-guide images (`app/src/main/assets/setup-guide`);
+  `Android/app/src/main/java/com/osama/cleanwave/AssetSeal.kt` (and its test), `tools/seal-assets.py`;
+- `Android/app/vendor/boringssl` (pinned upstream source; see `Android/app/vendor/BORINGSSL-PROVENANCE.md`),
+  prebuilt `Android/app/src/main/jniLibs`, and the LiteRT runtime AARs (see `LITERT-PROVENANCE.json`);
+- the Android setup-guide images (`Android/app/src/main/assets/setup-guide`);
 - test fixtures derived from model output, signing keys and passwords, and the signed APK
   that Windows and Linux bundle under `Assets/Phone`.
 
@@ -106,4 +106,4 @@ Tests that create virtual outputs switch the default output; warn the user first
 
 Tests: `Windows/tests/Sukut.UnitTests` (77), native `sukut_endpoint_tests`,
 `sukut_host_routing_tests`, `sukut_tray_tests`; Android focused unit tests under
-`app/src/testEngine`; Linux `Linux/scripts/test-stage2.sh` … `test-stage8.sh`.
+`Android/app/src/testEngine`; Linux `Linux/scripts/test-stage2.sh` … `test-stage8.sh`.

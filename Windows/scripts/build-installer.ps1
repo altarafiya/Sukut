@@ -5,14 +5,14 @@ $taskRepo=Split-Path -Parent $taskRoot
 $paths=Get-Content -LiteralPath (Join-Path $taskRoot 'local.build.json') -Raw | ConvertFrom-Json
 $taskProject=[xml](Get-Content -LiteralPath (Join-Path $taskRoot 'src/sukut-ui/Sukut.csproj') -Raw)
 $taskVersion=$taskProject.SelectSingleNode('/Project/PropertyGroup/Version').InnerText.Trim()
-$taskGradle=Get-Content -LiteralPath (Join-Path $taskRepo 'app/build.gradle.kts') -Raw
+$taskGradle=Get-Content -LiteralPath (Join-Path $taskRepo 'Android/app/build.gradle.kts') -Raw
 $taskAndroidVersion=[regex]::Match($taskGradle,'versionName\s*=\s*"(\d+\.\d+(?:\.\d+)?(?:-beta\.\d+)?)"').Groups[1].Value
 $taskParsedVersion=[version]([regex]::Match($taskVersion,'^\d+\.\d+(?:\.\d+)?').Value)
 $taskNumericVersion=('{0}.{1}.{2}' -f $taskParsedVersion.Major,$taskParsedVersion.Minor,[Math]::Max(0,$taskParsedVersion.Build))
-$taskApk=if($CompanionApk){[IO.Path]::GetFullPath($CompanionApk)}else{Join-Path $taskRepo ('Builds/Sukut-'+$taskAndroidVersion+'-android-arm64.apk')}
+$taskApk=if($CompanionApk){[IO.Path]::GetFullPath($CompanionApk)}else{Join-Path $taskRepo ('Android/releases/Sukut-'+$taskAndroidVersion+'-android-arm64.apk')}
 if(-not(Test-Path -LiteralPath $taskApk)){
     $code=[regex]::Match($taskGradle,'versionCode\s*=\s*(\d+)').Groups[1].Value
-    $taskApk=Join-Path $taskRepo ('Builds/Sukut-'+$taskAndroidVersion+'-code'+$code+'-android-arm64.apk')
+    $taskApk=Join-Path $taskRepo ('Android/releases/Sukut-'+$taskAndroidVersion+'-code'+$code+'-android-arm64.apk')
 }
 $taskBundle=Join-Path $taskRoot ('build/sukut-'+$taskVersion+'/Assets/Phone/Sukut.apk')
 $taskCurrentApk=if($CompanionApk){$taskApk}else{Join-Path $taskRepo 'app/build/outputs/apk/engine/app-engine.apk'}
