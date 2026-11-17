@@ -3,4 +3,16 @@
 <string name="recovery_return">Return to Sukut</string>
 <string name="recovery_pc_route">On your computer: Sukut → Phone → Activate Sukut</string>
 <string name="recovery_enable_debugging">Enable debugging</string>
+    <string name="dev_turn_off">Turn off Developer options</string>
+    <string name="dev_turn_off_note">Some apps, such as banking apps, need Developer options off. On some phones this also stops Sukut; if so, activate again when you need it.</string>
+    <string name="error_overload">Your phone couldn’t keep up with the sound, so Sukut stopped. Press Start to try again. If it happens often, choose more buffering in Engine performance.</string>
+    <string name="error_worker">The audio worker stopped. Tap Activate Sukut to start it again.</string>
+    <string name="error_background">Android didn’t let Sukut start in the background. Open Sukut and press Start.</string>
+    <string name="error_permission">Android refused Sukut access to the sound. Activate Sukut again, then press Start.</string>
+    <string name="error_route">Sukut couldn’t connect to your phone’s sound. Press Start to try again.</string>
+    <string name="error_generic">The sound stopped unexpectedly. Press Start to try again.</string>
+    <string name="setup_rest_note">When nothing is playing, Sukut rests to save battery. You can leave it on in the background.</string>
+    <string name="phone_wifi_title">Stay on Wi-Fi</string>
+    <string name="phone_wifi_note">Activation on the phone needs Wi-Fi. A phone hotspot works, even without internet. If Wi-Fi disconnects, Sukut can stop; when Wi-Fi is back, Sukut turns Wireless debugging on again by itself if it can, or turn it on and tap Activate.</string>
+    <string name="mode_tile_label">Sukut mode</string>
 </resources>

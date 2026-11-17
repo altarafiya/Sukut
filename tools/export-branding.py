@@ -22,7 +22,8 @@ MARKS = [('soft', '01-Sukut-Seen-Soft-Transparent.png'), ('wave', '02-Sukut-Seen
          ('wordmark', '03-Sukut-Wordmark-Transparent.png'), ('gold', '04-Sukut-Original-Gold-Transparent.png'),
          ('blue', '05-Sukut-White-Blue-Transparent.png')]
 COLORS = [('black', '#000000'), ('graphite', '#2B2E33'), ('navy', '#0E2238'),
-          ('forest', '#0F3B2E'), ('burgundy', '#4A1420'), ('plum', '#2E1A47')]
+          ('forest', '#0F3B2E'), ('burgundy', '#4A1420'), ('plum', '#2E1A47'),
+          ('teal', '#0E9F8E'), ('orange', '#E0662B'), ('raspberry', '#C2185B')]
 DEFAULT = ('blue', 'black')
 RADIUS = 0.225   # corner radius / side: the rounded square on every platform
 MARK_BOX = 0.72  # the mark fits a centred box this share of the side

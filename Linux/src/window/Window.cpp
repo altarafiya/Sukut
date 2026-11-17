@@ -1083,7 +1083,7 @@ void SukutWindow::RenderStatus() {
   enum class Look { Off, On, Standby, Attention } look;
   const bool working = command_ || state_.busy || state_.reconnecting;
   if (state_.state == 2 || !error_.empty()) look = Look::Attention;
-  else if (state_.mode != 0 && state_.standby && !working) look = Look::Standby;
+  // Standby (nothing playing) is not shown: Sukut simply stays On. Setup explains it once.
   else if (state_.mode != 0 || command_) look = Look::On;
   else look = Look::Off;
   // The Windows status words (ShellView.StatusText).

@@ -25,6 +25,7 @@ internal static class AppIcons
     [
         new("black", "#000000", "Black", "أسود"), new("graphite", "#2B2E33", "Graphite", "رمادي داكن"), new("navy", "#0E2238", "Navy", "كحلي"),
         new("forest", "#0F3B2E", "Forest green", "أخضر داكن"), new("burgundy", "#4A1420", "Burgundy", "عنّابي"), new("plum", "#2E1A47", "Plum", "بنفسجي"),
+        new("teal", "#0E9F8E", "Teal", "فيروزي"), new("orange", "#E0662B", "Orange", "برتقالي"), new("raspberry", "#C2185B", "Raspberry", "توتي"),
     ];
     internal const string DefaultMark = "blue", DefaultColor = "black";
 

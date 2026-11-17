@@ -17,7 +17,7 @@ internal class LocalActivationFlow(private val activity: Activity, state: Bundle
     private var pairSettingsPending = state?.getBoolean("pair_settings_pending") ?: false
     private var returning = state?.getBoolean("return_after_connection") ?: false
     private var resumed = false
-    private val listener: () -> Unit = { changed(); openSettingsIfReady(); returnIfReady() }
+    private val listener: () -> Unit = { changed(); openSettingsIfReady(); returnAfterPairing(); returnIfReady() }
     private val worker = WorkerConnection.OnChanged { activity.runOnUiThread { listener() } }
     init { LocalActivationState.add(listener); WorkerConnection.addListener(worker) }
     fun notificationsAllowed(): Boolean {
@@ -54,6 +54,13 @@ internal class LocalActivationFlow(private val activity: Activity, state: Bundle
     private fun openSettingsIfReady() {
         if (!resumed || !pairSettingsPending || !LocalActivationState.busy || !LocalActivationState.notificationReady || activity.isFinishing) return
         pairSettingsPending = false; AudioTools.openWirelessDebugging(activity, 704)
+    }
+    // The code was accepted: close Android's Wireless debugging screen and come back to
+    // Sukut at once, while activation finishes.
+    private fun returnAfterPairing() {
+        if (LocalActivationState.message != R.string.local_paired && LocalActivationState.message != R.string.local_activating) return
+        @Suppress("DEPRECATION")
+        activity.finishActivity(704)
     }
     private fun returnIfReady() {
         if (!returning || pendingAction != null || pairSettingsPending || !WorkerConnection.ready || LocalActivationState.busy) return

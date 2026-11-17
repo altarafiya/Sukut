@@ -16,9 +16,27 @@ class SukutApplication : Application(), Application.ActivityLifecycleCallbacks {
         UiPrefs.prepareAppearance(this)
         CleanerPrefs.prepareNewEngine(this)
         registerActivityLifecycleCallbacks(this)
+        watchWifi()
+    }
+    // Phone activation runs over Wi-Fi: when Wi-Fi comes back, Sukut turns Wireless
+    // debugging on again (if it may) and reconnects. Only while this process lives.
+    private fun watchWifi() {
+        val manager = getSystemService(android.net.ConnectivityManager::class.java) ?: return
+        val request = android.net.NetworkRequest.Builder().addTransportType(android.net.NetworkCapabilities.TRANSPORT_WIFI).build()
+        runCatching {
+            manager.registerNetworkCallback(request, object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { DeveloperOptionsControl.wifiReturned(this@SukutApplication) }
+                }
+            })
+        }
     }
     override fun onActivityStarted(activity: Activity) { uiVisible = ++started > 0 }
-    override fun onActivityStopped(activity: Activity) { started = (started - 1).coerceAtLeast(0); uiVisible = started > 0 }
+    override fun onActivityStopped(activity: Activity) {
+        started = (started - 1).coerceAtLeast(0); uiVisible = started > 0
+        // A new launcher icon is applied only after the user has left Sukut.
+        if (started == 0 && !activity.isChangingConfigurations) AppIcon.applyPending(this)
+    }
     override fun onActivityCreated(activity: Activity, state: Bundle?) = Unit
     override fun onActivityResumed(activity: Activity) = Unit
     override fun onActivityPaused(activity: Activity) = Unit

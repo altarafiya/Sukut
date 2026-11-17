@@ -11,7 +11,6 @@
     <string name="worker_needed_detail">التفعيل مطلوب — شغّل عامل الصوت لاستخدام سُكوت.</string>
     <string name="wireless_needed_detail">فعّل تصحيح الأخطاء اللاسلكي للتفعيل من الهاتف. قد يطلب أندرويد موافقتك على شبكة Wi-Fi هذه.</string>
     <string name="reactivate_now">تفعيل سُكوت</string>
-    <string name="reactivate_explanation">عامل الصوت لا يعمل. فعّله مجددًا، أو افتح الدليل المفصّل إذا احتجت إلى مساعدة. إعداداتك ووضع الصوت المختار محفوظان.</string>
     <string name="show_activation_guide">عرض دليل التفعيل</string>
     <string name="dev_wireless_on">خيارات المطوّر وتصحيح الأخطاء اللاسلكي مفعّلان.</string>
     <string name="dev_tile_wireless_on">تصحيح الأخطاء اللاسلكي مفعّل</string>

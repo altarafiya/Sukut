@@ -51,13 +51,11 @@
  <string name="next">التالي</string>
  <string name="finish_setup">ابدأ الاستخدام</string>
  <string name="developed_by">تطوير</string>
- <string name="sukut_changelog_latest">الإصدار 0.5.2\n• اختر أيقونة التطبيق ولون خلفيتها من الإعدادات. الافتراضية: السين البيضاء والزرقاء على خلفية سوداء.\n• دليل تفعيل أقصر: كل صفحة تطلب أمرًا واحدًا.\n• لم تعد أيقونة التطبيق داخل التطبيق تظهر بإطار داكن.\n• يشمل 0.5.1: تصحيح النصوص العربية وزر أوضح لتصحيح الأخطاء.</string>
+ <string name="sukut_changelog_latest">الإصدار 0.5.6\n• بعد التفعيل يبدأ سُكوت الترشيح بنفسه.\n• زر «تصحيح الأخطاء» يشغّل التصحيح ويعيد الاتصال في الخلفية دون فتح سُكوت.\n• يعود التفعيل من الهاتف إلى سُكوت فور قبول الرمز، ويعيد المحاولة بنفسه، ويعيد الاتصال عند عودة Wi-Fi.\n• رسائل خطأ أوضح، وتُغلق شاشة التفعيل بنفسها عند الانتهاء.\n• اختيار أيقونة التطبيق ولون خلفيتها من الإعدادات، وإصلاحات لأندرويد 12 و13.</string>
  <string name="notification_mode">وضع الصوت: %1$s</string>
  <string name="home_tap_to_start">اضغط للتشغيل · %1$s</string>
  <string name="status_filtering">جارٍ ترشيح الموسيقى</string>
  <string name="status_filtering_detail">%1$s · الكلام يبقى واضحًا</string>
- <string name="status_standby">استعداد</string>
- <string name="status_standby_detail">لا يوجد صوت قيد التشغيل. يرتاح سُكوت لتوفير البطارية ويعود فور بدء الصوت.</string>
  <string name="power_turn_on">تشغيل سُكوت</string>
  <string name="power_turn_off">إيقاف سُكوت</string>
  <string name="about_tagline">استمتع بالإنترنت، بلا موسيقى.</string>

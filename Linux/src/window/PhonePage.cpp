@@ -185,11 +185,21 @@ GtkWidget* SukutWindow::BuildPhone() {
   for (auto edge : {gtk_widget_set_margin_top, gtk_widget_set_margin_start, gtk_widget_set_margin_end}) edge(card, 18);
   adw_clamp_set_child(ADW_CLAMP(hero_clamp), card);
   GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
-  // The image is the round badge itself, so the icon is drawn in its centre.
+  // A fixed 56 × 56 badge with the icon centred inside. Its expand flags are set
+  // explicitly so the icon's centring never makes the card grow.
+  GtkWidget* badge = gtk_center_box_new();
+  gtk_widget_add_css_class(badge, "phone-badge");
+  gtk_widget_set_size_request(badge, 56, 56);
+  gtk_widget_set_valign(badge, GTK_ALIGN_CENTER);
+  gtk_widget_set_halign(badge, GTK_ALIGN_CENTER);
+  gtk_widget_set_hexpand(badge, FALSE);
+  gtk_widget_set_vexpand(badge, FALSE);
   phone_icon_ = Icon("phone-symbolic", "mode-off");
-  gtk_widget_add_css_class(phone_icon_, "phone-badge");
+  gtk_image_set_pixel_size(GTK_IMAGE(phone_icon_), 28);
   gtk_widget_set_valign(phone_icon_, GTK_ALIGN_CENTER);
-  gtk_box_append(GTK_BOX(row), phone_icon_);
+  gtk_widget_set_halign(phone_icon_, GTK_ALIGN_CENTER);
+  gtk_center_box_set_center_widget(GTK_CENTER_BOX(badge), phone_icon_);
+  gtk_box_append(GTK_BOX(row), badge);
   GtkWidget* words = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
   gtk_widget_set_hexpand(words, TRUE);
   gtk_widget_set_valign(words, GTK_ALIGN_CENTER);

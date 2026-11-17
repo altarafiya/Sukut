@@ -23,7 +23,8 @@ import android.os.Build
 internal object AppIcon {
     val MARKS = listOf("soft", "wave", "wordmark", "gold", "blue")
     val COLORS = listOf("black" to 0xFF000000.toInt(), "graphite" to 0xFF2B2E33.toInt(), "navy" to 0xFF0E2238.toInt(),
-        "forest" to 0xFF0F3B2E.toInt(), "burgundy" to 0xFF4A1420.toInt(), "plum" to 0xFF2E1A47.toInt())
+        "forest" to 0xFF0F3B2E.toInt(), "burgundy" to 0xFF4A1420.toInt(), "plum" to 0xFF2E1A47.toInt(),
+        "teal" to 0xFF0E9F8E.toInt(), "orange" to 0xFFE0662B.toInt(), "raspberry" to 0xFFC2185B.toInt())
     const val DEFAULT_MARK = "blue"
     const val DEFAULT_COLOR = "black"
     private const val PREFS = "sukut_app_icon"
@@ -52,16 +53,31 @@ internal object AppIcon {
         "forest" -> R.string.icon_color_forest
         "burgundy" -> R.string.icon_color_burgundy
         "plum" -> R.string.icon_color_plum
+        "teal" -> R.string.icon_color_teal
+        "orange" -> R.string.icon_color_orange
+        "raspberry" -> R.string.icon_color_raspberry
         else -> R.string.icon_color_black
     }
 
     private fun alias(context: Context, mark: String, color: String) =
         ComponentName(context.packageName, "com.osama.cleanwave.Launcher_${mark}_$color")
 
-    /** Saves the choice and switches the launcher alias. Called only from Settings. */
-    fun apply(context: Context, mark: String, color: String) {
-        if (mark == mark(context) && color == color(context)) return
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("mark", mark).putString("color", color).apply()
+    /** Saves the choice from Settings. The launcher alias switches later, in [applyPending]. */
+    fun choose(context: Context, mark: String, color: String) {
+        // Always mark it pending: re-applying the same alias is harmless and repairs any mismatch.
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("mark", mark).putString("color", color).putBoolean("pending", true).apply()
+    }
+
+    /**
+     * Switches the launcher alias once no Sukut screen is visible: disabling the alias
+     * a running task was launched from can close the app, so it waits until the user
+     * has left it. SukutApplication calls this when the last screen stops.
+     */
+    fun applyPending(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("pending", false)) return
+        prefs.edit().putBoolean("pending", false).apply()
+        val mark = mark(context); val color = color(context)
         val pm = context.packageManager
         val chosen = alias(context, mark, color)
         val all = MARKS.flatMap { m -> COLORS.map { alias(context, m, it.first) } }

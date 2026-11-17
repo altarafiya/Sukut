@@ -19,7 +19,6 @@
     <string name="arabic_native">العربية</string>
     <string name="cancel">إلغاء</string>
     <string name="english">English</string>
-    <string name="reconnect_worker">إعداد عامل الصوت</string>
     <string name="retry_audio">إعادة تشغيل الصوت</string>
     <string name="beta_home_tagline">إنترنت بدون موسيقى</string>
     <string name="arabic">العربية</string>

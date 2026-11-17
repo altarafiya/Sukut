@@ -173,7 +173,7 @@ struct Popup {
   void Render() {
     if(!status)return;
     applying=true;
-    gtk_label_set_text(GTK_LABEL(status),state.state==2?L("Attention · open Sukut","تنبيه · افتح سُكوت"):(state.busy||command)?L("Working…","جارٍ التنفيذ…"):state.mode==0?L("Off","متوقف"):state.standby?L("Standby","استعداد"):L("Active","نشط"));
+    gtk_label_set_text(GTK_LABEL(status),state.state==2?L("Attention · open Sukut","تنبيه · افتح سُكوت"):(state.busy||command)?L("Working…","جارٍ التنفيذ…"):state.mode==0?L("Off","متوقف"):L("Active","نشط"));
     SetClass(status,"mode-2",state.state==2);
     gtk_switch_set_active(GTK_SWITCH(power),state.mode!=0);gtk_widget_set_sensitive(power,!command&&!state.busy);
     const int selected=pending_mode>0?pending_mode:state.mode?state.mode:state.preferred_mode;

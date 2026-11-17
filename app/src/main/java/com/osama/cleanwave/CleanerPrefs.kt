@@ -80,8 +80,11 @@ object CleanerPrefs {
     fun advancedGain(context: Context, stem: Int): Int {
         val key = listOf("advanced_voice_db", "advanced_music_db", "advanced_background_db")[stem.coerceIn(0, 2)]
         val initial = when(stem) { 0 -> 0; 1 -> -20; else -> optimizedBackground(context) }
-        return prefs(context).getInt(key, initial).coerceIn(-20, 10)
+        return mixGain(prefs(context).getInt(key, initial))
     }
+    /** Advanced mix steps: mute (-100, one step below -20), then -20 to +10 dB. */
+    const val MUTE_DB = -100
+    fun mixGain(db: Int) = if (db < -20) MUTE_DB else db.coerceAtMost(10)
     fun setAdvancedMix(context: Context, enabled: Boolean) {
         if (advancedMix(context) == enabled) return
         val state = prefs(context)
@@ -91,7 +94,7 @@ object CleanerPrefs {
         if (sourcePreset(context) == SOURCE_OPTIMIZED) reconfigure(context)
     }
     fun setAdvancedGain(context: Context, stem: Int, db: Int) {
-        val safe = stem.coerceIn(0, 2); val value = db.coerceIn(-20, 10)
+        val safe = stem.coerceIn(0, 2); val value = mixGain(db)
         if (advancedGain(context, safe) == value) return
         prefs(context).edit().putInt(listOf("advanced_voice_db", "advanced_music_db", "advanced_background_db")[safe], value).apply()
         if (advancedMix(context) && sourcePreset(context) == SOURCE_OPTIMIZED) reconfigure(context)

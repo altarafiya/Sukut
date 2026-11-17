@@ -57,7 +57,6 @@ class MainActivity : Activity() {
     private var advancedDialog: Dialog? = null
     private var modeHelpDialog: Dialog? = null
     private var performanceDialog: Dialog? = null
-    private var reconnectDialog: Dialog? = null
     private var resumed = false
     private var appearance = ""
     private var selectionSignature = ""
@@ -69,7 +68,12 @@ class MainActivity : Activity() {
     private val preferencesListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (ControlPlanePolicy.affectsHome(key)) { handler.removeCallbacks(updateUi); handler.post(updateUi) }
     }
-    private val binderReceived = WorkerConnection.OnChanged { if (resumed) handler.post(updateUi) }
+    // A newly ready worker clears the last failure and starts filtering if the user asked to.
+    private val binderReceived = WorkerConnection.OnChanged { handler.post {
+        if (ready() && !CleanerPrefs.isEnabled(this) && CleanerPrefs.status(this) != "Off" && CleanerPrefs.status(this) != "Stopping") CleanerPrefs.setStatus(this, "Off")
+        if (resumed && !AppNavigation.hasActivationHost() && PowerActivationRequest.consumeIfReady()) PlaybackController.enable(this)
+        if (resumed) updateUi.run()
+    } }
     private val binderDead = WorkerConnection.OnChanged { if (resumed) handler.post(updateUi) }
 
     override fun attachBaseContext(base: Context) { super.attachBaseContext(UiPrefs.wrapLocale(base)) }
@@ -119,7 +123,6 @@ class MainActivity : Activity() {
         advancedDialog?.dismiss(); advancedDialog = null
         modeHelpDialog?.dismiss(); modeHelpDialog = null
         performanceDialog?.dismiss(); performanceDialog = null
-        reconnectDialog?.dismiss(); reconnectDialog = null
         handler.removeCallbacksAndMessages(null)
         WorkerConnection.removeListener(binderReceived); WorkerConnection.removeListener(binderDead)
         
@@ -190,7 +193,7 @@ class MainActivity : Activity() {
             setLineSpacing(ui.dp(2).toFloat(), 1f); maxLines = 3
         }
         hero.addView(statusDetail, LinearLayout.LayoutParams(-1, -2))
-        statusAction = ui.button(R.string.reconnect_worker, R.drawable.ic_worker, MobileUi.Tone.FILLED) {
+        statusAction = ui.button(R.string.reactivate_now, R.drawable.ic_worker, MobileUi.Tone.FILLED) {
             if (!ready()) reconnect() else {
                 CleanerPrefs.setStatus(this@MainActivity, "Off")
                 PlaybackController.enable(this@MainActivity)
@@ -266,7 +269,7 @@ class MainActivity : Activity() {
                     }
                 })
             }
-            SliderStyle.apply(backgroundSlider, ui, ModeStyle.audio(CleanerPrefs.SOURCE_OPTIMIZED, ui.dark))
+            SliderStyle.wide(backgroundSlider, ui, ModeStyle.audio(CleanerPrefs.SOURCE_OPTIMIZED, ui.dark))
             addView(backgroundSlider, LinearLayout.LayoutParams(-1, ui.dp(64)))
         }
         return backgroundPanel
@@ -291,27 +294,30 @@ class MainActivity : Activity() {
                 addView(value)
             })
             val slider=TouchSeekBar(this).apply {
-                max=30; setKeyProgressIncrement(1); tag="advanced_mix_$stem"; contentDescription=getString(labels[stem]); minimumHeight=ui.dp(56)
+                max=31; setKeyProgressIncrement(1); tag="advanced_mix_$stem"; contentDescription=getString(labels[stem])
                 setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener {
                     override fun onStartTrackingTouch(bar:SeekBar?) { trackingAdvanced[stem]=true }
                     override fun onProgressChanged(bar:SeekBar?,progress:Int,fromUser:Boolean) {
-                        value.text=db(progress-20)
+                        value.text=mixDb(stepGain(progress))
                         if(fromUser) bar?.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
-                        if(fromUser && !trackingAdvanced[stem]) CleanerPrefs.setAdvancedGain(this@MainActivity,stem,progress-20)
+                        if(fromUser && !trackingAdvanced[stem]) CleanerPrefs.setAdvancedGain(this@MainActivity,stem,stepGain(progress))
                     }
                     override fun onStopTrackingTouch(bar:SeekBar?) {
-                        trackingAdvanced[stem]=false; CleanerPrefs.setAdvancedGain(this@MainActivity,stem,(bar?.progress?:20)-20)
+                        trackingAdvanced[stem]=false; CleanerPrefs.setAdvancedGain(this@MainActivity,stem,stepGain(bar?.progress?:21))
                     }
                 })
             }
-            SliderStyle.apply(slider,ui,colors[stem])
-            slider.tickMark=ui.circle(ThemeColors.mix(ui.cardColor,colors[stem],.35f)).apply { setSize(ui.dp(2),ui.dp(2)) }
+            SliderStyle.wide(slider,ui,colors[stem])
             advancedSliders.add(slider)
             advancedPanel.addView(slider,LinearLayout.LayoutParams(-1,ui.dp(56)))
         }
     }
 
     private fun db(value: Int) = "${if (value > 0) "+" else ""}$value dB"
+    // Advanced sliders: step 0 mutes, steps 1–31 are -20 to +10 dB.
+    private fun stepGain(progress: Int) = if (progress <= 0) CleanerPrefs.MUTE_DB else progress - 21
+    private fun gainStep(gain: Int) = if (gain <= CleanerPrefs.MUTE_DB) 0 else gain + 21
+    private fun mixDb(value: Int) = if (value <= CleanerPrefs.MUTE_DB) getString(R.string.muted) else db(value)
 
     private fun performanceSection(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
@@ -354,11 +360,12 @@ class MainActivity : Activity() {
     }
 
     private fun reconnect() {
-        if (ready() || isFinishing || isDestroyed || reconnectDialog?.isShowing == true) return
+        if (ready() || isFinishing || isDestroyed) return
         if (!UiPrefs.setupCompleted(this)) { AppNavigation.openSetup(this); return }
-        reconnectDialog = WorkerReconnect.show(this).also { dialog ->
-            dialog.setOnDismissListener { if(reconnectDialog === dialog) reconnectDialog = null }
-        }
+        // Straight to the step the last activation method needs; the full guide is one tap from there.
+        // Filtering starts by itself once the worker is ready.
+        PowerActivationRequest.request()
+        AppNavigation.openReactivation(this, activateNow = true)
     }
     private fun ready(): Boolean = when (WorkerBackend.availabilityState()) {
         WorkerBackend.Companion.Availability.READY -> true
@@ -371,13 +378,11 @@ class MainActivity : Activity() {
         val enabled = CleanerPrefs.isEnabled(this); val status = CleanerPrefs.status(this); val detail = CleanerPrefs.error(this)
         val availability = WorkerBackend.availabilityState()
         val workerReady = ready()
-        if (workerReady) { reconnectDialog?.dismiss(); reconnectDialog = null }
         val preset = CleanerPrefs.sourcePreset(this)
         val mode = AudioModes.mode(preset)
         val modeName = getString(mode.label)
         val recovering = enabled && detail.startsWith("AI temporarily bypassed")
         val recent = enabled && CleanerPrefs.recoveryUntil(this) > SystemClock.elapsedRealtime()
-        val standby = enabled && detail == PrivilegedAudioService.STANDBY_STATUS
         val stopping = status == "Stopping"
         val starting = enabled && status == "Starting privileged audio route"
         val failed = !enabled && detail.isNotBlank() && status != "Off"
@@ -389,7 +394,6 @@ class MainActivity : Activity() {
             starting -> R.string.starting
             recovering -> R.string.recovering
             recent -> R.string.recently_recovered
-            standby -> R.string.status_standby
             enabled -> R.string.status_filtering
             else -> R.string.off
         }
@@ -403,11 +407,10 @@ class MainActivity : Activity() {
         statusText.setTextColor(color)
         val detailText: CharSequence = when {
             needsWorker -> getString(R.string.status_worker_help)
-            failed -> detail
+            failed -> ErrorText.friendly(this, detail)
             recovering && CleanerPrefs.silentRecovery(this) -> getString(R.string.recovery_silent)
             recovering -> getString(R.string.recovery_original)
             recent -> getString(R.string.recovery_recent_detail)
-            standby -> getString(R.string.status_standby_detail)
             enabled && !starting -> getString(R.string.status_filtering_detail, modeName)
             starting || stopping -> modeName
             else -> getString(R.string.home_tap_to_start, modeName)
@@ -419,19 +422,18 @@ class MainActivity : Activity() {
             needsWorker -> PowerButton.State.OFF
             failed -> PowerButton.State.ATTENTION
             stopping || starting -> PowerButton.State.STARTING
-            standby -> PowerButton.State.STANDBY
             enabled -> PowerButton.State.ON
             else -> PowerButton.State.OFF
         }, getString(if (enabled) R.string.power_turn_off else R.string.power_turn_on) + ", " + statusLabel)
         power.isEnabled = !stopping
         // Keep the hero neutral; the power button carries the active state.
-        val lit = enabled && !standby && !starting && !stopping
+        val lit = enabled && !starting && !stopping
         if (heroLit != lit) {
             heroLit = lit
             heroFill.colors = intArrayOf(ui.cardColor, ui.cardColor)
         }
         statusAction.visibility = if (failed && !needsWorker) View.VISIBLE else View.GONE
-        statusAction.setText(if (needsWorker) R.string.reconnect_worker else R.string.retry_audio)
+        statusAction.setText(if (needsWorker) R.string.reactivate_now else R.string.retry_audio)
 
         val value = EnginePerformance.bufferLabel(this); val explanation = EnginePerformance.effectsSummary(this)
         if (qualityValue.text.toString() != value) qualityValue.text = value
@@ -457,8 +459,8 @@ class MainActivity : Activity() {
         if (advanced) repeat(3) { stem ->
             if(!trackingAdvanced[stem]) {
                 val gain=CleanerPrefs.advancedGain(this,stem)
-                advancedSliders[stem].progress=gain+20
-                advancedValues[stem].text=db(gain)
+                advancedSliders[stem].progress=gainStep(gain)
+                advancedValues[stem].text=mixDb(gain)
             }
         }
         if (!trackingBackground) {

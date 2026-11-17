@@ -372,8 +372,7 @@ public sealed partial class ShellView : UserControl
 
     private string StatusText() => _status switch
     {
-        // Standby: nothing is playing, so the AI rests until sound returns.
-        "Active" when _state?.Standby == 1 => L("Standby", "استعداد"),
+        // Standby (nothing playing) is not shown: Sukut stays On. Setup explains it once.
         "Active" => L("On", "يعمل"),
         "Preparing" => _command ? L("Starting…", "جارٍ التشغيل…") : L("Preparing", "جارٍ التجهيز"),
         "Reconnecting" => L($"Reconnecting {Math.Min(3, _audioRestart.Attempts + (_automaticRestarting ? 0 : 1))}/3", $"إعادة الاتصال {Math.Min(3, _audioRestart.Attempts + (_automaticRestarting ? 0 : 1))}/3"),

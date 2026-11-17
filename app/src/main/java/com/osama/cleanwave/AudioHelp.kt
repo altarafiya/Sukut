@@ -35,8 +35,6 @@ internal object AudioHelp {
                 section(activity, R.drawable.ic_sliders, R.string.optimized, ModeStyle.audio(CleanerPrefs.SOURCE_OPTIMIZED, ui.dark), listOf(R.string.help_optimized_1, R.string.help_optimized_2)),
                 section(activity, R.drawable.ic_lock, R.string.strict, ModeStyle.audio(CleanerPrefs.SOURCE_STRICT, ui.dark), listOf(R.string.help_strict_1, R.string.help_strict_2)))
             cards.forEachIndexed { i, card -> addView(card, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = ui.dp(12) }) }
-            addView(section(activity, R.drawable.ic_notifications, R.string.help_notifications_title, ui.warning,
-                listOf(R.string.help_notifications_1, R.string.help_notifications_2)), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
         }
     }
     private fun sheet(activity: Activity, title: Int, body: View): Dialog {

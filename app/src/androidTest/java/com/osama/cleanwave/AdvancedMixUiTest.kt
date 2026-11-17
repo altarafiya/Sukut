@@ -90,8 +90,8 @@ class AdvancedMixUiTest {
             assertEquals(0,CleanerPrefs.sourceVoiceDb(context));assertEquals(-20,CleanerPrefs.sourceMusicDb(context))
             assertEquals(originalBackground,CleanerPrefs.sourceOtherDb(context))
             val sliders=(0..2).map { stem->all(page).filterIsInstance<SeekBar>().first { it.tag=="advanced_mix_$stem" } }
-            assertTrue(sliders.all { it.isShown && it.max==30 })
-            for((index,progress) in listOf(10,20,0).withIndex()) {
+            assertTrue(sliders.all { it.isShown && it.max==31 })
+            for((index,progress) in listOf(11,21,1).withIndex()) {
                 val args=Bundle().apply {putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE,progress.toFloat())}
                 assertTrue(sliders[index].performAccessibilityAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id,args))
             }

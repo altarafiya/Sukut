@@ -360,7 +360,6 @@ class Host {
     if (!attention_.empty()) return ar ? L"تنبيه · افتح سُكوت" : L"Attention · open Sukut";
     if (mode_ == 0) return ar ? L"متوقف" : L"Off";
     if (status_.state == 1) {
-      if (status_.standby) return ar ? L"استعداد · لا يوجد صوت" : L"Standby · nothing playing";
       if (status_.paused) return ar ? L"جارٍ الاستعادة" : L"Recovering";
       return (ar ? L"نشط · " : L"Active · ") + ModeName(mode_, ar);
     }
@@ -376,7 +375,7 @@ class Host {
     m.preferred = std::clamp(preferences_.preferred_mode, 1, 3);
     m.status = StatusText();
     m.attention = !attention_.empty();
-    m.standby = mode_ != 0 && status_.state == 1 && status_.standby;
+    m.standby = false;  // Standby is not shown; Sukut simply stays on.
     m.buffering = preferences_.buffering; m.output = preferences_.output; m.source_pid = std::to_string(preferences_.source_pid);
     m.optimized_background_db=preferences_.optimized_background_db;
     m.advanced_optimized=preferences_.optimized_mix.advanced;

@@ -67,7 +67,8 @@ class ReactivationActivity:Activity() {
                     addView(ui.text(R.string.worker_ready_short,23f,true,green).apply {gravity=Gravity.CENTER})
                     addView(ui.text(R.string.recovery_ready_detail,15f,color=ui.secondary).apply {gravity=Gravity.CENTER;setPadding(0,ui.dp(10),0,0)})
                 })
-                button(root,R.string.recovery_return,R.drawable.ic_back,tag="recovery_done",compact=true){close()}
+                // Done: show it briefly, then return to Sukut by itself.
+                content.postDelayed({ if(!isFinishing && WorkerConnection.ready) close() },1200)
             }
             RecoveryRoute.Screen.NOTIFICATIONS->{
                 root.addView(ui.text(R.string.local_notifications_needed,16f,color=ui.secondary))
@@ -95,7 +96,10 @@ class ReactivationActivity:Activity() {
                 root.addView(ActivationStatus.card(this,2))
                 if(message!=0)root.addView(ui.text(message,14f,color=ui.warning).apply {tag="reactivation_message"})
                 else root.addView(ui.text(R.string.worker_needed_detail,14f,color=ui.secondary).apply {tag="reactivation_message"})
-                if(phone())button(root,R.string.local_activate_button,tag="reactivation_start"){flow.begin(LocalActivationService.ACTIVATE)}
+                if(phone()) {
+                    button(root,R.string.local_activate_button,tag="reactivation_start"){flow.begin(LocalActivationService.ACTIVATE)}
+                    root.addView(ui.text(R.string.phone_wifi_note,13f,color=ui.secondary).apply {setPadding(0,ui.dp(14),0,0)})
+                }
                 else root.addView(ui.card(16).apply {
                     addView(ui.icon(R.drawable.ic_setup_pc,ui.accent,28))
                     addView(ui.text(R.string.recovery_pc_route,16f,true,ui.accent).apply {setPadding(0,ui.dp(10),0,0)})
@@ -105,14 +109,15 @@ class ReactivationActivity:Activity() {
         if(!ready && screen!=RecoveryRoute.Screen.NOTIFICATIONS)button(root,R.string.show_activation_guide,R.drawable.ic_activation_guide,false,"recovery_guide") {
             if(WorkerConnection.ready)refresh() else {
                 flow.cancel();PowerActivationRequest.cancel()
-                AppNavigation.openActivation(this,startStep=RecoveryRoute.guideStep(phone(),DeveloperOptionsControl.developerEnabled(this),if(phone())DeveloperOptionsControl.wirelessEnabled(this) else DeveloperOptionsControl.usbEnabled(this)))
+                // The full guide starts at choosing computer or phone, then skips the steps already done.
+                AppNavigation.openActivation(this,startStep=-1)
             }
         }
         content.removeAllViews();content.addView(root,FrameLayout.LayoutParams(-1,-2));SukutTypography.apply(root)
     }
     private fun enableAndActivate(){if(DeveloperOptionsControl.changeFromGuide(this,true) && phone())flow.begin(LocalActivationService.ACTIVATE);refresh()}
     private fun openDebugging(){if(phone())AudioTools.openWirelessDebugging(this,704) else runCatching {startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))}}
-    private fun close(){flow.cancel();if(!WorkerConnection.ready)PowerActivationRequest.cancel();AppNavigation.closeSettings(this)}
+    private fun close(){flow.cancel(keepReturn=WorkerConnection.ready);if(!WorkerConnection.ready)PowerActivationRequest.cancel();AppNavigation.closeSettings(this)}
     override fun onResume(){super.onResume();flow.resume();if(!observing){listOf(Settings.Global.DEVELOPMENT_SETTINGS_ENABLED,Settings.Global.ADB_ENABLED,"adb_wifi_enabled").forEach {contentResolver.registerContentObserver(Settings.Global.getUriFor(it),false,settings)};observing=true};refresh()}
     override fun onPause(){if(observing){contentResolver.unregisterContentObserver(settings);observing=false};flow.pause();super.onPause()}
     override fun onSaveInstanceState(state:Bundle){flow.save(state);super.onSaveInstanceState(state)}

@@ -171,7 +171,7 @@
       </StackPanel>
      </StackPanel>
     </ScrollViewer>
-    <UserControl x:Name="PhonePanel" x:Load="{x:Bind View.PhoneLoaded, Mode=OneWay}" Loaded="PhonePanel_Loaded" Unloaded="PhonePanel_Unloaded"><Grid><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><ScrollViewer x:Name="PhoneScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PhoneContent" Spacing="16" Padding="0,0,8,12"/></ScrollViewer><Border x:Name="PhoneFooter" Grid.Row="1" Padding="0,12,0,12" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"/><Border x:Name="PhoneConnectionHost" Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"/></Grid></UserControl>
+    <UserControl x:Name="PhonePanel" x:Load="{x:Bind View.PhoneLoaded, Mode=OneWay}" Loaded="PhonePanel_Loaded" Unloaded="PhonePanel_Unloaded"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><ScrollViewer x:Name="PhoneScroll" Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PhoneContent" Spacing="16" Padding="0,0,8,12"/></ScrollViewer><Border x:Name="PhoneFooter" Grid.Row="2" Padding="0,12,0,12" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"/><Border x:Name="PhoneConnectionHost" Grid.Row="0" Margin="0,0,8,14"/></Grid></UserControl>
    </Grid>
   </Grid>
    </Grid>
@@ -237,6 +237,7 @@
                         </StackPanel>
                         <StackPanel x:Name="SetupReadyPage" Visibility="Collapsed" Spacing="16">
                             <TextBlock Loaded="Typography_Loaded" x:Name="SetupReadyTitle" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <Border Style="{StaticResource SetupGuideCard}"><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><FontIcon Glyph="&#xE708;" FontSize="20" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Loaded="Typography_Loaded" x:Name="SetupRestHint" Grid.Column="1" TextWrapping="Wrap"/></Grid></Border>
                             <TextBlock Loaded="Typography_Loaded" x:Name="SetupReadyDevice" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
                             <TextBlock Loaded="Typography_Loaded" x:Name="SetupRoutingHint" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             <Border Style="{StaticResource SetupGuideCard}">

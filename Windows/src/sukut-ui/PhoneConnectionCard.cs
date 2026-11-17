@@ -8,6 +8,7 @@ public sealed partial class ShellView
 {
     private TextBlock? _phoneNameText,_phoneConnectionText,_phoneVersionText;
     private FontIcon? _phoneConnectionIcon;
+    private Border? _phoneVersionPill;
     private Button? _phoneRefreshButton;
     private PhoneConnectionInfo? _phoneInfo;
     private string? _phoneInfoSerial;
@@ -17,17 +18,25 @@ public sealed partial class ShellView
     {
         var content=new StackPanel {Spacing=6};
         var row=new Grid {ColumnSpacing=14};row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});row.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
-        _phoneConnectionIcon=new FontIcon {Glyph="\uE8EA",FontSize=PhoneIconSize,Width=PhoneIconSize,Height=PhoneIconSize,VerticalAlignment=VerticalAlignment.Center};row.Children.Add(_phoneConnectionIcon);
+        // The phone's card leads the page, as on Linux: a round badge, the name, and a status pill.
+        _phoneConnectionIcon=new FontIcon {Glyph="\uE8EA",FontSize=26,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center};
+        row.Children.Add(new Border {Width=56,Height=56,CornerRadius=new CornerRadius(28),VerticalAlignment=VerticalAlignment.Center,
+            Background=(Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],Child=_phoneConnectionIcon});
         var words=new StackPanel {Spacing=3};Grid.SetColumn(words,1);
-        _phoneNameText=new TextBlock {FontSize=14,FontWeight=Microsoft.UI.Text.FontWeights.SemiBold,TextWrapping=TextWrapping.Wrap};
+        _phoneNameText=new TextBlock {FontSize=19,FontWeight=Microsoft.UI.Text.FontWeights.Bold,TextWrapping=TextWrapping.Wrap};
         _phoneConnectionText=new TextBlock {Style=PhoneText("CaptionTextBlockStyle"),TextWrapping=TextWrapping.Wrap};
         _phoneVersionText=new TextBlock {Style=PhoneText("CaptionTextBlockStyle"),TextWrapping=TextWrapping.Wrap};
-        words.Children.Add(_phoneNameText);words.Children.Add(_phoneConnectionText);words.Children.Add(_phoneVersionText);row.Children.Add(words);
+        words.VerticalAlignment=VerticalAlignment.Center;
+        _phoneVersionPill=new Border {CornerRadius=new CornerRadius(12),Padding=new Thickness(10,2,10,3),HorizontalAlignment=HorizontalAlignment.Left,
+            Background=(Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],Child=_phoneVersionText};
+        words.Children.Add(_phoneNameText);words.Children.Add(_phoneConnectionText);words.Children.Add(_phoneVersionPill);row.Children.Add(words);
         _phoneRefreshButton=new Button {Content=new FontIcon {Glyph="\uE72C",FontSize=PhoneSmallIconSize},Width=32,Height=32,MinWidth=32,MinHeight=32,Padding=new Thickness(4),CornerRadius=new CornerRadius(4),VerticalAlignment=VerticalAlignment.Center};
         AutomationProperties.SetName(_phoneRefreshButton,L("Refresh connected phone","تحديث الهاتف المتصل"));ToolTipService.SetToolTip(_phoneRefreshButton,L("Refresh","تحديث"));
         _phoneRefreshButton.Click+=async(_,_)=>await PhoneAction(RefreshPhoneDevices);Grid.SetColumn(_phoneRefreshButton,2);row.Children.Add(_phoneRefreshButton);
         content.Children.Add(row);content.Children.Add(PhoneDevicePicker());UpdatePhoneConnectionCard();
-        return new Border {Padding=new Thickness(8,10,8,10),Child=content};
+        return new Border {Padding=new Thickness(18),CornerRadius=new CornerRadius(16),BorderThickness=new Thickness(1),
+            Background=(Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+            BorderBrush=(Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],Child=content};
     }
     private void UpdatePhoneConnectionCard()
     {
@@ -40,6 +49,7 @@ public sealed partial class ShellView
             :_phoneKnown.Count>1?L("Choose your phone below","اختر هاتفك أدناه"):L("Connect your phone by USB","وصّل هاتفك عبر USB");
         _phoneConnectionIcon!.Foreground=PhoneBrush(connected?"GainRaised":"ModeOffText");
         _phoneVersionText!.Visibility=connected&&info!=null?Visibility.Visible:Visibility.Collapsed;
+        if(_phoneVersionPill!=null)_phoneVersionPill.Visibility=_phoneVersionText.Visibility;
         _phoneVersionText.Text=info?.SukutCode==null?L("Sukut not installed","سُكوت غير مثبّت")
             :"Sukut "+(info.SukutVersion??info.SukutCode.ToString())+" · "+(info.WorkerReady?L("Worker ready","عامل الصوت جاهز"):L("Activation needed","يلزم التفعيل"));
         _phoneVersionText.Foreground=PhoneBrush(info?.WorkerReady==true?"GainRaised":"ModeOptimizedText");

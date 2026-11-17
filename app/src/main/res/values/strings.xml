@@ -20,7 +20,6 @@
     <string name="cancel">Cancel</string>
     <string name="english">English</string>
     <string name="arabic">العربية</string>
-    <string name="reconnect_worker">Audio worker setup</string>
     <string name="retry_audio">Restart audio</string>
     <string name="beta_home_tagline">Internet without music</string>
     <string name="worker">Audio worker</string>

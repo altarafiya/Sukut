@@ -21,6 +21,7 @@ class LocalActivationService : Service() {
     private var preferPair = false
     private var destroyed = false
     private var connectRetries = 0
+    private var restartedWireless = false
     private val timeout = Runnable { finish(R.string.local_timeout) }
     override fun onBind(intent: Intent?) = null
     @android.annotation.SuppressLint("ForegroundServiceType") // AGP8.7 false positive with compileSdk36; merged manifest + device test verify shortService.
@@ -89,6 +90,13 @@ class LocalActivationService : Service() {
                         discovery?.close(); discovery=null
                         update(R.string.local_searching)
                         main.postDelayed({ discover() },300)
+                    } else if(!restartedWireless && DeveloperOptionsControl.available(this@LocalActivationService)) {
+                        // Wireless debugging sometimes stops answering although the
+                        // pairing is still saved: switch it off and on, then try again.
+                        restartedWireless = true; connectPort=0; pairingPort=0
+                        discovery?.close(); discovery=null
+                        update(R.string.local_searching)
+                        DeveloperOptionsControl.restartWireless(this@LocalActivationService) { if(!destroyed) discover() }
                     } else finish(R.string.local_activate_failed)
                 }
             }
@@ -128,6 +136,7 @@ class LocalActivationService : Service() {
         const val ACTIVATE = BuildConfig.APPLICATION_ID + ".LOCAL_ACTIVATE"
         const val CANCEL = BuildConfig.APPLICATION_ID + ".LOCAL_CANCEL"
         const val CODE = "pairing_code"
+        const val QUIET = "quiet"
         const val CHANNEL = "local_activation"
         private const val ID = 41
     }

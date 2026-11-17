@@ -152,6 +152,15 @@ class SetupActivity : Activity() {
                 addView(EnginePerformance.choices(this@SetupActivity))
             })
             3 -> {
+                // Sukut rests by itself when nothing plays; say it once here instead of showing a Standby state.
+                root.addView(ui.card(14).apply {
+                    tag = "setup_rest_note"
+                    addView(LinearLayout(this@SetupActivity).apply {
+                        gravity = Gravity.CENTER_VERTICAL
+                        addView(ui.icon(R.drawable.ic_sleep, ui.accent, 22))
+                        addView(ui.text(R.string.setup_rest_note, 14f, color = ui.secondary), LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = ui.dp(12) })
+                    })
+                }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = ui.dp(12) })
                 root.addView(AudioHelp.modeCards(this))
                 root.addView(ui.text(R.string.setup_model_note, 13f, color = ui.secondary).apply { setPaddingRelative(ui.dp(8), ui.dp(12), ui.dp(8), 0) })
                 root.addView(ui.text("ادعوا لخالي بالرَّحمة، ولزوجته بالشِّفاء،\nولجميع المسلمين.", 17f, color = ui.palette.highlight).apply {

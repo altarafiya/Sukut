@@ -46,7 +46,7 @@ internal object AdvancedMixDialog {
                 input.text.clear()
                 when (attempt.result) {
                     AdvancedMixPolicy.Result.ENABLED -> { CleanerPrefs.setAdvancedMix(activity, true); dialog?.dismiss(); changed() }
-                    AdvancedMixPolicy.Result.INCORRECT -> { error.text = activity.getString(R.string.advanced_incorrect, 3 - attempt.state.failures); input.requestFocus() }
+                    AdvancedMixPolicy.Result.INCORRECT -> { error.text = (3 - attempt.state.failures).let { left -> activity.resources.getQuantityString(R.plurals.advanced_incorrect, left, left) }; input.requestFocus() }
                     AdvancedMixPolicy.Result.LOCKED -> { dialog?.dismiss(); Toast.makeText(activity, activity.resources.getQuantityString(R.plurals.advanced_locked, 10, 10), Toast.LENGTH_LONG).show() }
                 }
             })

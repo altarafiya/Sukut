@@ -2,7 +2,7 @@
 <resources>
     <string name="app_icon">أيقونة التطبيق</string>
     <string name="app_icon_color">لون الخلفية</string>
-    <string name="app_icon_updated">تغيّرت أيقونة الشاشة الرئيسية. قد تحتاج بعض الشاشات الرئيسية لحظة لتحديثها.</string>
+    <string name="app_icon_updated">حُفظت الأيقونة. تتغيّر عند الخروج من سُكوت.</string>
     <string name="icon_mark_soft">حرف السين</string>
     <string name="icon_mark_wave">سين متموّجة</string>
     <string name="icon_mark_wordmark">كلمة سُكوت</string>
@@ -14,4 +14,7 @@
     <string name="icon_color_forest">أخضر داكن</string>
     <string name="icon_color_burgundy">عنّابي</string>
     <string name="icon_color_plum">بنفسجي</string>
+    <string name="icon_color_teal">فيروزي</string>
+    <string name="icon_color_orange">برتقالي</string>
+    <string name="icon_color_raspberry">توتي</string>
 </resources>

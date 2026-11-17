@@ -93,8 +93,10 @@ class SukutBetaUiReviewTest {
                 assertFalse("Mode selection started processing", CleanerPrefs.isEnabled(context))
                 assertFalse("Mode selection queued a service start", CleanerPrefs.startPending(context))
                 assertFalse(CleanerService.isAlive)
-                val reconnect = MainActivity::class.java.getDeclaredField("reconnectDialog").apply { isAccessible = true }.get(home)
-                assertNull("Mode selection opened worker setup", reconnect)
+                var opened = false
+                ins.runOnMainSync { opened = androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(androidx.test.runner.lifecycle.Stage.RESUMED).any { it is ReactivationActivity } }
+                assertFalse("Mode selection opened worker setup", opened)
             }
         } finally {
             CleanerPrefs.setSourcePreset(context, preset)
@@ -167,7 +169,7 @@ class SukutBetaUiReviewTest {
                     var help: android.app.Dialog? = null
                     ins.runOnMainSync { help = AudioHelp.showPerformance(home) }; settle()
                     val sections = views(help!!.window!!.decorView).first { it.tag == "performance_help_sections" } as ViewGroup
-                    assertEquals(3, sections.childCount); assertFalse(help is android.app.AlertDialog)
+                    assertEquals(7, sections.childCount); assertFalse(help is android.app.AlertDialog)
                     assertPinnedAction(help!!)
                     assertTextFits(help!!.window!!.decorView); screenshot("playback-help-$locale")
                     ins.runOnMainSync { help!!.dismiss() }

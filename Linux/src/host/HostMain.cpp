@@ -118,7 +118,6 @@ std::string StatusText(const EngineState& e, bool ar) {
   if (e.reconnecting) return T(ar, "Reconnecting", "إعادة الاتصال");
   if (e.state == 2) return T(ar, "Attention · open Sukut", "تنبيه · افتح سُكوت");
   if (e.mode == 0) return T(ar, "Off", "متوقف");
-  if (e.standby) return T(ar, "Standby · nothing playing", "استعداد · لا يوجد صوت");
   return std::string(T(ar, "Active · ", "نشط · ")) + ModeName(e.mode, ar);
 }
 

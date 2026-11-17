@@ -14,7 +14,10 @@ import android.service.quicksettings.TileService
 
 class CleanerTileService : TileService() {
     companion object {
-        fun requestRefresh(context: Context) = requestListeningState(context, ComponentName(context, CleanerTileService::class.java))
+        fun requestRefresh(context: Context) {
+            requestListeningState(context, ComponentName(context, CleanerTileService::class.java))
+            ModeSwitchTileService.requestRefresh(context)  // its on/off look follows Sukut too
+        }
     }
     private var listening = false
     private val handler = Handler(Looper.getMainLooper())
@@ -94,7 +97,7 @@ class CleanerTileService : TileService() {
             status == "Stopping" -> ui.getString(R.string.stopping)
             enabled && status == "Starting privileged audio route" -> ui.getString(R.string.starting)
             enabled -> ui.getString(AudioModes.mode(CleanerPrefs.sourcePreset(this)).label)
-            !ready() -> ui.getString(R.string.reconnect_worker)
+            !ready() -> ui.getString(R.string.status_activation_needed)
             else -> ui.getString(R.string.off)
         }
         val nextState = when { status == "Stopping" -> Tile.STATE_UNAVAILABLE; enabled -> Tile.STATE_ACTIVE; else -> Tile.STATE_INACTIVE }

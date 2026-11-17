@@ -23,9 +23,11 @@ struct Mark { const char* id; const char* en; const char* ar; };
 inline constexpr std::array<Mark, 5> kMarks{{{"soft", "Seen", "حرف السين"}, {"wave", "Seen wave", "سين متموّجة"},
                                              {"wordmark", "Sukut wordmark", "كلمة سُكوت"}, {"gold", "Original gold", "الذهبي الأصلي"},
                                              {"blue", "White and blue", "أبيض وأزرق"}}};
-inline constexpr std::array<Color, 6> kColors{{{"black", "#000000", "Black", "أسود"}, {"graphite", "#2B2E33", "Graphite", "رمادي داكن"},
+inline constexpr std::array<Color, 9> kColors{{{"black", "#000000", "Black", "أسود"}, {"graphite", "#2B2E33", "Graphite", "رمادي داكن"},
                                                {"navy", "#0E2238", "Navy", "كحلي"}, {"forest", "#0F3B2E", "Forest green", "أخضر داكن"},
-                                               {"burgundy", "#4A1420", "Burgundy", "عنّابي"}, {"plum", "#2E1A47", "Plum", "بنفسجي"}}};
+                                               {"burgundy", "#4A1420", "Burgundy", "عنّابي"}, {"plum", "#2E1A47", "Plum", "بنفسجي"},
+                                               {"teal", "#0E9F8E", "Teal", "فيروزي"}, {"orange", "#E0662B", "Orange", "برتقالي"},
+                                               {"raspberry", "#C2185B", "Raspberry", "توتي"}}};
 
 Choice Load();
 // Draws the rounded-square icon at size × size (caller destroys the surface).

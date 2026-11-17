@@ -3,4 +3,16 @@
 <string name="recovery_return">العودة إلى سُكوت</string>
 <string name="recovery_pc_route">في الكمبيوتر: سُكوت ← الهاتف ← تفعيل سُكوت</string>
 <string name="recovery_enable_debugging">تفعيل تصحيح الأخطاء</string>
+    <string name="dev_turn_off">إيقاف خيارات المطوّر</string>
+    <string name="dev_turn_off_note">تحتاج بعض التطبيقات، مثل التطبيقات المصرفية، إلى إيقاف خيارات المطوّر. في بعض الهواتف يوقف ذلك سُكوت أيضًا؛ عندها أعد التفعيل عند الحاجة.</string>
+    <string name="error_overload">لم يستطع هاتفك مواكبة الصوت، فتوقّف سُكوت. اضغط زر التشغيل للمحاولة مجددًا. إذا تكرّر ذلك، فاختر تخزينًا مؤقتًا أكبر من أداء المحرّك.</string>
+    <string name="error_worker">توقّف عامل الصوت. اضغط «تفعيل سُكوت» لتشغيله مجددًا.</string>
+    <string name="error_background">لم يسمح أندرويد لسُكوت بالبدء في الخلفية. افتح سُكوت واضغط زر التشغيل.</string>
+    <string name="error_permission">رفض أندرويد وصول سُكوت إلى الصوت. فعّل سُكوت مجددًا ثم اضغط زر التشغيل.</string>
+    <string name="error_route">تعذّر على سُكوت الاتصال بصوت هاتفك. اضغط زر التشغيل للمحاولة مجددًا.</string>
+    <string name="error_generic">توقّف الصوت على نحو غير متوقّع. اضغط زر التشغيل للمحاولة مجددًا.</string>
+    <string name="setup_rest_note">عندما لا يُشغَّل أي صوت، يرتاح سُكوت لتوفير البطارية. يمكنك تركه يعمل في الخلفية.</string>
+    <string name="phone_wifi_title">ابقَ متصلًا بشبكة Wi-Fi</string>
+    <string name="phone_wifi_note">يحتاج التفعيل من الهاتف إلى Wi-Fi، وتكفي نقطة اتصال من هاتف آخر ولو دون إنترنت. إذا انقطع Wi-Fi فقد يتوقف سُكوت؛ وعند عودته يعيد سُكوت تشغيل تصحيح الأخطاء اللاسلكي بنفسه إن استطاع، أو شغّله واضغط «تفعيل».</string>
+    <string name="mode_tile_label">وضع سُكوت</string>
 </resources>

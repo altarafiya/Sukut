@@ -51,6 +51,7 @@ public sealed partial class ShellView
         RenderHeadphoneEffects(SetupEffectsText);
         SetupPhysicalHint.Text = L("Choose your real headphones or speakers here. Sukut handles VB-CABLE routing automatically when you choose a mode.", "اختر سماعاتك الفعلية هنا. يتولى سُكوت التوجيه عبر VB-CABLE تلقائيًا عند اختيار وضع.");
         SetupReadyTitle.Text = L("You’re ready", "أنت جاهز");
+        SetupRestHint.Text = L("When nothing is playing, Sukut rests to save power. You can leave it on in the background.", "عندما لا يُشغَّل أي صوت، يرتاح سُكوت لتوفير الطاقة. يمكنك تركه يعمل في الخلفية.");
         SetupRoutingHint.Text = L("Choose a mode on Home. Sukut switches audio to VB-CABLE automatically.", "اختر وضعًا من الرئيسية. يحوّل سُكوت الصوت إلى VB-CABLE تلقائيًا.");
         SetupHalalHint.Text = L("Music Filter — removes music and improves speech clarity.", "مرشّح الموسيقى — يزيل الموسيقى ويحسّن وضوح الكلام.");
         SetupStrictHint.Text = L("Strict — the strongest music removal, muting music and background. Some sound effects may be removed too.", "صارم — أقوى إزالة للموسيقى مع كتم الموسيقى والخلفية. قد تختفي بعض المؤثرات الصوتية أيضًا.");

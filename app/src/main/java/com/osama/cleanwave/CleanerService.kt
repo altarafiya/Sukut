@@ -150,7 +150,7 @@ class CleanerService : Service() {
                 }
                 CleanerPrefs.setEnabled(this@CleanerService, false)
                 CleanerPrefs.setStatus(this@CleanerService, failureStatus, reason)
-                updateNotification(failureStatus)
+                updateNotification(ErrorText.friendly(UiPrefs.wrapLocale(this@CleanerService), reason))
                 CleanerTileService.requestRefresh(this@CleanerService)
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()

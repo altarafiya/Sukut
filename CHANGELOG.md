@@ -1,5 +1,24 @@
 # What’s new
 
+## 0.5.6
+
+**Android**
+
+- After you activate, Sukut starts filtering by itself.
+- The Debugging tile turns debugging on and reconnects in the background, without opening Sukut.
+- Phone activation returns to Sukut as soon as the code is accepted, retries by itself, and reconnects when Wi-Fi comes back. It needs Wi-Fi; a hotspot without internet works.
+- The activation screen closes by itself when done; the full guide skips steps you've already done.
+- Clearer error messages.
+
+**All platforms**
+
+- Nine app icon background colours, including teal, orange and raspberry.
+- No more "Standby" status: Sukut simply stays on and rests by itself when nothing plays.
+
+**Linux and Windows**
+
+- A refreshed Phone page, led by a card for your phone (Windows: in the next Windows build).
+
 ## 0.5.2 (Android, Linux; Windows to follow)
 
 - Choose your app icon: five designs and six background colours, in Settings. The default is the white and blue Seen on black.

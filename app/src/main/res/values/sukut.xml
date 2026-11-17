@@ -51,13 +51,11 @@
  <string name="next">Next</string>
  <string name="finish_setup">Get started</string>
  <string name="developed_by">Developed by</string>
- <string name="sukut_changelog_latest">0.5.2\n• Choose the app icon and its background colour in Settings. The default is the white and blue Seen on black.\n• A shorter activation guide: every page now asks for one thing.\n• The in-app icon no longer shows a dark frame.\n• Includes 0.5.1: corrected Arabic and a clearer Debugging tile.</string>
+ <string name="sukut_changelog_latest">0.5.6\n• After activating, Sukut starts filtering by itself.\n• The Debugging tile turns debugging on and reconnects in the background, without opening Sukut.\n• Phone activation returns to Sukut as soon as the code is accepted, retries by itself, and reconnects when Wi-Fi comes back.\n• Clearer error messages, and the activation screen closes by itself when done.\n• Choose the app icon and its background colour in Settings, and fixes for Android 12 and 13.</string>
  <string name="notification_mode">Audio Mode: %1$s</string>
  <string name="home_tap_to_start">Tap to start · %1$s</string>
  <string name="status_filtering">Filtering music</string>
  <string name="status_filtering_detail">%1$s · Voice stays clear</string>
- <string name="status_standby">Standby</string>
- <string name="status_standby_detail">Nothing is playing. Sukut rests to save battery and resumes the moment sound starts.</string>
  <string name="power_turn_on">Turn Sukut on</string>
  <string name="power_turn_off">Turn Sukut off</string>
  <string name="about_tagline">Enjoy the internet. Without the music.</string>

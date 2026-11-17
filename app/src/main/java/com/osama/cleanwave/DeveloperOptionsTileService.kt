@@ -35,8 +35,6 @@ class DeveloperOptionsTileService : TileService() {
         // Enabling debugging always needs an unlocked phone and this user gesture.
         if (isLocked) unlockAndRun { toggle() } else toggle()
     }
-    // The Intent form is only used below Android 14, where it is the only one.
-    @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
     private fun toggle() {
         DeveloperOptionsControl.markTileAdded(this,true)
         if (!DeveloperOptionsControl.available(this)) {
@@ -47,11 +45,9 @@ class DeveloperOptionsTileService : TileService() {
         if (!success) Toast.makeText(this, UiPrefs.wrapLocale(this).getString(R.string.dev_change_failed), Toast.LENGTH_LONG).show()
         // This tile tap is the explicit request. Discovery exists only for the
         // bounded activation session, never continuously or after boot.
-        if(success && enabled && DeveloperOptionsControl.usesWireless(this)) {
-            val intent=android.content.Intent(this,ReactivationActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP).putExtra("activate_now",true)
-            if(android.os.Build.VERSION.SDK_INT>=34) startActivityAndCollapse(android.app.PendingIntent.getActivity(this,72,intent,android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE))
-            else { @Suppress("DEPRECATION") startActivityAndCollapse(intent) }
-        }
+        // Turning debugging on stays in the shade: Sukut tries to activate in the
+        // background, and failing quietly is fine; the Activate button remains.
+        if(success && enabled) DeveloperOptionsControl.activateQuietly(this)
         refresh()
     }
     private fun refresh() {

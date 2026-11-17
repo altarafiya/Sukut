@@ -99,8 +99,13 @@ class SettingsActivity : Activity() {
                 UiPrefs.setTheme(this@SettingsActivity, which); recreate()
             }.apply { tag = "appearance_choice" }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(10) })
             addView(ui.space(20)); addView(backgroundPreferences())
-            addView(ui.space(20)); addView(appIconPreferences())
-            addView(ui.space(20))
+            addView(ui.space(20)); addView(LinearLayout(this@SettingsActivity).apply { orientation = LinearLayout.VERTICAL; iconSection = this; addView(appIconPreferences()) })
+        })
+
+        // Language has its own section.
+        root.addView(ui.space(24))
+        root.addView(ui.sectionLabel(R.string.language))
+        root.addView(ui.card(16).apply {
             addView(label(R.drawable.ic_language, R.string.language))
             val languages = arrayOf(UiPrefs.LANGUAGE_SYSTEM, UiPrefs.LANGUAGE_ENGLISH, UiPrefs.LANGUAGE_ARABIC)
             addView(SegmentedChoice(this@SettingsActivity,
@@ -122,6 +127,11 @@ class SettingsActivity : Activity() {
             addView(ui.row(R.drawable.ic_sukut_tile, getString(R.string.worker), workerStatus) {
                 AppNavigation.openActivation(this@SettingsActivity)
             }.apply { tag = "settings_audio_worker" })
+            // Computer activation turned Developer options on; switching them off again is one tap here.
+            if (!DeveloperOptionsControl.usesWireless(this@SettingsActivity) && DeveloperOptionsControl.available(this@SettingsActivity) && DeveloperOptionsControl.developerEnabled(this@SettingsActivity))
+                addView(ui.row(R.drawable.ic_developer_tile, getString(R.string.dev_turn_off)) {
+                    DeveloperOptionsControl.changeFromGuide(this@SettingsActivity, false); recreate()
+                }.apply { tag = "settings_developer_off" })
         })
 
         root.addView(ui.space(24))
@@ -178,7 +188,7 @@ class SettingsActivity : Activity() {
         orientation = LinearLayout.VERTICAL
         val context = this@SettingsActivity
         val mark = AppIcon.mark(context); val color = AppIcon.color(context)
-        addView(label(R.drawable.ic_palette, R.string.app_icon))
+        addView(label(R.drawable.ic_app_icon, R.string.app_icon))
         addView(LinearLayout(context).apply {
             tag = "app_icon_marks"; gravity = Gravity.CENTER_VERTICAL
             AppIcon.MARKS.forEachIndexed { i, m ->
@@ -192,24 +202,36 @@ class SettingsActivity : Activity() {
                 }, LinearLayout.LayoutParams(0, ui.dp(60), 1f).apply { if (i > 0) marginStart = ui.dp(6) })
             }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
-        addView(ui.text(R.string.app_icon_color, 14f, color = ui.secondary), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(14) })
-        addView(LinearLayout(context).apply {
-            tag = "app_icon_colors"; gravity = Gravity.CENTER_VERTICAL
-            AppIcon.COLORS.forEachIndexed { i, (key, value) ->
-                addView(View(context).apply {
-                    background = ui.circle(value).apply { setStroke(ui.dp(if (key == color) 3 else 1), if (key == color) ui.accent else ui.dividerColor) }
-                    contentDescription = getString(AppIcon.colorName(key)); isSelected = key == color; isFocusable = true
-                    ui.springPress(this)
-                    setOnClickListener { ui.tap(this); changeIcon(mark, key) }
-                }, LinearLayout.LayoutParams(ui.dp(36), ui.dp(36)).apply { if (i > 0) marginStart = ui.dp(10) })
-            }
-        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(8) })
+        addView(label(R.drawable.ic_palette, R.string.app_icon_color), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(18) })
+        // Nine colours in rows of five, each in an equal cell, so they fit narrow phones.
+        AppIcon.COLORS.chunked(5).forEachIndexed { row, swatches ->
+            addView(LinearLayout(context).apply {
+                tag = if (row == 0) "app_icon_colors" else "app_icon_colors_$row"; gravity = Gravity.CENTER_VERTICAL
+                for (slot in 0 until 5) {
+                    val cell = android.widget.FrameLayout(context)
+                    swatches.getOrNull(slot)?.let { (key, value) ->
+                        cell.addView(View(context).apply {
+                            background = ui.circle(value).apply { setStroke(ui.dp(if (key == color) 3 else 1), if (key == color) ui.accent else ui.dividerColor) }
+                            contentDescription = getString(AppIcon.colorName(key)); isSelected = key == color; isFocusable = true
+                            ui.springPress(this)
+                            setOnClickListener { ui.tap(this); changeIcon(mark, key) }
+                        }, android.widget.FrameLayout.LayoutParams(ui.dp(38), ui.dp(38), Gravity.CENTER))
+                    }
+                    addView(cell, LinearLayout.LayoutParams(0, ui.dp(48), 1f))
+                }
+            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(if (row == 0) 8 else 4) })
+        }
     }
 
+    private var iconSection: LinearLayout? = null
+    private var aboutIcon: ImageView? = null
+    // Updates the picker and the About icon in place: no restart. The home screen
+    // icon follows when the user leaves Sukut (AppIcon.applyPending).
     private fun changeIcon(mark: String, color: String) {
-        AppIcon.apply(this, mark, color)
+        AppIcon.choose(this, mark, color)
+        iconSection?.apply { removeAllViews(); addView(appIconPreferences()) }
+        aboutIcon?.setImageDrawable(AppIcon.tile(this))
         android.widget.Toast.makeText(this, R.string.app_icon_updated, android.widget.Toast.LENGTH_SHORT).show()
-        recreate()
     }
 
     private fun reconfigureAudio() {
@@ -248,7 +270,7 @@ class SettingsActivity : Activity() {
 
     private fun about(): View = ui.card(20).apply {
         gravity = Gravity.CENTER_HORIZONTAL
-        addView(ui.brandIcon(64), LinearLayout.LayoutParams(ui.dp(64), ui.dp(64)))
+        addView(ui.brandIcon(64).also { aboutIcon = it }, LinearLayout.LayoutParams(ui.dp(64), ui.dp(64)))
         addView(centered(ui.text(R.string.app_name, 22f, true)).apply { setPadding(0, ui.dp(10), 0, 0) }, LinearLayout.LayoutParams(-1, -2))
         addView(centered(ui.text(R.string.about_tagline, 14f, color = ui.secondary)), LinearLayout.LayoutParams(-1, -2))
         val version = android.text.BidiFormatter.getInstance(ui.rtl).unicodeWrap(BuildConfig.VERSION_NAME, android.text.TextDirectionHeuristics.LTR)

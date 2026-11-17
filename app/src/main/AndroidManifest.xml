@@ -68,6 +68,15 @@
         <activity-alias android:name=".Launcher_soft_plum" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_soft_plum" android:roundIcon="@mipmap/ic_launcher_soft_plum" android:enabled="false" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
+        <activity-alias android:name=".Launcher_soft_teal" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_soft_teal" android:roundIcon="@mipmap/ic_launcher_soft_teal" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_soft_orange" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_soft_orange" android:roundIcon="@mipmap/ic_launcher_soft_orange" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_soft_raspberry" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_soft_raspberry" android:roundIcon="@mipmap/ic_launcher_soft_raspberry" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
         <activity-alias android:name=".Launcher_wave_black" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wave_black" android:roundIcon="@mipmap/ic_launcher_wave_black" android:enabled="false" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
@@ -84,6 +93,15 @@
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
         <activity-alias android:name=".Launcher_wave_plum" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wave_plum" android:roundIcon="@mipmap/ic_launcher_wave_plum" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_wave_teal" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wave_teal" android:roundIcon="@mipmap/ic_launcher_wave_teal" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_wave_orange" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wave_orange" android:roundIcon="@mipmap/ic_launcher_wave_orange" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_wave_raspberry" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wave_raspberry" android:roundIcon="@mipmap/ic_launcher_wave_raspberry" android:enabled="false" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
         <activity-alias android:name=".Launcher_wordmark_black" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wordmark_black" android:roundIcon="@mipmap/ic_launcher_wordmark_black" android:enabled="false" android:exported="true">
@@ -104,6 +122,15 @@
         <activity-alias android:name=".Launcher_wordmark_plum" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wordmark_plum" android:roundIcon="@mipmap/ic_launcher_wordmark_plum" android:enabled="false" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
+        <activity-alias android:name=".Launcher_wordmark_teal" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wordmark_teal" android:roundIcon="@mipmap/ic_launcher_wordmark_teal" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_wordmark_orange" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wordmark_orange" android:roundIcon="@mipmap/ic_launcher_wordmark_orange" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_wordmark_raspberry" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_wordmark_raspberry" android:roundIcon="@mipmap/ic_launcher_wordmark_raspberry" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
         <activity-alias android:name=".Launcher_gold_black" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_gold_black" android:roundIcon="@mipmap/ic_launcher_gold_black" android:enabled="false" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
@@ -122,6 +149,15 @@
         <activity-alias android:name=".Launcher_gold_plum" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_gold_plum" android:roundIcon="@mipmap/ic_launcher_gold_plum" android:enabled="false" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
+        <activity-alias android:name=".Launcher_gold_teal" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_gold_teal" android:roundIcon="@mipmap/ic_launcher_gold_teal" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_gold_orange" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_gold_orange" android:roundIcon="@mipmap/ic_launcher_gold_orange" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_gold_raspberry" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_gold_raspberry" android:roundIcon="@mipmap/ic_launcher_gold_raspberry" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
         <activity-alias android:name=".Launcher_blue_black" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_blue_black" android:roundIcon="@mipmap/ic_launcher_blue_black" android:enabled="true" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
@@ -138,6 +174,15 @@
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
         <activity-alias android:name=".Launcher_blue_plum" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_blue_plum" android:roundIcon="@mipmap/ic_launcher_blue_plum" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_blue_teal" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_blue_teal" android:roundIcon="@mipmap/ic_launcher_blue_teal" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_blue_orange" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_blue_orange" android:roundIcon="@mipmap/ic_launcher_blue_orange" android:enabled="false" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Launcher_blue_raspberry" android:targetActivity=".MainActivity" android:icon="@mipmap/ic_launcher_blue_raspberry" android:roundIcon="@mipmap/ic_launcher_blue_raspberry" android:enabled="false" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
 
@@ -165,6 +210,18 @@
                 android:value="Keeps a user-enabled system-wide output audio DSP effect active" />
         </service>
 
+        <!-- Music Filter / Strict switch: offered only in the Quick Settings editor. -->
+        <service
+            android:name=".ModeSwitchTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_music_filter"
+            android:label="@string/mode_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <meta-data android:name="android.service.quicksettings.ACTIVE_TILE" android:value="false" />
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
         <service
             android:name=".CleanerTileService"
             android:exported="true"

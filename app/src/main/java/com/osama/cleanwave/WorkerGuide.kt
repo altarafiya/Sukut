@@ -50,7 +50,18 @@ internal object WorkerGuide {
         fun next():Boolean {
             if(!canNext)return false
             if(step==steps.last()) {DeveloperOptionsControl.dismissCleanup(activity);if(!WorkerConnection.ready)PowerActivationRequest.cancel();return true}
-            if(step<0)UiPrefs.setActivationMethod(activity,method)
+            if(step<0) {
+                UiPrefs.setActivationMethod(activity,method)
+                // Skip what is already done: Developer options on, and USB debugging for the computer route.
+                val developer=DeveloperOptionsControl.developerEnabled(activity)
+                step=when {
+                    method==WINDOWS && developer && DeveloperOptionsControl.usbEnabled(activity) -> 3
+                    method==WINDOWS && developer -> 1
+                    method==PHONE && developer -> 2
+                    else -> 0
+                }
+                render(direction=1);return false
+            }
             step=steps.firstOrNull {it>step}?:steps.last();render(direction=1);return false
         }
         fun refresh() {
@@ -138,6 +149,10 @@ internal object WorkerGuide {
                     title(R.string.guide_phone_ready_title,R.drawable.ic_worker)
                     statuses(0,1,2)
                     instruction(R.string.ready_start,R.string.ready_start_body,R.drawable.ic_power,ui.readyColor)
+                    if(DeveloperOptionsControl.available(activity) && DeveloperOptionsControl.developerEnabled(activity)) {
+                        body(R.string.dev_turn_off_note)
+                        action(R.string.dev_turn_off,R.drawable.ic_developer_tile,tag="guide_developer_off"){DeveloperOptionsControl.changeFromGuide(activity,false);refresh()}
+                    }
                 } else {
                     title(R.string.guide_activate_title,R.drawable.ic_worker)
                     statuses(2)
@@ -152,6 +167,7 @@ internal object WorkerGuide {
             2 -> {
                 title(R.string.guide_pair_title,R.drawable.ic_setup_wireless);statuses(3,2)
                 if(!WorkerConnection.ready) {
+                    instruction(R.string.phone_wifi_title,R.string.phone_wifi_note,R.drawable.ic_setup_wireless,ui.warning)
                     instruction(R.string.guide_code_title,R.string.guide_phone_1_body,R.drawable.ic_pair_key)
                     picture(GuidePictures.Picture.NOTIFICATION)
                     body(R.string.guide_phone_2_body)

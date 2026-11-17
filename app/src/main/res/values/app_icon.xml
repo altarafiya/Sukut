@@ -2,7 +2,7 @@
 <resources>
     <string name="app_icon">App icon</string>
     <string name="app_icon_color">Background colour</string>
-    <string name="app_icon_updated">Home screen icon changed. Some launchers take a moment to update.</string>
+    <string name="app_icon_updated">Icon saved. It changes when you leave Sukut.</string>
     <string name="icon_mark_soft">Seen</string>
     <string name="icon_mark_wave">Seen wave</string>
     <string name="icon_mark_wordmark">Sukut wordmark</string>
@@ -14,4 +14,7 @@
     <string name="icon_color_forest">Forest green</string>
     <string name="icon_color_burgundy">Burgundy</string>
     <string name="icon_color_plum">Plum</string>
+    <string name="icon_color_teal">Teal</string>
+    <string name="icon_color_orange">Orange</string>
+    <string name="icon_color_raspberry">Raspberry</string>
 </resources>

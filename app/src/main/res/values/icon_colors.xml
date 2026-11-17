@@ -6,4 +6,7 @@
     <color name="icon_bg_forest">#0F3B2E</color>
     <color name="icon_bg_burgundy">#4A1420</color>
     <color name="icon_bg_plum">#2E1A47</color>
+    <color name="icon_bg_teal">#0E9F8E</color>
+    <color name="icon_bg_orange">#E0662B</color>
+    <color name="icon_bg_raspberry">#C2185B</color>
 </resources>

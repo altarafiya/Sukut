@@ -72,6 +72,33 @@ internal object DeveloperOptionsControl {
         DeveloperOptionsTileService.requestRefresh(context)
         return success
     }
+    /** Wireless debugging off and on again, keeping the saved pairing. Needs the shell-granted permission. */
+    fun restartWireless(context: Context, after: () -> Unit) {
+        if (!available(context) || Build.VERSION.SDK_INT < 30) { after(); return }
+        val resolver = context.contentResolver
+        runCatching { Settings.Global.putInt(resolver, WIFI, 0) }
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            runCatching { Settings.Global.putInt(resolver, WIFI, 1) }
+            DeveloperOptionsTileService.requestRefresh(context); after()
+        }, 1500)
+    }
+
+    /**
+     * Tries to activate on the phone without opening Sukut (the Debugging tile, Wi-Fi
+     * returning). Android may refuse a background start; that is fine, the user can
+     * still tap Activate.
+     */
+    /** Wi-Fi is back: switch Wireless debugging on again if Sukut may, then try to activate. */
+    fun wifiReturned(context: Context) {
+        if (!UiPrefs.setupCompleted(context) || !usesWireless(context) || WorkerConnection.ready || !available(context) || !developerEnabled(context)) return
+        if (!wirelessEnabled(context)) runCatching { Settings.Global.putInt(context.contentResolver, WIFI, 1) }
+        // Give Wireless debugging a moment to start listening on the new network.
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ activateQuietly(context) }, 2500)
+    }
+    fun activateQuietly(context: Context) {
+        if (!usesWireless(context) || WorkerConnection.ready || LocalActivationState.busy || !readyForActivation(context)) return
+        runCatching { context.startForegroundService(android.content.Intent(context, LocalActivationService::class.java).setAction(LocalActivationService.ACTIVATE).putExtra(LocalActivationService.QUIET, true)) }
+    }
     fun changeFromGuide(activity: Activity, enabled: Boolean): Boolean {
         val success = setEnabled(activity, enabled)
         Toast.makeText(activity, if (success) {

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 # Sukut for Linux. Stage 1 (Linux/PLAN.md section 12): the engine without audio,
 # built from the same sources as Windows so both platforms run identical code.
-project(SukutLinux VERSION 0.5.2 LANGUAGES C CXX)
+project(SukutLinux VERSION 0.5.6 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

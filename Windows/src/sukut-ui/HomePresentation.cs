@@ -20,7 +20,7 @@ public sealed partial class ShellView
         _windowModeIcons?.SetMode(_mode,refreshIcons);
         if(PowerButton==null)return;
         if(refreshIcons)PowerButton.Tag=null; // Theme changed: re-resolve the brushes.
-        var look=_status=="Attention"?PowerLook.Attention:_status=="Active" && _mode!=0 && _state?.Standby==1?PowerLook.Standby:_mode!=0 || _command?PowerLook.On:PowerLook.Off;
+        var look=_status=="Attention"?PowerLook.Attention:_mode!=0 || _command?PowerLook.On:PowerLook.Off;
         // Standby (5 s of silence): explain it like the phone, next to the sleeping face.
         HeroModeLabel.Text=look==PowerLook.Standby
             ?L("Nothing is playing. Sukut rests to save power and wakes as soon as sound starts.","لا يوجد صوت قيد التشغيل. يرتاح سُكوت لتوفير الطاقة ويعود فور بدء الصوت.")

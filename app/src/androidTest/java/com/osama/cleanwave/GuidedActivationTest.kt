@@ -241,10 +241,6 @@ class GuidedActivationTest {
             ins.waitForIdleSync();SystemClock.sleep(300)
             ins.runOnMainSync {
                 assertTrue(ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED).contains(page))
-                val dialog=WorkerReconnect.show(page)
-                assertTrue(views(dialog.window!!.decorView).any {it.tag=="reconnect_tutorial"})
-                assertTrue(views(dialog.window!!.decorView).any {it.tag=="reconnect_activate"})
-                dialog.dismiss()
             }
         } finally {
             ins.runOnMainSync {WorkerConnection.clear(fake)};finish(page)

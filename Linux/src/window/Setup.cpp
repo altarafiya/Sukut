@@ -156,6 +156,12 @@ GtkWidget* SukutWindow::BuildSetup() {
   // 4. Ready.
   GtkWidget* ready = StepPage(setup_stack_, 3);
   gtk_box_append(GTK_BOX(ready), Label(L("You’re ready", "أنت جاهز"), "setup-title"));
+  // Sukut rests by itself when nothing plays; said once here instead of a Standby state.
+  GtkWidget* rest = Card();
+  gtk_box_append(GTK_BOX(rest), Line("io.github.altarafiya.Sukut-standby-symbolic", "accent-text",
+      L("When nothing is playing, Sukut rests to save power. You can leave it on in the background.",
+        "عندما لا يُشغَّل أي صوت، يرتاح سُكوت لتوفير الطاقة. يمكنك تركه يعمل في الخلفية.")));
+  gtk_box_append(GTK_BOX(ready), rest);
   gtk_box_append(GTK_BOX(ready), Label(L("Choose a mode on the Audio page, then press Start. Sukut switches your apps' sound automatically.",
                                          "اختر وضعًا من صفحة الصوت، ثم اضغط «تشغيل». يحوّل سُكوت صوت تطبيقاتك تلقائيًا."),
                                        "dim-label"));

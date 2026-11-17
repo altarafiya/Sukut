@@ -43,7 +43,7 @@ class SukutBetaContractTest {
             val theme = ContextThemeWrapper(context.createConfigurationContext(configuration), R.style.Theme_CleanWave_Light)
             // Sukut's buttons are framework TextViews styled by MobileUi.button.
             val button = TextView(theme).apply {
-                text = theme.getString(R.string.reconnect_worker); textSize = 14f
+                text = theme.getString(R.string.reactivate_now); textSize = 14f
                 isAllCaps = false; isSingleLine = false; maxLines = 3; ellipsize = null
                 SukutTypography.apply(this)
             }

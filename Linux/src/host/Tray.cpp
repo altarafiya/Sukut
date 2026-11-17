@@ -178,7 +178,6 @@ void Tray::Build(const State& s) {
   Item status;
   status.label = s.status;
   status.enabled = false;
-  if (s.standby) status.icon = std::string(kAppId) + "-standby-symbolic";
   add(1, status);
   add(2, separator());
   Item open;
