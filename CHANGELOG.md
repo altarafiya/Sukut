@@ -2,12 +2,12 @@
 
 ## Product page · 18 November 2026
 
-- Refreshed the artwork and added a complete Arabic README with language links.
+- Added a complete Arabic README with language links.
 - Clarified that Linux is stable and recommended the stable Snap Store release for Ubuntu, with current package versions and installation instructions.
 
 <div lang="ar" dir="rtl">
 
-- تحديث الرسومات وإضافة صفحة تعريف عربية كاملة مع روابط للتبديل بين اللغتين.
+- إضافة صفحة تعريف عربية كاملة مع روابط للتبديل بين اللغتين.
 - توضيح أن إصدار لينكس مستقر، والتوصية بإصدار متجر Snap المستقر لأوبونتو، مع تحديث إصدارات الحزم وتعليمات التثبيت.
 
 </div>
