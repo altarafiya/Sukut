@@ -1,0 +1,29 @@
+EN DARK VERSION
+
+Use case: precise-object-edit
+Asset type: dark version of the supplied English Sukut project banner.
+Edit only the palette. Keep the exact 3:1 wide composition, all text, font shapes, sizes, line breaks, alignment, audio-wave illustration, circles, margins, and rounded outer corners.
+Replace the off-white background with a solid deep charcoal navy (#101823). Replace all dark navy text with warm off-white (#F3F5F7). Make the incoming thin wave lines a restrained slate blue (#7F9DBD). Keep the output waveform and top circle vivid blue, using a lighter readable cobalt (#4E85FF) for good contrast on dark. Make the vertical filter plane muted blue (#28496C), and the lower circle desaturated light blue (#6394C7). The illustration should stay flat and precise.
+Preserve exactly the English words: "Sukut", "Enjoy the internet.", "Without the music.", "Windows · Android · Linux".
+Preserve genuine transparent cutouts outside all four rounded corners. The dark background inside the rounded rectangle must be opaque. Do not add any border, glow, shadow, texture, gradients, 3D, graphics, badges, text or padding. Do not redesign or rearrange anything.
+
+Transparency repair prompt:
+Use case: precise-object-edit
+Repair only the alpha/transparency of this dark English banner.
+The input has accidental transparent holes inside its dark background. Fill all of those interior holes with the SAME solid charcoal navy as the rest of the banner, #101823. The banner is a SOLID OPAQUE rounded rectangular card, not a cutout of its lettering or illustration. Its dark surface is part of the subject and must not be removed.
+Keep the complete card fully opaque: every point inside its rounded outline, including the empty spaces above, below, between and around the letters, curves and bars. ONLY the four tiny outer corner regions outside its rounded rectangle may be transparent. Retain exactly the original 2172 by 724 canvas, rounded outline, text and graphic colors. Keep every English/Arabic letter and every element unchanged. Do not introduce any texture or pattern, no shadows, no glow, no holes.
+
+AR DARK VERSION
+
+Use case: precise-object-edit
+Asset type: dark version of the supplied Arabic Sukut project banner.
+Edit only the palette. Keep the exact 3:1 wide composition, all text, font shapes, sizes, line breaks, alignment, audio-wave illustration, circles, margins, and rounded outer corners.
+Replace the off-white background with a solid deep charcoal navy (#101823). Replace all dark navy text with warm off-white (#F3F5F7). Make the incoming thin wave lines a restrained slate blue (#7F9DBD). Keep the output waveform and top circle vivid blue, using a lighter readable cobalt (#4E85FF) for good contrast on dark. Make the vertical filter plane muted blue (#28496C), and the lower circle desaturated light blue (#6394C7). The illustration should stay flat and precise.
+Preserve exactly the connected Arabic words: "سُكوت", "استمتع بالإنترنت،", "بلا موسيقى.", "ويندوز · أندرويد · لينكس".
+Preserve genuine transparent cutouts outside all four rounded corners. The dark background inside the rounded rectangle must be opaque. Do not add any border, glow, shadow, texture, gradients, 3D, graphics, badges, text or padding. Do not redesign or rearrange anything.
+
+Transparency repair prompt:
+Use case: precise-object-edit
+Repair only the alpha/transparency of this dark Arabic banner.
+The input has accidental transparent holes inside its dark background. Fill all of those interior holes with the SAME solid charcoal navy as the rest of the banner, #101823. The banner is a SOLID OPAQUE rounded rectangular card, not a cutout of its lettering or illustration. Its dark surface is part of the subject and must not be removed.
+Keep the complete card fully opaque: every point inside its rounded outline, including the empty spaces above, below, between and around the letters, curves and bars. ONLY the four tiny outer corner regions outside its rounded rectangle may be transparent. Retain exactly the original 2172 by 724 canvas, rounded outline, text and graphic colors. Keep every English/Arabic letter and every element unchanged. Do not introduce any texture or pattern, no shadows, no glow, no holes.

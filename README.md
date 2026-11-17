@@ -5,7 +5,7 @@
 <h1 align="center">Sukut</h1>
 <p align="center"><strong>Enjoy the internet. Without the music.</strong></p>
 
-![Sukut: music filtering for Windows, Android and Linux.](docs/artwork/hero-typography.png)
+![Sukut: music filtering for Windows, Android and Linux.](docs/artwork/hero-dark-en.svg)
 
 Sukut mutes music from app audio while keeping speech. It works in real time, on your device.
 
@@ -44,6 +44,7 @@ Choose English or Arabic, light or dark themes, and your app icon. Windows and L
 
 - **Windows:** Install from Microsoft Store, or extract the ZIP and open `Sukut.exe`. Install [VB-CABLE](https://vb-audio.com/Cable/), then follow the welcome guide. The ZIP is unsigned.
 - **Android:** Install the APK while Google Play is in review. Follow the guide to activate through Wireless debugging (Android 11+) or USB from Sukut on Windows or Linux (Android 10+).
+- **Other Linux:** Download the Flatpak above, then run `flatpak install --user ./Sukut-0.5.7-Linux-x86_64.flatpak`. Open Sukut from your apps.
 - **Ubuntu:** Run `sudo snap install sukut`, then open Sukut. Follow any audio permission steps shown in the app. For other packages, see the [Linux guide](Linux/README.md#packages).
 
 The GitHub APK and Google Play app have different signatures. Uninstall one before switching to the other.

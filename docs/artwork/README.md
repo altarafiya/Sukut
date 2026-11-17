@@ -1,10 +1,12 @@
 # GitHub artwork
 
-The English page uses `hero-typography.png` and the Arabic page uses
-`hero-typography-ar.png`: a typography-led
-banner with a flat audio-filter illustration, navy and cobalt on off-white,
-with rounded corners and transparent cutouts.
-It was generated with the built-in imagegen tool. The final prompt is preserved
+The pages use `hero-dark-en.svg` and `hero-dark-ar.svg`: dark typography-led
+banners with a flat audio-filter illustration, off-white text and blue accents.
+The SVG containers embed the generated bitmap over an opaque dark backdrop and
+clip the rounded outer corners, keeping the interior solid on any page theme.
+The previous light PNG versions are retained.
+The bitmap artwork was generated with the built-in imagegen tool. Dark-version
+prompts are in [dark-artwork-prompts.txt](dark-artwork-prompts.txt). The final prompt is preserved
 in [hero-typography-prompt.txt](hero-typography-prompt.txt) and
 [hero-typography-ar-prompt.txt](hero-typography-ar-prompt.txt).
 
