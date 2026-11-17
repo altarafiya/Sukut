@@ -1,3 +1,5 @@
+<p align="center"><strong>English</strong> · <a href="README.ar.md" lang="ar">العربية</a></p>
+
 <p align="center">
   <img src="./Linux/data/icons/hicolor/256x256/apps/io.github.altarafiya.Sukut.png" width="96" height="96" alt="Sukut app icon">
 </p>
@@ -16,12 +18,13 @@
   <a href="#get-started">Setup</a>
 </p>
 
-![Sukut filters app audio on your device, muting music while keeping speech and other sounds audible.](docs/artwork/hero.png)
+![Sukut filters app audio on your device, muting music while keeping speech and other sounds audible.](docs/artwork/hero-v2.png)
 
 Sukut filters music from app audio in real time, so you can keep watching and hear the speech you came for.
-Available for Windows, Android and Linux.
+Available for Windows, Android and Linux. **Linux is stable**, with Snap, Flatpak and `.deb` packages.
+For Ubuntu, use the [Snap Store release](https://snapcraft.io/sukut).
 
-<p lang="ar" dir="rtl">يُرشّح سُكوت الموسيقى من صوت التطبيقات في الوقت الفعلي، لتتابع المشاهدة وتسمع الكلام بوضوح أكبر. يتوفر على ويندوز وأندرويد ولينكس (تجريبي).</p>
+<p lang="ar" dir="rtl">يُرشّح سُكوت الموسيقى من صوت التطبيقات في الوقت الفعلي، لتتابع المشاهدة وتسمع الكلام بوضوح أكبر. يتوفر على ويندوز وأندرويد ولينكس.</p>
 
 ## Features
 
@@ -74,7 +77,9 @@ The interface supports English and Arabic, with light, dark and system themes. C
 | <img src="docs/artwork/icons/android.svg" width="24" height="24" alt=""> **Android** | **[Sukut 0.5.6 for Android (APK)](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Android-arm64.apk)** | Android 10+, ARM64 |
 | <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (.deb)** | **[Sukut 0.5.7 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb)** | x64, PipeWire. Ubuntu 26.04 or newer, PikaOS 4 |
 | <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Flatpak)** | **[Sukut 0.5.7 (.flatpak)](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak)** | x64, Flatpak and PipeWire. Works across Linux distributions |
-| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Snap)** | **[Sukut on the Snap Store](https://snapcraft.io/sukut)** | x64, snapd and PipeWire. Tested on Ubuntu 26.04 and 24.04 |
+| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Snap)** | **[Sukut 0.5.1 on the Snap Store (stable)](https://snapcraft.io/sukut)** | x64, snapd and PipeWire. Tested on Ubuntu 26.04 and 24.04 |
+
+The Snap Store currently provides stable **0.5.1**; the `.deb` and Flatpak releases are **0.5.7**. Snap updates arrive automatically.
 
 [All releases and checksums →](https://github.com/altarafiya/Sukut/releases)
 
@@ -118,10 +123,11 @@ the other, uninstall the one you have first.
 
 **Linux**
 
-1. On Ubuntu, run `sudo snap install sukut --beta`. Sukut then shows one command to copy into Terminal, once, to allow audio access.
+1. On Ubuntu, run `sudo snap install sukut`. Sukut then shows one command to copy into Terminal, once, to allow audio access.
    On most other distributions, install the Flatpak with `flatpak install --user ./Sukut-0.5.7-Linux-x86_64.flatpak`.
    On Ubuntu 26.04 or newer and PikaOS 4 you can use the `.deb` instead: open it with your software installer, or run
    `sudo apt install ./Sukut-0.5.7-Linux-amd64.deb`.
+   The Snap bundles its own libraries, avoiding the older `.deb`’s PipeWire dependency issue on Ubuntu ([#2](https://github.com/altarafiya/Sukut/issues/2)).
    See [Linux packages](Linux/README.md#packages) for what each one needs.
 2. Open Sukut from your apps and follow the welcome guide.
 3. The Phone page installs and activates the Android app over USB, all from the window.

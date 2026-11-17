@@ -1,0 +1,9 @@
+Use case: ads-marketing
+Asset type: finished professional GitHub project cover banner, wide 3:1.
+Brand: Sukut, on-device app that mutes music from playback while keeping speech.
+Input image: use the existing white calligraphic Seen over blue audio bars as the brand mark reference, preserve its silhouette accurately.
+Design direction: a tasteful software brand identity cover with confident editorial typography and a refined abstract audio motif. Sophisticated and visually engaging. Think carefully art-directed Swiss graphic design for an audio utility.
+Layout: asymmetric grid, broad margin, left 55% has the brand name "Sukut" in beautiful large off-white contemporary sans serif type. Beneath it, two lines in medium weight: "Enjoy the internet." then "Without the music." Small muted footer line: "Windows · Android · Linux".
+The right 45% is one beautiful compact graphic: the Sukut icon as a flat dark square bearing the reference mark, layered over an abstract set of blue and muted silver vertical audio bars. The left part of that bar composition has overlapping blue and grey bars, the right resolves into a confident clean blue waveform. Use careful rhythm, a touch of translucent layering and two slim hairline grid rules to organize this detail; no clutter.
+Background: rich dark navy charcoal, with a very subtle soft blue tonal wash behind the right-hand illustration. Crisp flat graphics with restrained depth only from layering. Premium printed-identity feeling, precise and spacious. Balance blue and off-white with a tiny muted warm silver accent. All letters impeccable, legible and exactly spelled.
+Must avoid: glossy 3D, floating objects, ribbons, fake UI, photorealistic materials, bloom, lens effects, particles, noisy textures, black empty poster, bare flowchart, generic AI tech aesthetic, excessive decoration, music notes, arbitrary logos, badges or extra claims. No words other than the specified title, tagline and platform line.
