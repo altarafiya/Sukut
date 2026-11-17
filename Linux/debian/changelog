@@ -1,3 +1,14 @@
+sukut (0.5.7-1) resolute; urgency=medium
+
+  * EasyEffects following the default output (apps -> EasyEffects -> Sukut):
+    Sukut plays to the real output and keeps it, without a loop warning.
+  * Apps pinned to Easy Effects Sink are left alone when EasyEffects plays
+    into Sukut; no "skips Sukut" warning.
+  * Off never gives the default output back to a sink that looped into
+    Sukut, which left the sound silent.
+
+ -- الطرفية <altarafiyah@gmail.com>  Wed, 18 Nov 2026 00:30:00 +0800
+
 sukut (0.5.6-1) resolute; urgency=medium
 
   * Nine app icon colours, including teal, orange and raspberry.

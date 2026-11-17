@@ -604,8 +604,11 @@ std::string PipeWireBridge::BestWanted(const std::string& excluded) const {
 void PipeWireBridge::UpdateRestoreTarget() {
   if (!switched_default_ || wanted_.empty()) return;
   std::string target = BestWanted();
-  if (target.empty()) target = wanted_.back();
-  if (target != journal_.previous_sink) {
+  if (target.empty()) target = blocked_.count(wanted_.back()) == 0 ? wanted_.back() : journal_.previous_sink;
+  // Never give the default back to an output that looped into Sukut: an effects app
+  // that follows the default output would then play into itself, and go silent.
+  if (blocked_.count(target) != 0) target = NextOutput(target);
+  if (!target.empty() && target != journal_.previous_sink) {
     journal_.previous_sink = target;
     SaveJournal();
   }
@@ -680,17 +683,39 @@ void PipeWireBridge::CheckLoop() {
   if (!loop) return;
   const std::string through = output_;
   blocked_.insert(through);
-  Event("FEEDBACK_LOOP through=" + through + Describe(through));
+  // Through a virtual sink (EasyEffects or a loopback following the default output,
+  // which is Sukut): the working arrangement is apps -> effects -> Sukut -> a real
+  // output. Sukut moves to the real output and keeps it, without a warning. Any
+  // other loop is reported.
+  const Node* via = Find(through);
+  const bool in_front = via != nullptr && IsVirtualSink(*via);
+  Event((in_front ? "EFFECTS_IN_FRONT through=" : "FEEDBACK_LOOP through=") + through + Describe(through));
   std::string next = BestWanted(through);
   if (next.empty()) next = NextOutput(through);
+  if (in_front && !next.empty()) { Want(next); UpdateRestoreTarget(); }
   if (next.empty()) {
     if (playback_ != nullptr) { pw_stream_destroy(playback_); playback_ = nullptr; }
     playback_ready_ = false;
     output_.clear();
     Event("OUTPUT_LOST");
   } else {
-    Retarget(next, "loop");
+    Retarget(next, in_front ? "front" : "loop");
   }
+}
+
+bool PipeWireBridge::FeedsSukut(const std::string& name) const {
+  const Node* sink = Find(name);
+  if (sink == nullptr || !IsVirtualSink(*sink) || sink->client == 0) return false;
+  std::uint32_t ours = 0;
+  for (const auto& [id, node] : nodes_)
+    if (node.name == kSinkName) ours = id;
+  if (ours == 0) return false;
+  for (const auto& [link, ends] : links_) {
+    if (ends.second != ours) continue;
+    const auto from = nodes_.find(ends.first);
+    if (from != nodes_.end() && from->second.client == sink->client) return true;
+  }
+  return false;
 }
 
 const PipeWireBridge::Pin* PipeWireBridge::EffectivePin(std::uint32_t id, std::string* key) const {
@@ -733,6 +758,16 @@ void PipeWireBridge::ConsiderPinned(std::uint32_t id) {
   std::string key;
   const Pin* pin = EffectivePin(id, &key);
   if (pin != nullptr && PinTargetName(key, *pin) == kSinkName) return;  // through Sukut (also Sukut's own change)
+  // Pinned to EasyEffects (or another effects sink) whose output plays into Sukut:
+  // the app is still filtered, after its effects. Leave it and say nothing.
+  if (pin != nullptr && pin->value != "-1" && FeedsSukut(PinTargetName(key, *pin))) {
+    if (redirected_.erase(id) != 0) {
+      journal_.pins.erase(std::remove_if(journal_.pins.begin(), journal_.pins.end(), [id](const auto& p) { return p.node == id; }), journal_.pins.end());
+      SaveJournal();
+    }
+    released_.insert(id);
+    return;
+  }
   if (const auto redirected = redirected_.find(id); redirected != redirected_.end()) {
     const std::string app = redirected->second.app;
     redirected_.erase(redirected);
@@ -862,7 +897,9 @@ void PipeWireBridge::RestoreLocked() {
   if (switched_default_) {
     switched_default_ = false;
     // Never undo a newer choice: restore only while the default is still Sukut's sink.
-    if (configured_sink_ == kSinkName) SetConfiguredSink(journal_.previous_sink);
+    std::string back = journal_.previous_sink;
+    if (blocked_.count(back) != 0) back = NextOutput(back);  // never an output that looped into Sukut
+    if (configured_sink_ == kSinkName) SetConfiguredSink(back);
   }
   for (const auto id : targets_)
     if (nodes_.count(id) != 0) pw_metadata_set_property(metadata_, id, kTargetObject, nullptr, nullptr);

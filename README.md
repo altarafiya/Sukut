@@ -72,8 +72,8 @@ The interface supports English and Arabic, with light, dark and system themes. C
 | --- | --- | --- |
 | <img src="docs/artwork/icons/windows.svg" width="24" height="24" alt=""> **Windows** | **[Sukut 0.4.2 for Windows (ZIP)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.2-Windows-x64.zip)** | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
 | <img src="docs/artwork/icons/android.svg" width="24" height="24" alt=""> **Android** | **[Sukut 0.5.6 for Android (APK)](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Android-arm64.apk)** | Android 10+, ARM64 |
-| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (.deb)** | **[Sukut 0.5.6 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Linux-amd64.deb)** | x64, PipeWire. Ubuntu 26.04 or newer, PikaOS 4 |
-| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Flatpak)** | **[Sukut 0.5.6 (.flatpak)](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Linux-x86_64.flatpak)** | x64, Flatpak and PipeWire. Works across Linux distributions |
+| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (.deb)** | **[Sukut 0.5.7 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb)** | x64, PipeWire. Ubuntu 26.04 or newer, PikaOS 4 |
+| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Flatpak)** | **[Sukut 0.5.7 (.flatpak)](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak)** | x64, Flatpak and PipeWire. Works across Linux distributions |
 | <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Snap)** | **[Sukut on the Snap Store](https://snapcraft.io/sukut)** | x64, snapd and PipeWire. Tested on Ubuntu 26.04 and 24.04 |
 
 [All releases and checksums →](https://github.com/altarafiya/Sukut/releases)
@@ -119,9 +119,9 @@ the other, uninstall the one you have first.
 **Linux**
 
 1. On Ubuntu, run `sudo snap install sukut --beta`. Sukut then shows one command to copy into Terminal, once, to allow audio access.
-   On most other distributions, install the Flatpak with `flatpak install --user ./Sukut-0.5.6-Linux-x86_64.flatpak`.
+   On most other distributions, install the Flatpak with `flatpak install --user ./Sukut-0.5.7-Linux-x86_64.flatpak`.
    On Ubuntu 26.04 or newer and PikaOS 4 you can use the `.deb` instead: open it with your software installer, or run
-   `sudo apt install ./Sukut-0.5.6-Linux-amd64.deb`.
+   `sudo apt install ./Sukut-0.5.7-Linux-amd64.deb`.
    See [Linux packages](Linux/README.md#packages) for what each one needs.
 2. Open Sukut from your apps and follow the welcome guide.
 3. The Phone page installs and activates the Android app over USB, all from the window.

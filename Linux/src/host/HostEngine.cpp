@@ -226,7 +226,8 @@ void HostEngine::Tick() {
       // Saved as the chosen output: a choice in the sound settings, a newly
       // connected device, or a wanted output that came back. A stand-in while
       // the chosen one is missing (removed, missing, appeared, loop) is not.
-      if (reason == "default" || reason == "connected" || reason == "returned") {
+      // "front": an effects app sits in front of Sukut, so this real output is the one to keep.
+      if (reason == "default" || reason == "connected" || reason == "returned" || reason == "front") {
         applied_.output = name;
         facts.push_back("output=" + name);
       }

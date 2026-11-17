@@ -303,15 +303,25 @@ def scenario_i():
     started = f.wait_line("STARTED", 30)
     check("I_started_on_effects_sink", started and "output=test_fx" in started and wait_until(lambda: playback_to() == ["test_fx"], 4),
           started)
-    check("I_no_loop_while_effects_play_to_speakers", f.wait_line("FEEDBACK_LOOP", 1.5) is None)
+    check("I_no_loop_while_effects_play_to_speakers", f.wait_line("EFFECTS_IN_FRONT", 1.5) is None and f.wait_line("FEEDBACK_LOOP", 0.5) is None)
     mark = f.mark()
     pin(node_id("test_fx_out"), "sukut_sink")  # the effects app follows the default output, which is Sukut
-    line = f.wait_line("FEEDBACK_LOOP", 6, mark)
-    check("I_loop_detected", line and "through=test_fx" in line, line)
-    moved = f.wait_line("reason=loop", 4, mark)
-    check("I_loop_broken", moved and "to=test_fx " not in moved and wait_until(lambda: "test_fx" not in playback_to(), 4),
+    line = f.wait_line("EFFECTS_IN_FRONT", 6, mark)
+    check("I_effects_in_front_detected", line and "through=test_fx" in line and f.wait_line("FEEDBACK_LOOP", 0.5, mark) is None, line)
+    moved = f.wait_line("reason=front", 4, mark)
+    check("I_moves_to_real_output", moved and "to=test_fx " not in moved and wait_until(lambda: "test_fx" not in playback_to(), 4),
           f"{moved} now -> {playback_to()}")
+    # An app pinned to the effects sink still reaches Sukut through it: left alone, no warning.
+    mark = f.mark()
+    app1 = app(WORK / "app1.wav")
+    a1 = app_node(app1.pid)
+    pin(a1, "test_fx")
+    time.sleep(2)
+    quiet = all(f.wait_line(word, 0.2, mark) is None for word in ("STREAM_REDIRECTED", "STREAM_PINNED", "EASYEFFECTS_PROCESS_ALL"))
+    check("I_app_through_effects_left_alone", quiet and linked_to(a1) == ["test_fx"], linked_to(a1))
+    unpin(a1); app1.terminate(); app1.wait(timeout=10)
     f.stop()
+    check("I_off_never_gives_default_to_effects_sink", wait_until(lambda: default_sink() not in ("test_fx", "sukut_sink"), 3), default_sink())
     fx.stop()
 
 
@@ -492,11 +502,14 @@ def scenario_l():
         reply, s = start("test_fx")
         before = len(notifications.notices("Sukut stopped an audio loop"))
         pin(node_id("test_fx_out"), "sukut_sink")
-        s = wait_state(lambda s: s.get("notice", "").startswith("feedback_loop:"), 6)
-        notes = wait_until(lambda: notifications.notices("Sukut stopped an audio loop")[before:], 5)
-        check("L_loop_notice_and_notification", s and s["notice"] == "feedback_loop:test_fx" and s["output"] != "test_fx" and notes
-              and settings().get("Output") == "test_fx", f"{s and s.get('notice')} {s and s['output']} {notes}")
-        stop("test_fx")
+        # EasyEffects-style arrangement: Sukut moves to a real output, keeps it, and says nothing.
+        s = wait_state(lambda s: s["output"] not in ("", "test_fx"), 6)
+        time.sleep(1)
+        notes = notifications.notices("Sukut stopped an audio loop")[before:]
+        check("L_effects_in_front_quiet_and_kept", s and not (s.get("notice") or "").startswith("feedback_loop:") and not notes
+              and wait_until(lambda: settings().get("Output") not in (None, "test_fx"), 3), f"{s and s.get('notice')} {s and s['output']} {settings().get('Output')} {notes}")
+        stop(s["output"] if s else "")
+        check("L_off_default_not_effects_sink", wait_until(lambda: default_sink() not in ("test_fx", "sukut_sink"), 3), default_sink())
         fx.stop()
         host.exit()
 

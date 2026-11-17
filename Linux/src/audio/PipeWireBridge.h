@@ -19,13 +19,17 @@
 // output, or to the newest choice the user made meanwhile.
 //
 // Effects apps such as EasyEffects (section 5.6):
-// - A feedback loop (Sukut's playback reaching sukut_sink again, e.g. EasyEffects
-//   following the default output while Sukut plays into it) is broken at once:
-//   Sukut moves to another output and reports FEEDBACK_LOOP.
+// - A feedback loop (Sukut's playback reaching sukut_sink again) is broken at once.
+//   Through a virtual sink (EasyEffects following the default output while Sukut
+//   plays into it) the arrangement apps -> EasyEffects -> Sukut -> speakers works,
+//   so Sukut moves to the real output, keeps it, and reports EFFECTS_IN_FRONT
+//   quietly; Off never gives the default back to that sink. Other loops report
+//   FEEDBACK_LOOP.
 // - For all system audio, app streams pinned to another output in the default
 //   metadata (EasyEffects' "Process all output streams", a move in the sound
 //   settings) go through Sukut too; their pins are journalled and put back on
-//   Off. A stream pinned again by someone else is left alone and reported.
+//   Off. A stream pinned again by someone else is left alone and reported, unless
+//   the pin is an effects sink whose output already plays into Sukut.
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -100,9 +104,11 @@ class PipeWireBridge {
   //     reason: default (picked in the sound settings), connected (a new device),
   //     returned (a wanted output came back), removed (the output went away),
   //     appeared (the first output after none), missing (the chosen output is
-  //     not there at start), loop (moved away from a feedback loop)
+  //     not there at start), loop (moved away from a feedback loop), front (an
+  //     effects app follows the default output: Sukut plays to a real output after it)
   //   OUTPUT_LOST, SOURCE_TARGETED node=<id>, SOURCE_CLOSED, JOURNAL_FAILED <reason>
   //   FEEDBACK_LOOP through=<node> description=<text>
+  //   EFFECTS_IN_FRONT through=<node> description=<text>   apps -> effects -> Sukut; no warning
   //   STREAM_REDIRECTED node=<id> app=<name>         a pinned stream now goes through Sukut
   //   STREAM_PINNED target=<node> app=<name>         pinned again by someone else; left alone
   //   EASYEFFECTS_PROCESS_ALL app=<name>             the same, by EasyEffects
@@ -195,6 +201,8 @@ class PipeWireBridge {
   [[nodiscard]] bool NewlyConnected(const Node& node);
   // Effects apps (loop thread, lock held).
   void CheckLoop();
+  // A virtual sink (EasyEffects, a loopback) whose own output already plays into Sukut's sink.
+  [[nodiscard]] bool FeedsSukut(const std::string& name) const;
   void ConsiderPinned(std::uint32_t id);
   void RestorePin(const PinnedStream& pin);
   [[nodiscard]] const Pin* EffectivePin(std::uint32_t id, std::string* key = nullptr) const;

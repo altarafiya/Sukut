@@ -2,7 +2,7 @@
 
 The plan is in [PLAN.md](PLAN.md): Debian 13 first, with stages and owner gates.
 
-Current version: **0.5.6** as snap, Flatpak and `.deb`.
+Current version: **0.5.7** as snap, Flatpak and `.deb`.
 
 ## Packages
 
@@ -10,9 +10,9 @@ Three builds of the same Sukut. Pick one; they don't share settings.
 
 | Package | Version | Where | Works on |
 |---|---|---|---|
-| Snap | 0.5.6 | [Snap Store](https://snapcraft.io/sukut) | Ubuntu 24.04 and 26.04 (tested), other distributions with snapd |
-| Flatpak | 0.5.6 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.6) (`.flatpak` file) | Most distributions with Flatpak; it uses the GNOME 51 runtime from Flathub |
-| `.deb` | 0.5.6 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.6) | Ubuntu 26.04 or newer, PikaOS 4: it needs `libc6` 2.43. On older Ubuntu, use the snap |
+| Snap | 0.5.7 | [Snap Store](https://snapcraft.io/sukut) | Ubuntu 24.04 and 26.04 (tested), other distributions with snapd |
+| Flatpak | 0.5.7 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.7) (`.flatpak` file) | Most distributions with Flatpak; it uses the GNOME 51 runtime from Flathub |
+| `.deb` | 0.5.7 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.7) | Ubuntu 26.04 or newer, PikaOS 4: it needs `libc6` 2.43. On older Ubuntu, use the snap |
 
 All three need PipeWire and an x86-64 PC.
 
@@ -33,7 +33,7 @@ sudo snap connect sukut:pipewire && sudo snap connect sukut:audio-record && sudo
 **Flatpak**
 
 ```bash
-flatpak install --user ./Sukut-0.5.6-Linux-x86_64.flatpak
+flatpak install --user ./Sukut-0.5.7-Linux-x86_64.flatpak
 ```
 
 - The first time the Phone page needs it, Sukut downloads Google's adb and checks it.
@@ -46,7 +46,7 @@ flatpak install --user ./Sukut-0.5.6-Linux-x86_64.flatpak
 Open it with your software installer, or:
 
 ```bash
-sudo apt install ./Sukut-0.5.6-Linux-amd64.deb
+sudo apt install ./Sukut-0.5.7-Linux-amd64.deb
 ```
 
 It brings `adb`, and **Allow access** on the Phone page sets up USB access to the phone.
@@ -68,8 +68,9 @@ The window shows the same steps under Audio output (**Using EasyEffects**) whene
 
 What Sukut does by itself:
 
-- If EasyEffects follows the default output (step 2 not done), Sukut's sound would loop through EasyEffects back into Sukut. Sukut stops that at once, plays to another output, notifies, and shows **How to fix**.
-- Apps pinned to Easy Effects Sink (by **Process all output streams**, or remembered by WirePlumber afterwards) are sent through Sukut while it runs and get their pin back on Off. If EasyEffects keeps pinning them again, Sukut leaves them and shows **How to fix**.
+- If EasyEffects keeps **Use default output** on, it plays into Sukut: apps → EasyEffects → Sukut → speakers. That works too. Sukut plays to your real speakers, remembers them, and shows no warning; apps EasyEffects processes are still filtered.
+- If something else plays Sukut's own sound back into Sukut (a loop), Sukut stops it at once, plays to another output, notifies, and shows **How to fix**.
+- Apps pinned to Easy Effects Sink (by **Process all output streams**, or remembered by WirePlumber afterwards) are sent through Sukut while it runs and get their pin back on Off. If EasyEffects keeps pinning them again, Sukut leaves them; it shows **How to fix** only when that sound really skips Sukut (EasyEffects playing straight to your speakers).
 - Headphones connected while Sukut runs are used at once; when they disconnect, Sukut goes back to Easy Effects Sink.
 - If EasyEffects isn't running yet when Sukut starts, Sukut starts on the default output and moves to Easy Effects Sink when it appears.
 

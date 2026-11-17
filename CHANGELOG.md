@@ -1,5 +1,11 @@
 # What’s new
 
+## Linux 0.5.7
+
+- EasyEffects: when EasyEffects plays into Sukut (its "Use default output" on), Sukut plays to your real speakers and remembers them, with no loop warning.
+- Apps that EasyEffects processes are no longer reported as skipping Sukut when EasyEffects plays into Sukut.
+- Turning Sukut off no longer leaves the sound silent with EasyEffects.
+
 ## 0.5.6
 
 **Android**
