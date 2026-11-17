@@ -18,7 +18,7 @@
   <a href="#get-started">Setup</a>
 </p>
 
-![Sukut filters app audio on your device, muting music while keeping speech and other sounds audible.](docs/artwork/hero.png)
+![Sukut filters app audio on your device, muting music while keeping speech and other sounds audible.](docs/artwork/hero-typography.png)
 
 Sukut filters music from app audio in real time, so you can keep watching and hear the speech you came for.
 Available for Windows, Android and Linux. **Linux is stable**, with Snap, Flatpak and `.deb` packages.
