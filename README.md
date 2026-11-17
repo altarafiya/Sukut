@@ -1,149 +1,55 @@
-<p align="center"><strong>English</strong> · <a href="README.ar.md" lang="ar">العربية</a></p>
+<p align="center"><strong>English</strong> · <a href="README.ar.md">Arabic</a></p>
 
-<p align="center">
-  <img src="./Linux/data/icons/hicolor/256x256/apps/io.github.altarafiya.Sukut.png" width="96" height="96" alt="Sukut app icon">
-</p>
+<p align="center"><img src="Linux/data/icons/hicolor/256x256/apps/io.github.altarafiya.Sukut.png" width="80" height="80" alt="Sukut icon"></p>
 
-<h1 align="center">Sukut · سُكوت</h1>
+<h1 align="center">Sukut</h1>
+<p align="center"><strong>Enjoy the internet. Without the music.</strong></p>
 
-<p align="center">
-  <strong>Enjoy the internet. Without the music.</strong><br>
-  <span lang="ar" dir="rtl">استمتع بالإنترنت، بلا موسيقى.</span>
-</p>
+![Sukut: music filtering for Windows, Android and Linux.](docs/artwork/hero-typography.png)
 
-<p align="center">
-  <a href="#download"><strong>Download</strong></a> ·
-  <a href="#features">Features</a> ·
-  <a href="#four-audio-modes">Audio modes</a> ·
-  <a href="#get-started">Setup</a>
-</p>
-
-![Sukut filters app audio on your device, muting music while keeping speech and other sounds audible.](docs/artwork/hero-typography.png)
-
-Sukut filters music from app audio in real time, so you can keep watching and hear the speech you came for.
-Available for Windows, Android and Linux. **Linux is stable**, with Snap, Flatpak and `.deb` packages.
-For Ubuntu, use the [Snap Store release](https://snapcraft.io/sukut).
-
-<p lang="ar" dir="rtl">يُرشّح سُكوت الموسيقى من صوت التطبيقات في الوقت الفعلي، لتتابع المشاهدة وتسمع الكلام بوضوح أكبر. يتوفر على ويندوز وأندرويد ولينكس.</p>
-
-## Features
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="docs/artwork/icons/filter.svg" width="36" height="36" alt=""><br>
-      <strong>Real-time music filtering</strong><br>
-      Mute music as your apps play and keep speech and other sounds audible in Music Filter mode.
-    </td>
-    <td width="50%" valign="top">
-      <img src="docs/artwork/icons/controls.svg" width="36" height="36" alt=""><br>
-      <strong>Lightweight controls</strong><br>
-      Keep Sukut in the desktop tray or switch modes from Android’s notification or Quick Settings.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="docs/artwork/icons/playback.svg" width="36" height="36" alt=""><br>
-      <strong>Tunable playback performance</strong><br>
-      Use a shorter buffer for less delay or a longer buffer to help smooth out interruptions.
-    </td>
-    <td width="50%" valign="top">
-      <img src="docs/artwork/icons/device.svg" width="36" height="36" alt=""><br>
-      <strong>On-device processing</strong><br>
-      Sukut processes playback locally. Your audio stays on your device.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="docs/artwork/icons/modes.svg" width="36" height="36" alt=""><br>
-      <strong>Adjustable background sound</strong><br>
-      Use the background slider in Optimized mode or choose Strict to focus on speech.
-    </td>
-    <td width="50%" valign="top">
-      <img src="docs/artwork/icons/routing.svg" width="36" height="36" alt=""><br>
-      <strong>App and output selection</strong><br>
-      On Windows and Linux, choose which app to filter and where to play the audio.
-    </td>
-  </tr>
-</table>
-
-The interface supports English and Arabic, with light, dark and system themes. Choose the app icon and its background colour in Settings.
+Sukut mutes music from app audio while keeping speech. It works in real time, on your device.
 
 ## Download
 
-| Platform | Download | Requirements |
+| Windows | Android | Linux |
+| :---: | :---: | :---: |
+| [<img src="docs/artwork/stores/microsoft-en.svg" height="44" width="161" alt="Download from Microsoft Store">](https://apps.microsoft.com/detail/9NL67C3CS7QR) | [<img src="docs/artwork/stores/google-play-en.png" height="64" width="165" alt="Google Play — coming soon">](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut) | [<img src="docs/artwork/stores/snap-en.svg" height="44" width="143" alt="Get it from the Snap Store">](https://snapcraft.io/sukut) |
+| Available now | **Coming soon — in review** | **Stable** |
+
+**Direct downloads**
+
+| Platform | Download | Needs |
 | --- | --- | --- |
-| <img src="docs/artwork/icons/windows.svg" width="24" height="24" alt=""> **Windows** | **[Sukut 0.4.2 for Windows (ZIP)](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.2-Windows-x64.zip)** | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
-| <img src="docs/artwork/icons/android.svg" width="24" height="24" alt=""> **Android** | **[Sukut 0.5.6 for Android (APK)](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Android-arm64.apk)** | Android 10+, ARM64 |
-| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (.deb)** | **[Sukut 0.5.7 (.deb)](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb)** | x64, PipeWire. Ubuntu 26.04 or newer, PikaOS 4 |
-| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Flatpak)** | **[Sukut 0.5.7 (.flatpak)](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak)** | x64, Flatpak and PipeWire. Works across Linux distributions |
-| <img src="docs/artwork/icons/linux.svg" width="24" height="24" alt=""> **Linux (Snap)** | **[Sukut 0.5.1 on the Snap Store (stable)](https://snapcraft.io/sukut)** | x64, snapd and PipeWire. Tested on Ubuntu 26.04 and 24.04 |
+| Windows | [ZIP 0.4.2](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.2-Windows-x64.zip) | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
+| Android | [APK 0.5.6](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Android-arm64.apk) | Android 10+, ARM64 |
+| Linux | [Flatpak 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak) · [.deb 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb) | x64, PipeWire. See [package requirements](Linux/README.md#packages) |
 
-The Snap Store currently provides stable **0.5.1**; the `.deb` and Flatpak releases are **0.5.7**. Snap updates arrive automatically.
+On Ubuntu, use Snap. The stable Snap Store version is 0.5.1.
+[All releases and checksums](https://github.com/altarafiya/Sukut/releases).
 
-[All releases and checksums →](https://github.com/altarafiya/Sukut/releases)
-
-## Four audio modes
+## Audio modes
 
 | Mode | What you hear |
 | --- | --- |
-| **Off** | Original audio; processing stops. |
-| **Music Filter** | Music muted; speech and other sounds stay. |
-| **Optimized** | Music muted, with a background slider to suit what you are watching. |
-| **Strict** | Music and background muted, focusing on speech. |
+| Off | Original audio. |
+| Music Filter | Speech and other sounds, with music muted. |
+| Optimized | Music muted, with adjustable background sound. |
+| Strict | Speech, with music and background muted. |
 
-Results vary when sounds overlap in a recording. Strict can also remove sound effects.
+Results vary when sounds overlap. Strict may also remove sound effects.
 
-## Get started
+Choose English or Arabic, light or dark themes, and your app icon. Windows and Linux also let you choose the source app and audio output.
 
-**Windows**
+## Setup
 
-1. Install [VB-CABLE](https://vb-audio.com/Cable/) if you don't have it, then restart.
-2. Extract the whole ZIP folder and open `Sukut.exe`. Exit an older Sukut in the tray first.
-3. Follow the welcome guide, choose your speakers or headphones, and pick a mode.
+- **Windows:** Install from Microsoft Store, or extract the ZIP and open `Sukut.exe`. Install [VB-CABLE](https://vb-audio.com/Cable/), then follow the welcome guide. The ZIP is unsigned.
+- **Android:** Install the APK while Google Play is in review. Follow the guide to activate through Wireless debugging (Android 11+) or USB from Sukut on Windows or Linux (Android 10+).
+- **Ubuntu:** Run `sudo snap install sukut`, then open Sukut. Follow any audio permission steps shown in the app. For other packages, see the [Linux guide](Linux/README.md#packages).
 
-Bluetooth headphones work too. When a new audio device connects, Sukut switches to it
-and shows a notification; turning Sukut off returns Windows sound to that device.
-Sukut keeps working in the tray when you close its window. The ZIP is not publisher-signed.
+The GitHub APK and Google Play app have different signatures. Uninstall one before switching to the other.
 
-**Android**
+## Support
 
-1. Install the APK and open Sukut.
-2. Follow the setup guide to activate Sukut's audio worker: on Android 11+ through
-   Wireless debugging on the phone itself (it needs Wi-Fi; a phone hotspot without
-   internet is enough), or over USB from Sukut on Windows or Linux.
-3. Choose a mode in the app, its notification or Quick Settings.
+[What's new](CHANGELOG.md) · [Report a problem](https://github.com/altarafiya/Sukut/issues/new/choose) · [Privacy](https://altarafiya.github.io/Sukut/privacy.html)
 
-On Android 10, activate over USB from Sukut on Windows or Linux; Wireless debugging starts at Android 11.
-
-Sukut 0.5.1 and later fix filtering on Android 12 and 13 ([#1](https://github.com/altarafiya/Sukut/issues/1)).
-
-The GitHub APK and the Google Play app are signed differently. To switch from one to
-the other, uninstall the one you have first.
-
-**Linux**
-
-1. On Ubuntu, run `sudo snap install sukut`. Sukut then shows one command to copy into Terminal, once, to allow audio access.
-   On most other distributions, install the Flatpak with `flatpak install --user ./Sukut-0.5.7-Linux-x86_64.flatpak`.
-   On Ubuntu 26.04 or newer and PikaOS 4 you can use the `.deb` instead: open it with your software installer, or run
-   `sudo apt install ./Sukut-0.5.7-Linux-amd64.deb`.
-   The Snap bundles its own libraries, avoiding the older `.deb`’s PipeWire dependency issue on Ubuntu ([#2](https://github.com/altarafiya/Sukut/issues/2)).
-   See [Linux packages](Linux/README.md#packages) for what each one needs.
-2. Open Sukut from your apps and follow the welcome guide.
-3. The Phone page installs and activates the Android app over USB, all from the window.
-
-Sukut switches to newly connected headphones and returns to the previous output when they
-disconnect. If you use EasyEffects, follow the [setup steps](Linux/README.md#sukut-with-easyeffects),
-also available under Audio output.
-
-## Updates and support
-
-See [what's new](CHANGELOG.md). Found a problem? [Open an issue](https://github.com/altarafiya/Sukut/issues/new/choose)
-with your app version, device/output, and the steps that caused it.
-Privacy policy: <https://altarafiya.github.io/Sukut/privacy.html>.
-
-Development layout and build guidance are in [AGENTS.md](AGENTS.md).
-Model files, sealed engine assets and signing material are not in this repository.
-Third-party components retain their [notices and licenses](THIRD_PARTY_NOTICES.md).
-
-<p align="center"><strong>Developed by الطرفية</strong></p>
+Developed by Altarafiyah. [Build guide](AGENTS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md).

@@ -1,0 +1,16 @@
+Use case: text-localization
+Asset type: Arabic version of the approved-direction Sukut typography-led project banner.
+Edit target: attached off-white Sukut banner.
+Change only the English text to Arabic. Preserve the entire illustration, its exact arrangement, colors, off-white background, typography hierarchy, margins and overall composition. Keep the graphics on the right and the text within the same left-hand text area. Set Arabic lines right-aligned within that area. Use clean bold connected Arabic sans-serif typography.
+Replace "Sukut" with exactly "سُكوت".
+Replace "Enjoy the internet." with exactly "استمتع بالإنترنت،".
+Replace "Without the music." with exactly "بلا موسيقى.".
+Replace "Windows · Android · Linux" with exactly "ويندوز · أندرويد · لينكس".
+Keep Arabic correctly shaped and connected. Preserve all other visual elements unchanged. No additional text, new graphics, border or watermark.
+
+Final corner edit (built-in imagegen):
+Use case: precise-object-edit
+Edit target: the supplied Arabic Sukut banner.
+Primary request: give this exact artwork softly rounded outer corners, with transparent pixels outside those corner curves.
+Change ONLY the four outer corners. Use a corner radius of about 40 pixels for a 2172 by 724 banner (approximately 5.5% of its height).
+Preserve the full original wide 3:1 canvas, composition, every letter, exact wording and font shapes, illustration, all colors, off-white background and margins. The off-white background must remain fully opaque everywhere inside the rounded rectangle. Only the small four cut-away corner areas should be transparent. Keep all text and graphics completely unchanged. No redrawing, no new text, no border, no shadow, no additional padding, no checkerboard drawn into the image, no white square corners.

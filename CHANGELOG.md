@@ -2,12 +2,14 @@
 
 ## Product page · 18 November 2026
 
-- Refreshed the product artwork and added a complete Arabic README with language links.
+- Refreshed the product artwork and added short, separate English and Arabic pages.
+- Added official Microsoft Store, Google Play and Snap Store badges. Google Play is coming soon and is still in review.
 - Clarified that Linux is stable and recommended the stable Snap Store release for Ubuntu, with current package versions and installation instructions.
 
 <div lang="ar" dir="rtl">
 
-- تحديث رسومات صفحة التعريف وإضافة ترجمة عربية كاملة مع روابط للتبديل بين اللغتين.
+- تحديث رسومات صفحة التعريف وإضافة صفحتين مختصرتين بالعربية والإنجليزية.
+- إضافة شارات متاجر مايكروسوفت وجوجل بلاي وسناب. نسخة جوجل بلاي قادمة قريبًا، وهي قيد المراجعة.
 - توضيح أن إصدار لينكس مستقر، والتوصية بإصدار متجر Snap المستقر لأوبونتو، مع تحديث إصدارات الحزم وتعليمات التثبيت.
 
 </div>
