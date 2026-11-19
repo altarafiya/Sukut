@@ -21,8 +21,12 @@ public sealed partial class ShellView
     {
         if (PageHost == null || DesktopNavigation == null) return;
         // Keep the rail compact at launch; only the user's menu command opens it.
+        // Left (not LeftCompact): the opened menu sits beside the page and pushes it
+        // over, and stays open until the menu button is pressed again, instead of
+        // floating over the page and closing on any click elsewhere. Narrow windows
+        // have no room for that, so they keep the overlay (LeftMinimal).
         var paneMode = Root.ActualWidth > 0 && Root.ActualWidth < 620
-            ? NavigationViewPaneDisplayMode.LeftMinimal : NavigationViewPaneDisplayMode.LeftCompact;
+            ? NavigationViewPaneDisplayMode.LeftMinimal : NavigationViewPaneDisplayMode.Left;
         if (DesktopNavigation.PaneDisplayMode != paneMode) {
             DesktopNavigation.PaneDisplayMode = paneMode;
             DesktopNavigation.IsPaneOpen = false;

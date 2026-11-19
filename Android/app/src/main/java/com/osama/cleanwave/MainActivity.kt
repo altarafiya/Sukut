@@ -240,21 +240,24 @@ class MainActivity : Activity() {
     }
 
     private fun backgroundControl(): View {
+        // Same icon and amber colour as the Background slider in Advanced mix.
+        val backgroundColour = ModeStyle.buffer(1, ui.dark)
         backgroundPanel = ui.card(14).apply {
             visibility = View.GONE
             setPaddingRelative(ui.dp(16), ui.dp(12), ui.dp(16), ui.dp(6))
             addView(LinearLayout(this@MainActivity).apply {
                 gravity = Gravity.CENTER_VERTICAL
-                addView(ui.text(R.string.background_level, 14f, true), LinearLayout.LayoutParams(0, -2, 1f))
-                backgroundValue = ui.text("", 14f, true, ui.accent).apply { textDirection = View.TEXT_DIRECTION_LTR }
+                addView(ui.icon(R.drawable.ic_mix_background, backgroundColour, 22))
+                addView(ui.text(R.string.background_level, 14f, true, backgroundColour), LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = ui.dp(10) })
+                backgroundValue = ui.text("", 14f, true, backgroundColour).apply { textDirection = View.TEXT_DIRECTION_LTR }
                 addView(backgroundValue)
             })
             backgroundSlider = TouchSeekBar(this@MainActivity).apply {
                 max = 30; minimumHeight = ui.dp(64); minHeight = ui.dp(6); maxHeight = ui.dp(6); tag = "optimized_background"
                 contentDescription = getString(R.string.background_level)
-                progressTintList = ColorStateList.valueOf(ui.accent)
+                progressTintList = ColorStateList.valueOf(backgroundColour)
                 progressBackgroundTintList = ColorStateList.valueOf(ui.dividerColor)
-                thumbTintList = ColorStateList.valueOf(ui.accent)
+                thumbTintList = ColorStateList.valueOf(backgroundColour)
                 setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onStartTrackingTouch(bar: SeekBar?) { trackingBackground = true }
                     override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -269,7 +272,7 @@ class MainActivity : Activity() {
                     }
                 })
             }
-            SliderStyle.wide(backgroundSlider, ui, ModeStyle.audio(CleanerPrefs.SOURCE_OPTIMIZED, ui.dark))
+            SliderStyle.wide(backgroundSlider, ui, backgroundColour)
             addView(backgroundSlider, LinearLayout.LayoutParams(-1, ui.dp(64)))
         }
         return backgroundPanel
@@ -394,7 +397,7 @@ class MainActivity : Activity() {
             starting -> R.string.starting
             recovering -> R.string.recovering
             recent -> R.string.recently_recovered
-            enabled -> R.string.status_filtering
+            enabled -> R.string.home_sukut_on
             else -> R.string.off
         }
         val color = when {
@@ -406,12 +409,17 @@ class MainActivity : Activity() {
         if (statusText.text.toString() != statusLabel) statusText.text = statusLabel
         statusText.setTextColor(color)
         val detailText: CharSequence = when {
-            needsWorker -> getString(R.string.status_worker_help)
+            // Only a first activation mentions pairing; afterwards just say how to switch it back on.
+            needsWorker -> getString(if (!UiPrefs.setupCompleted(this)) R.string.status_worker_help
+                else if (DeveloperOptionsControl.needsWifi(this))
+                    if (DeveloperOptionsControl.available(this)) R.string.status_worker_wifi_auto else R.string.status_worker_wifi
+                else if (UiPrefs.activationMethod(this) == WorkerGuide.PHONE) R.string.status_worker_again_phone
+                else R.string.status_worker_again_pc)
             failed -> ErrorText.friendly(this, detail)
             recovering && CleanerPrefs.silentRecovery(this) -> getString(R.string.recovery_silent)
             recovering -> getString(R.string.recovery_original)
             recent -> getString(R.string.recovery_recent_detail)
-            enabled && !starting -> getString(R.string.status_filtering_detail, modeName)
+            enabled && !starting -> AudioModes.onDetail(this, preset)
             starting || stopping -> modeName
             else -> getString(R.string.home_tap_to_start, modeName)
         }

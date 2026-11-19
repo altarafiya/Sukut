@@ -32,6 +32,9 @@ ANDROID_COLORS = [('black', '#000000'), ('graphite', '#2B2E33'), ('navy', '#0E22
 ANDROID_ALL = ANDROID_COLORS + [c for c in COLORS if c[0] not in dict(ANDROID_COLORS)]
 RADIUS = 0.225   # corner radius / side: the rounded square on every platform
 MARK_BOX = 0.72  # the mark fits a centred box this share of the side
+# Windows taskbar/title-bar sizes (16-48 px): the mark fills more of the square so it
+# reads at the size of other apps' icons instead of a small glyph in a big tile.
+SMALL_MARK_BOX, SMALL_RADIUS = 0.90, 0.18
 
 marks = {}
 for key, name in MARKS:
@@ -42,14 +45,14 @@ def fit(mark, box):
     scale = min(box / mark.width, box / mark.height)
     return mark.resize((max(1, round(mark.width * scale)), max(1, round(mark.height * scale))), LANCZOS)
 
-def tile(key, color, size):
+def tile(key, color, size, box=MARK_BOX, radius=RADIUS):
     """The rounded-square icon, drawn at 4x and reduced for smooth corners."""
     big = size * 4
     canvas = Image.new('RGBA', (big, big))
     shape = Image.new('L', (big, big))
-    ImageDraw.Draw(shape).rounded_rectangle((0, 0, big - 1, big - 1), radius=round(big * RADIUS), fill=255)
+    ImageDraw.Draw(shape).rounded_rectangle((0, 0, big - 1, big - 1), radius=round(big * radius), fill=255)
     canvas.paste(Image.new('RGBA', (big, big), color), (0, 0), shape)
-    art = fit(marks[key], round(big * MARK_BOX))
+    art = fit(marks[key], round(big * box))
     canvas.alpha_composite(art, ((big - art.width) // 2, (big - art.height) // 2))
     return canvas.resize((size, size), LANCZOS)
 
@@ -114,8 +117,14 @@ choices = assets / 'AppIcons'
 choices.mkdir(exist_ok=True)
 for key, _ in MARKS:
     for color, value in COLORS:
-        tile(key, value, 256).save(choices / f'{key}-{color}.ico', sizes=[(n, n) for n in [16, 24, 32, 48, 64, 256]])
+        # Each size drawn on its own (not one 256 px image shrunk), larger mark when small.
+        frames = [tile(key, value, n, SMALL_MARK_BOX, SMALL_RADIUS) if n <= 48 else tile(key, value, n)
+                  for n in [16, 20, 24, 32, 40, 48, 64, 128, 256]]
+        frames[-1].save(choices / f'{key}-{color}.ico', sizes=[f.size for f in frames], append_images=frames[:-1])
     tile(key, '#000000', 128).save(choices / f'preview-{key}.png', optimize=True)
+    # The Settings picker draws the colour itself and lays this transparent mark on top,
+    # so it stays sharp at any display scale (an .ico in an Image shows a small frame).
+    fit(marks[key], 192).save(choices / f'mark-{key}.png', optimize=True)
 for source in sorted((GLYPH / 'windows').glob('Tray-*')):
     shutil.copy2(source, assets / source.name)
 

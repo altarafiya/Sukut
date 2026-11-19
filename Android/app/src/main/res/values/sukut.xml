@@ -54,8 +54,6 @@
  <string name="sukut_changelog_latest">0.5.7\n• A calmer set of app icon colours.\n• After activating, Sukut starts filtering by itself.\n• The Debugging tile turns debugging on and reconnects in the background, without opening Sukut.\n• Phone activation returns to Sukut as soon as the code is accepted, retries by itself, and reconnects when Wi-Fi comes back.\n• Clearer error messages, and the activation screen closes by itself when done.</string>
  <string name="notification_mode">Audio Mode: %1$s</string>
  <string name="home_tap_to_start">Tap to start · %1$s</string>
- <string name="status_filtering">Filtering music</string>
- <string name="status_filtering_detail">%1$s · Voice stays clear</string>
  <string name="power_turn_on">Turn Sukut on</string>
  <string name="power_turn_off">Turn Sukut off</string>
  <string name="about_tagline">Enjoy the internet. Without the music.</string>

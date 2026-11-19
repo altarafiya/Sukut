@@ -35,7 +35,7 @@ class WirelessShortcutEmulatorTest {
             ins.waitForIdleSync();SystemClock.sleep(400)
             ins.runOnMainSync {
                 assertFalse(views(page!!.window.decorView).any {it.tag=="guide_step_counter" || it.tag=="guide_phone"})
-                assertTrue(views(page!!.window.decorView).any {it.tag in listOf("reactivation_start","recovery_enable","recovery_working")})
+                assertTrue(views(page!!.window.decorView).any {it.tag in listOf("recovery_auto","recovery_wifi","reactivation_start","recovery_enable","recovery_working")})
                 page!!.finish()
             }
             ins.waitForIdleSync();SystemClock.sleep(400)

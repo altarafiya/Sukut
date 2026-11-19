@@ -15,6 +15,8 @@ import android.widget.FrameLayout
 internal object WorkerGuide {
     const val PHONE = 0
     const val WINDOWS = 1
+    /** Computer route only: install Sukut on the computer. Runs first, before Developer options. */
+    const val GET_APP = 4
     class Controller(
         private val activity: Activity, state: Bundle?, initial: Int = UiPrefs.activationMethod(activity), private val showProgress: Boolean = true,
         private val pair: () -> Unit, private val cancelPair: () -> Unit, private val changed: () -> Unit
@@ -24,11 +26,12 @@ internal object WorkerGuide {
         private lateinit var content:LinearLayout
         var method = if(Build.VERSION.SDK_INT<30) WINDOWS else (state?.getInt("guide_method",initial)?:initial).coerceIn(PHONE,WINDOWS)
             private set
-        var step = (state?.getInt("guide_step",-1)?:-1).coerceIn(-1,3)
+        var step = (state?.getInt("guide_step",-1)?:-1).coerceIn(-1,GET_APP)
             private set
-        // Every page asks for something: the computer route ends on Activate (connecting the
-        // cable is part of it), and the phone route explains the code beside the Pair button.
-        private val steps get() = if(method==PHONE) listOf(0,2,3) else listOf(0,1,3)
+        // Every page asks for something: the computer route starts by getting Sukut on the
+        // computer and ends on Activate (connecting the cable is part of it); the phone route
+        // explains the code beside the Pair button. Steps run in list order.
+        private val steps get() = if(method==PHONE) listOf(0,2,3) else listOf(GET_APP,0,1,3)
         val progressCount get()=steps.size+1 // Choosing a method belongs inside Activation too.
         val progressIndex get()=if(step<0)0 else steps.indexOf(step)+1
         private var snapshot=""
@@ -39,19 +42,20 @@ internal object WorkerGuide {
         }
         val nextLabel get()=if(step==steps.last())R.string.guide_continue else R.string.next
         init {
-            if(step>=0 && step !in steps) step=steps.firstOrNull {it>=step}?:steps.last()
+            if(step>=0 && step !in steps) step=if(step==GET_APP)steps.first() else steps.firstOrNull {it in 0..3 && it>=step}?:steps.last()
             render(false,0)
         }
         fun save(state:Bundle) {state.putInt("guide_method",method);state.putInt("guide_step",step)}
         fun back():Boolean {
             if(step<0)return false
-            cancelPair();step=steps.lastOrNull {it<step}?:-1;render(direction=-1);return true
+            cancelPair();val at=steps.indexOf(step);step=if(at>0)steps[at-1] else -1;render(direction=-1);return true
         }
         fun next():Boolean {
             if(!canNext)return false
             if(step==steps.last()) {DeveloperOptionsControl.dismissCleanup(activity);if(!WorkerConnection.ready)PowerActivationRequest.cancel();return true}
-            if(step<0) {
-                UiPrefs.setActivationMethod(activity,method)
+            if(step<0) UiPrefs.setActivationMethod(activity,method)
+            if(step<0 && method==WINDOWS) {step=GET_APP;render(direction=1);return false}
+            if(step<0 || step==GET_APP) {
                 // Skip what is already done: Developer options on, and USB debugging for the computer route.
                 val developer=DeveloperOptionsControl.developerEnabled(activity)
                 step=when {
@@ -62,7 +66,7 @@ internal object WorkerGuide {
                 }
                 render(direction=1);return false
             }
-            step=steps.firstOrNull {it>step}?:steps.last();render(direction=1);return false
+            val at=steps.indexOf(step);step=steps.getOrElse(at+1){steps.last()};render(direction=1);return false
         }
         fun refresh() {
             val now="${WorkerConnection.ready}:${WorkerConnection.debuggingTethered}:${DeveloperOptionsControl.available(activity)}:${DeveloperOptionsControl.developerEnabled(activity)}:${DeveloperOptionsControl.usbEnabled(activity)}:${DeveloperOptionsControl.wirelessEnabled(activity)}:${DeveloperOptionsControl.tileAdded(activity)}"
@@ -142,7 +146,43 @@ internal object WorkerGuide {
             if(direction!=0)view.post {var p=view.parent;while(p!=null){if(p is android.widget.ScrollView){p.scrollTo(0,0);break};p=p.parent}}
             if(notify)changed()
         }
+        /** Sukut on the computer: Microsoft Store first (most people use Windows), then a small Snap Store row for Ubuntu. */
+        private fun getApp() {
+            title(R.string.guide_get_app_title,R.drawable.ic_setup_pc)
+            body(R.string.guide_get_app_body)
+            content.addView(ui.card(18).apply {
+                tag="guide_store_windows"
+                background=ui.rounded(ui.selectedColor,20).apply {setStroke(ui.dp(2),ui.accent)}
+                addView(LinearLayout(activity).apply {
+                    gravity=Gravity.CENTER_VERTICAL
+                    addView(android.widget.ImageView(activity).apply {setImageResource(R.drawable.ic_store_microsoft);importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO},LinearLayout.LayoutParams(ui.dp(44),ui.dp(44)))
+                    addView(LinearLayout(activity).apply {
+                        orientation=LinearLayout.VERTICAL
+                        addView(ui.text(R.string.guide_store_windows_title,18f,true))
+                        addView(ui.text(R.string.guide_store_windows_detail,14f,color=ui.secondary).apply {setPadding(0,ui.dp(2),0,0)})
+                    },LinearLayout.LayoutParams(0,-2,1f).apply {marginStart=ui.dp(14)})
+                })
+                addView(ui.button(R.string.guide_store_windows_button,0,MobileUi.Tone.FILLED){AudioTools.website(activity,ReleaseLinks.MICROSOFT_STORE)}.apply {tag="guide_open_microsoft_store"},LinearLayout.LayoutParams(-1,-2).apply {topMargin=ui.dp(14)})
+            },LinearLayout.LayoutParams(-1,-2).apply {bottomMargin=ui.dp(12)})
+            content.addView(LinearLayout(activity).apply {
+                tag="guide_open_snap_store"
+                gravity=Gravity.CENTER_VERTICAL;minimumHeight=ui.dp(58)
+                setPaddingRelative(ui.dp(16),ui.dp(10),ui.dp(14),ui.dp(10))
+                background=ui.pressable(ui.cardColor,20);isClickable=true;isFocusable=true
+                contentDescription=activity.getString(R.string.guide_store_linux_title)+". "+activity.getString(R.string.guide_store_linux_detail)
+                setOnClickListener {ui.tap(this);AudioTools.website(activity,ReleaseLinks.SNAP_STORE)}
+                addView(android.widget.ImageView(activity).apply {setImageResource(R.drawable.ic_store_ubuntu);importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO},LinearLayout.LayoutParams(ui.dp(30),ui.dp(30)).apply {marginEnd=ui.dp(14)})
+                addView(LinearLayout(activity).apply {
+                    orientation=LinearLayout.VERTICAL
+                    addView(ui.text(R.string.guide_store_linux_title,16f))
+                    addView(ui.text(R.string.guide_store_linux_detail,14f,color=ui.secondary).apply {setPadding(0,ui.dp(2),0,0)})
+                },LinearLayout.LayoutParams(0,-2,1f))
+                addView(ui.icon(R.drawable.ic_chevron,ui.secondary,18).apply {alpha=.7f})
+            },LinearLayout.LayoutParams(-1,-2).apply {bottomMargin=ui.dp(12)})
+            content.addView(ui.text(R.string.guide_get_app_done,13f,color=ui.secondary).apply {setPadding(0,ui.dp(6),0,0)})
+        }
         private fun computerStep() {when(step) {
+            GET_APP -> getApp()
             1 -> {title(R.string.guide_usb_title,R.drawable.ic_phone);statuses(1);if(!DeveloperOptionsControl.usbEnabled(activity)){body(R.string.guide_windows_1_body);action(R.string.guide_developer_options){openSettings()};picture(GuidePictures.Picture.DEVELOPER)}}
             3 -> {
                 if(WorkerConnection.ready) {

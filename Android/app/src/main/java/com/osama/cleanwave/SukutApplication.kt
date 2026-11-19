@@ -17,10 +17,17 @@ class SukutApplication : Application(), Application.ActivityLifecycleCallbacks {
         CleanerPrefs.prepareNewEngine(this)
         registerActivityLifecycleCallbacks(this)
         watchWifi()
+        // The worker came back after Sukut lost it while filtering: turn filtering on again.
+        WorkerConnection.addListener { android.os.Handler(android.os.Looper.getMainLooper()).post { resumeIfWanted() } }
         AppIcon.repair(this)
     }
     // Phone activation runs over Wi-Fi: when Wi-Fi comes back, Sukut turns Wireless
     // debugging on again (if it may) and reconnects. Only while this process lives.
+    private fun resumeIfWanted() {
+        if (!WorkerConnection.ready || !CleanerPrefs.resumeAfterWorkerPending(this) || CleanerService.isAlive) return
+        // Android may refuse a background start; then the next time Home opens it starts.
+        PlaybackController.enable(this) { PowerActivationRequest.request() }
+    }
     private fun watchWifi() {
         val manager = getSystemService(android.net.ConnectivityManager::class.java) ?: return
         val request = android.net.NetworkRequest.Builder().addTransportType(android.net.NetworkCapabilities.TRANSPORT_WIFI).build()

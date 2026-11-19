@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Quiet activation (0.5.8): one animated screen while Sukut turns debugging on and starts the worker. -->
+    <string name="auto_title">Activating Sukut</string>
+    <string name="auto_step_debugging">Turning on Wireless debugging…</string>
+    <string name="auto_step_connecting">Connecting to this phone…</string>
+    <string name="auto_step_worker">Starting the audio worker…</string>
+    <string name="auto_hint">This takes a few seconds.</string>
+    <string name="auto_ready">Sukut is ready</string>
+    <string name="auto_ready_detail">Taking you back…</string>
+    <string name="try_again">Try again</string>
+
+    <string name="fail_wifi_title">Connect to Wi-Fi</string>
+    <string name="fail_wifi_body">You activated Sukut with Wireless debugging, so this phone needs to be connected to Wi-Fi.\n\nThe Wi-Fi doesn’t need internet. A hotspot from another phone is enough.</string>
+    <string name="fail_wifi_auto">Sukut will carry on by itself as soon as Wi-Fi connects.</string>
+    <string name="open_wifi">Open Wi-Fi</string>
+    <string name="local_no_wifi">This phone isn’t connected to Wi-Fi. Wireless debugging needs Wi-Fi (no internet needed; another phone’s hotspot works).</string>
+    <string name="no_wifi_short">Connect to Wi-Fi first. Wireless debugging needs Wi-Fi, but not internet.</string>
+
+    <string name="fail_debugging_title">Couldn’t turn on debugging</string>
+    <string name="fail_debugging_body">Android didn’t let Sukut turn it on by itself. Turn on the setting marked below, then tap Try again.</string>
+    <string name="fail_worker_title">Sukut couldn’t finish activating</string>
+    <string name="status_worker_again_phone">Press the power button to activate Sukut again. It takes a few seconds.</string>
+    <string name="status_worker_again_pc">Press the power button, then connect this phone to your computer to activate Sukut again.</string>
+    <string name="home_sukut_on">Sukut is on</string>
+    <string name="on_music_muted">Music muted</string>
+    <string name="on_voices_effects">Voices and sound effects stay</string>
+    <string name="on_voices_clear">Voices clear</string>
+    <string name="on_background_softer">Background softer</string>
+    <string name="on_music_background_muted">Music and background muted</string>
+    <string name="on_only_voices">Only voices stay</string>
+    <string name="on_your_mix">Your own mix</string>
+    <string name="status_worker_wifi_auto">No Wi-Fi. Sukut turns itself back on as soon as this phone connects to Wi-Fi (no internet needed).</string>
+    <string name="status_worker_wifi">No Wi-Fi. Connect to any Wi-Fi (no internet needed), then press the power button.</string>
+    <string name="guide_get_app_title">Get Sukut on your computer</string>
+    <string name="guide_get_app_body">Sukut on your computer activates this phone over a USB cable. It is free.</string>
+    <string name="guide_store_windows_title">Windows</string>
+    <string name="guide_store_windows_detail">Microsoft Store</string>
+    <string name="guide_store_windows_button">Get it from Microsoft Store</string>
+    <string name="guide_store_linux_title">Using Ubuntu or Linux?</string>
+    <string name="guide_store_linux_detail">Snap Store</string>
+    <string name="guide_get_app_done">Already installed on your computer? Tap Next.</string>
+</resources>

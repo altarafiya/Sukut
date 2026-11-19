@@ -1,5 +1,21 @@
 # What’s new
 
+## Windows 0.5.8 · Android 0.5.8 · 19 November 2026
+
+- **Google Play:** Sukut for Android is now on [Google Play](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut).
+- **Android:** one tap activates Sukut, with a spark animation while it turns on debugging and starts by itself. Without Wi-Fi, Sukut says so (no internet is needed; a hotspot is enough) and turns itself back on when Wi-Fi connects. Home says "Sukut is on" with what each mode keeps. Screen recordings no longer repeat the sound on Android 14 and older. A new step shows how to get Sukut for Windows or Ubuntu, and the icon picker is tidier on tablets.
+- **Windows:** choose your app icon (five designs, nine colours) with a larger taskbar icon. The menu opens beside the page and stays open. Activate your phone over USB step by step, with a card for your phone at the top of the Phone page. The tray notice appears only once, and Standby is gone. Includes Android 0.5.8.
+- Linux stays 0.5.7.
+
+<div lang="ar" dir="rtl">
+
+- **جوجل بلاي:** سُكوت لأندرويد متوفر الآن على [جوجل بلاي](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut).
+- **أندرويد:** تفعيل سُكوت بلمسة واحدة مع حركة شرارة بينما يشغّل تصحيح الأخطاء ويبدأ بنفسه. عند غياب Wi-Fi يخبرك سُكوت بذلك (لا حاجة للإنترنت، ونقطة اتصال تكفي) ويعود للعمل بنفسه عند الاتصال. الشاشة الرئيسية تقول «سُكوت يعمل» مع ما يبقيه كل وضع. لم يعد الصوت يتكرر في تسجيل الشاشة على أندرويد 14 وما قبله. خطوة جديدة لتثبيت سُكوت على ويندوز أو أوبونتو، واختيار أيقونة أرتب على الأجهزة اللوحية.
+- **ويندوز:** اختر أيقونة التطبيق (خمسة تصاميم وتسعة ألوان) مع أيقونة أكبر في شريط المهام. تفتح القائمة بجانب الصفحة وتبقى مفتوحة. فعّل هاتفك عبر USB خطوة بخطوة، مع بطاقة لهاتفك أعلى صفحة الهاتف. يظهر تنبيه منطقة الإشعارات مرة واحدة فقط، ولم تعد هناك حالة الاستعداد. يتضمن أندرويد 0.5.8.
+- لينكس يبقى 0.5.7.
+
+</div>
+
 ## Android 0.5.7 · 18 November 2026
 
 - A calmer set of app icon colours: black, graphite, navy and forest green. If you had picked a colour that is no longer offered, the icon moves to black.

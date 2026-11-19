@@ -22,7 +22,7 @@ class LocalActivationService : Service() {
     private var destroyed = false
     private var connectRetries = 0
     private var restartedWireless = false
-    private val timeout = Runnable { finish(R.string.local_timeout) }
+    private val timeout = Runnable { finish(failure(R.string.local_timeout)) }
     override fun onBind(intent: Intent?) = null
     @android.annotation.SuppressLint("ForegroundServiceType") // AGP8.7 false positive with compileSdk36; merged manifest + device test verify shortService.
     override fun onCreate() {
@@ -47,6 +47,8 @@ class LocalActivationService : Service() {
         intent?.getIntExtra("pair_port", 0)?.takeIf(AdbWire::validPort)?.let { pairingPort = it }
         intent?.getIntExtra("connect_port", 0)?.takeIf(AdbWire::validPort)?.let { connectPort = it }
         if (WorkerConnection.ready && !preferPair) { finish(R.string.local_ready); return START_NOT_STICKY }
+        // No Wi-Fi means no Wireless debugging: stop at once with a clear reason.
+        if (!DeveloperOptionsControl.wifiConnected(this)) { finish(R.string.local_no_wifi); return START_NOT_STICKY }
         discover()
         attempt(); return START_NOT_STICKY
     }
@@ -97,7 +99,7 @@ class LocalActivationService : Service() {
                         discovery?.close(); discovery=null
                         update(R.string.local_searching)
                         DeveloperOptionsControl.restartWireless(this@LocalActivationService) { if(!destroyed) discover() }
-                    } else finish(R.string.local_activate_failed)
+                    } else finish(failure(R.string.local_activate_failed))
                 }
             }
         }
@@ -121,8 +123,10 @@ class LocalActivationService : Service() {
         LocalActivationState.update(text, true, posted = true)
     }
     private fun finish(text: Int) { LocalActivationState.update(text, false); stopSelf() }
-    override fun onTimeout(startId: Int) { finish(R.string.local_timeout) }
-    override fun onTimeout(startId: Int, fgsType: Int) { finish(R.string.local_timeout) }
+    /** Wi-Fi dropped during the attempt: that is the reason to show, not a generic failure. */
+    private fun failure(text: Int) = if (DeveloperOptionsControl.wifiConnected(this)) text else R.string.local_no_wifi
+    override fun onTimeout(startId: Int) { finish(failure(R.string.local_timeout)) }
+    override fun onTimeout(startId: Int, fgsType: Int) { finish(failure(R.string.local_timeout)) }
     override fun onDestroy() {
         destroyed = true
         code = null; main.removeCallbacksAndMessages(null)

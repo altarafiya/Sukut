@@ -12,16 +12,26 @@ public sealed partial class ShellView
     private readonly DispatcherTimer _advancedHold = new() { Interval = TimeSpan.FromMilliseconds(AdvancedMixAccess.HoldMilliseconds) };
     private Point _advancedPress;
     private ContentDialog? _advancedDialog;
+    /** The Optimized card the hold is attached to; Home loads lazily and can be recreated. */
+    private RadioButton? _advancedHoldCard;
+    /** Constructor: only what does not touch Home's controls (they may not exist yet, e.g. setup on first run). */
     private void InitializeAdvancedMixHold()
     {
-        AdvancedAccessNotice.Closed += (_, _) => AdvancedAccessNotice.Visibility=Visibility.Collapsed;
         _advancedHold.Tick += async (_, _) =>
         {
             _advancedHold.Stop();
-            if (_quitting || !_visible || Minimized || !OptimizedCard.IsEnabled || HomePanel.Visibility != Visibility.Visible) return;
+            if (_quitting || !_visible || Minimized || OptimizedCard is null || HomePanel is null || !OptimizedCard.IsEnabled || HomePanel.Visibility != Visibility.Visible) return;
             OptimizedCard.ReleasePointerCaptures();
             if(_preferences.AdvancedOptimized) await DisableAdvancedMix(); else await OpenAdvancedMix();
         };
+        _window.Activated += (_, e) => { if (e.WindowActivationState == WindowActivationState.Deactivated) _advancedHold.Stop(); };
+    }
+    /** From HomePanel_Loaded: attach the hold to the current Optimized card once per instance. */
+    private void AttachAdvancedMixHold()
+    {
+        if (OptimizedCard is null || ReferenceEquals(_advancedHoldCard, OptimizedCard)) return;
+        _advancedHoldCard = OptimizedCard;
+        if (AdvancedAccessNotice is not null) AdvancedAccessNotice.Closed += (_, _) => AdvancedAccessNotice.Visibility=Visibility.Collapsed;
         OptimizedCard.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, e) =>
         {
             var point = e.GetCurrentPoint(OptimizedCard);
@@ -42,7 +52,6 @@ public sealed partial class ShellView
         OptimizedCard.AddHandler(UIElement.KeyUpEvent, new KeyEventHandler((_, _) => _advancedHold.Stop()), true);
         OptimizedCard.Unloaded += (_, _) => _advancedHold.Stop();
         HomePanel.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => _advancedHold.Stop());
-        _window.Activated += (_, e) => { if (e.WindowActivationState == WindowActivationState.Deactivated) _advancedHold.Stop(); };
 
     }
     private async Task DisableAdvancedMix()

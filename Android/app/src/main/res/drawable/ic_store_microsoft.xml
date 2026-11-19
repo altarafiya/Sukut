@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Microsoft Store mark (shopping bag with four squares), for the computer activation step. Not tinted. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#FF9AA0A6" android:pathData="M17,12a7,7 0,0 1,14 0h-3a4,4 0,0 0,-8 0z"/>
+    <path android:fillColor="#FFF4F5F7" android:strokeColor="#FFB4B9BF" android:strokeWidth="1.2" android:pathData="M6,13h36l-2,29a3,3 0,0 1,-3 3h-26a3,3 0,0 1,-3 -3z"/>
+    <path android:fillColor="#FFF25022" android:pathData="M15,20h8.5v8.5h-8.5z"/>
+    <path android:fillColor="#FF7FBA00" android:pathData="M24.5,20h8.5v8.5h-8.5z"/>
+    <path android:fillColor="#FF00A4EF" android:pathData="M15,29.5h8.5v8.5h-8.5z"/>
+    <path android:fillColor="#FFFFB900" android:pathData="M24.5,29.5h8.5v8.5h-8.5z"/>
+</vector>

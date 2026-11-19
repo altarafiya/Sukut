@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auto_title">جارٍ تفعيل سُكوت</string>
+    <string name="auto_step_debugging">جارٍ تشغيل تصحيح الأخطاء اللاسلكي…</string>
+    <string name="auto_step_connecting">جارٍ الاتصال بهذا الهاتف…</string>
+    <string name="auto_step_worker">جارٍ تشغيل عامل الصوت…</string>
+    <string name="auto_hint">يستغرق ذلك بضع ثوانٍ.</string>
+    <string name="auto_ready">سُكوت جاهز</string>
+    <string name="auto_ready_detail">جارٍ العودة…</string>
+    <string name="try_again">حاول مجددًا</string>
+
+    <string name="fail_wifi_title">اتصل بشبكة Wi-Fi</string>
+    <string name="fail_wifi_body">فعّلتَ سُكوت عبر تصحيح الأخطاء اللاسلكي، لذا يجب أن يكون هذا الهاتف متصلًا بشبكة Wi-Fi.\n\nلا تحتاج الشبكة إلى إنترنت، وتكفي نقطة اتصال من هاتف آخر.</string>
+    <string name="fail_wifi_auto">سيكمل سُكوت بنفسه فور الاتصال بشبكة Wi-Fi.</string>
+    <string name="open_wifi">فتح Wi-Fi</string>
+    <string name="local_no_wifi">هذا الهاتف غير متصل بشبكة Wi-Fi. يحتاج تصحيح الأخطاء اللاسلكي إلى Wi-Fi (دون حاجة إلى إنترنت، وتكفي نقطة اتصال من هاتف آخر).</string>
+    <string name="no_wifi_short">اتصل بشبكة Wi-Fi أولًا. يحتاج تصحيح الأخطاء اللاسلكي إلى Wi-Fi لا إلى الإنترنت.</string>
+
+    <string name="fail_debugging_title">تعذّر تشغيل تصحيح الأخطاء</string>
+    <string name="fail_debugging_body">لم يسمح أندرويد لسُكوت بتشغيله بنفسه. شغّل الإعداد المشار إليه أدناه، ثم اضغط «حاول مجددًا».</string>
+    <string name="fail_worker_title">تعذّر إكمال تفعيل سُكوت</string>
+    <string name="status_worker_again_phone">اضغط زر التشغيل لتفعيل سُكوت مجددًا. يستغرق ذلك بضع ثوانٍ.</string>
+    <string name="status_worker_again_pc">اضغط زر التشغيل، ثم صِل هذا الهاتف بالكمبيوتر لتفعيل سُكوت مجددًا.</string>
+    <string name="home_sukut_on">سُكوت يعمل</string>
+    <string name="on_music_muted">الموسيقى مكتومة</string>
+    <string name="on_voices_effects">الكلام والمؤثرات الصوتية باقية</string>
+    <string name="on_voices_clear">الكلام واضح</string>
+    <string name="on_background_softer">الخلفية أخفض</string>
+    <string name="on_music_background_muted">الموسيقى والخلفية مكتومتان</string>
+    <string name="on_only_voices">يبقى الكلام فقط</string>
+    <string name="on_your_mix">مزيجك الخاص</string>
+    <string name="status_worker_wifi_auto">لا يوجد Wi-Fi. يعود سُكوت للعمل بنفسه فور اتصال هذا الهاتف بشبكة Wi-Fi (دون حاجة إلى إنترنت).</string>
+    <string name="status_worker_wifi">لا يوجد Wi-Fi. اتصل بأي شبكة Wi-Fi (دون حاجة إلى إنترنت)، ثم اضغط زر التشغيل.</string>
+    <string name="guide_get_app_title">ثبّت سُكوت على الكمبيوتر</string>
+    <string name="guide_get_app_body">يفعّل سُكوت على الكمبيوتر هذا الهاتف عبر كابل USB. التطبيق مجاني.</string>
+    <string name="guide_store_windows_title">Windows</string>
+    <string name="guide_store_windows_detail">Microsoft Store</string>
+    <string name="guide_store_windows_button">احصل عليه من Microsoft Store</string>
+    <string name="guide_store_linux_title">تستخدم Ubuntu أو Linux؟</string>
+    <string name="guide_store_linux_detail">Snap Store</string>
+    <string name="guide_get_app_done">مثبّت على الكمبيوتر بالفعل؟ اضغط «التالي».</string>
+</resources>

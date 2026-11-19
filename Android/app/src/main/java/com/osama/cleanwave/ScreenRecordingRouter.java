@@ -47,6 +47,29 @@ final class ScreenRecordingRouter implements AutoCloseable {
         requestRefresh();
     }
     String status(){return status;}
+
+    private static Boolean canNarrow;
+    /**
+     * Whether this Android can list and narrow another app's playback capture. Both
+     * hidden calls arrived after Android 14: on the Xiaomi Pad 6 (Android 14, HyperOS)
+     * neither exists, so a screen recording took the original app and Sukut's output,
+     * which sounded like an echo. Where this is false, Sukut keeps its output out of
+     * every capture instead (the recording then has the original sound once).
+     */
+    static synchronized boolean canNarrow() {
+        if(canNarrow!=null)return canNarrow;
+        boolean result;
+        try {
+            Class<?> system=Class.forName("android.media.AudioSystem");
+            Class<?> mixArray=Array.newInstance(Class.forName("android.media.audiopolicy.AudioMix"),0).getClass();
+            Class<?> ruleArray=Array.newInstance(Class.forName("android.media.audiopolicy.AudioMixingRule"),0).getClass();
+            HiddenApiBypass.getDeclaredMethod(system,"getRegisteredPolicyMixes",List.class);
+            HiddenApiBypass.getDeclaredMethod(system,"updatePolicyMixes",mixArray,ruleArray);
+            result=true;
+        } catch(Throwable missing) { result=false; }
+        canNarrow=result;
+        return result;
+    }
     void requestRefresh() {
         if(!closed && pending.compareAndSet(false,true))handler.post(refresh);
     }

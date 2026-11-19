@@ -67,7 +67,7 @@ internal static class AppIcons
             var button = new ToggleButton
             {
                 IsChecked = mark.Id == current, Padding = new Thickness(4), CornerRadius = new CornerRadius(14),
-                Content = new Image { Width = 52, Height = 52, Source = new BitmapImage(new Uri(IconPath(mark.Id, color))) },
+                Content = Preview(mark.Id, color),
             };
             AutomationProperties.SetName(button, arabic ? mark.Arabic : mark.English);
             string id = mark.Id;
@@ -87,6 +87,28 @@ internal static class AppIcons
             button.Click += (_, _) => changed(Load().Mark, id);
             colors.Children.Add(button);
         }
+    }
+
+    // The tile as the picker shows it: the colour drawn by XAML and the transparent mark
+    // (192 px PNG) on top, same proportions as the .ico (corner 22.5 %, mark in 72 %).
+    // Loading the .ico into an Image showed its 16 px frame stretched, which looked blurred.
+    private static FrameworkElement Preview(string mark, string color)
+    {
+        const double side = 52;
+        string png = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcons", "mark-" + mark + ".png");
+        if (!File.Exists(png))
+            return new Image { Width = side, Height = side, Source = new BitmapImage(new Uri(IconPath(mark, color))) { DecodePixelWidth = 256 } };
+        string hex = Colors.FirstOrDefault(c => c.Id == color)?.Hex ?? "#000000";
+        return new Border
+        {
+            Width = side, Height = side, CornerRadius = new CornerRadius(side * .225), Background = new SolidColorBrush(Parse(hex)),
+            Child = new Image
+            {
+                Width = side * .72, Height = side * .72, Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                Source = new BitmapImage(new Uri(png)),
+            },
+        };
     }
 
     private static Windows.UI.Color Parse(string hex) => Windows.UI.Color.FromArgb(255,

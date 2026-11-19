@@ -13,6 +13,7 @@ internal object PlaybackController {
      * caller then retries from a foreground activity instead of failing.
      */
     fun enable(context: Context, onBlocked: (() -> Unit)? = null) {
+        CleanerPrefs.clearResumeAfterWorker(context)
         CleanerPrefs.prepareNewEngine(context)
         if (CleanerPrefs.status(context) == "Stopping") return
         if (CleanerService.isAlive && CleanerPrefs.isEnabled(context)) {
@@ -36,6 +37,7 @@ internal object PlaybackController {
         }
     }
     fun disable(context: Context) {
+        CleanerPrefs.clearResumeAfterWorker(context)
         val hasWorker = CleanerService.isAlive || CleanerPrefs.startPending(context)
         CleanerPrefs.beginStop(context)
         CleanerTileService.requestRefresh(context)

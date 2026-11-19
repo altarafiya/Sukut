@@ -189,21 +189,27 @@ class SettingsActivity : Activity() {
         val context = this@SettingsActivity
         val mark = AppIcon.mark(context); val color = AppIcon.color(context)
         addView(label(R.drawable.ic_app_icon, R.string.app_icon))
+        // Tablets: equal-width cells stretched each icon into a wide pill. Each preview is a
+        // fixed square inside its cell, and the row stops growing past five comfortable cells.
+        val wide = resources.configuration.screenWidthDp >= 560
         addView(LinearLayout(context).apply {
             tag = "app_icon_marks"; gravity = Gravity.CENTER_VERTICAL
             AppIcon.MARKS.forEachIndexed { i, m ->
-                addView(ImageView(context).apply {
-                    setImageDrawable(AppIcon.tile(context, m, color))
-                    contentDescription = getString(AppIcon.markName(m)); isSelected = m == mark; isFocusable = true
-                    setPadding(ui.dp(4), ui.dp(4), ui.dp(4), ui.dp(4))
-                    if (m == mark) background = ui.rounded(android.graphics.Color.TRANSPARENT, 16).apply { setStroke(ui.dp(2), ui.accent) }
-                    ui.springPress(this)
-                    setOnClickListener { ui.tap(this); changeIcon(m, color) }
-                }, LinearLayout.LayoutParams(0, ui.dp(60), 1f).apply { if (i > 0) marginStart = ui.dp(6) })
+                addView(android.widget.FrameLayout(context).apply {
+                    addView(ImageView(context).apply {
+                        setImageDrawable(AppIcon.tile(context, m, color)); scaleType = ImageView.ScaleType.FIT_CENTER
+                        contentDescription = getString(AppIcon.markName(m)); isSelected = m == mark; isFocusable = true
+                        setPadding(ui.dp(3), ui.dp(3), ui.dp(3), ui.dp(3))
+                        if (m == mark) background = ui.rounded(android.graphics.Color.TRANSPARENT, 16).apply { setStroke(ui.dp(2), ui.accent) }
+                        ui.springPress(this)
+                        setOnClickListener { ui.tap(this); changeIcon(m, color) }
+                    }, android.widget.FrameLayout.LayoutParams(ui.dp(56), ui.dp(56), Gravity.CENTER))
+                }, LinearLayout.LayoutParams(0, ui.dp(62), 1f).apply { if (i > 0) marginStart = ui.dp(4) })
             }
-        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(12) })
+        }, LinearLayout.LayoutParams(if (wide) ui.dp(5 * 72) else -1, -2).apply { topMargin = ui.dp(12) })
         addView(label(R.drawable.ic_palette, R.string.app_icon_color), LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(18) })
-        // Four colours in one row of equal cells.
+        // Four colours side by side; a visible ring keeps the dark colours readable on a dark card.
+        val ring = ThemeColors.mix(ui.cardColor, ui.primary, .38f)
         AppIcon.COLORS.chunked(4).forEachIndexed { row, swatches ->
             addView(LinearLayout(context).apply {
                 tag = if (row == 0) "app_icon_colors" else "app_icon_colors_$row"; gravity = Gravity.CENTER_VERTICAL
@@ -211,15 +217,15 @@ class SettingsActivity : Activity() {
                     val cell = android.widget.FrameLayout(context)
                     swatches.getOrNull(slot)?.let { (key, value) ->
                         cell.addView(View(context).apply {
-                            background = ui.circle(value).apply { setStroke(ui.dp(if (key == color) 3 else 1), if (key == color) ui.accent else ui.dividerColor) }
+                            background = ui.circle(value).apply { setStroke(ui.dp(if (key == color) 3 else 2), if (key == color) ui.accent else ring) }
                             contentDescription = getString(AppIcon.colorName(key)); isSelected = key == color; isFocusable = true
                             ui.springPress(this)
                             setOnClickListener { ui.tap(this); changeIcon(mark, key) }
-                        }, android.widget.FrameLayout.LayoutParams(ui.dp(38), ui.dp(38), Gravity.CENTER))
+                        }, android.widget.FrameLayout.LayoutParams(ui.dp(40), ui.dp(40), Gravity.CENTER))
                     }
-                    addView(cell, LinearLayout.LayoutParams(0, ui.dp(48), 1f))
+                    addView(cell, LinearLayout.LayoutParams(0, ui.dp(52), 1f))
                 }
-            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(if (row == 0) 8 else 4) })
+            }, LinearLayout.LayoutParams(ui.dp(4 * 64), -2).apply { topMargin = ui.dp(if (row == 0) 8 else 4) })
         }
     }
 

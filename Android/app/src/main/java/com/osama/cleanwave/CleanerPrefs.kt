@@ -235,6 +235,17 @@ object CleanerPrefs {
         prefs(context).edit().putBoolean(KEY_ENABLED, false).putBoolean("cancel_start", true)
             .putString(KEY_STATUS, "Stopping").putString(KEY_ERROR, "").apply()
     }
+    /**
+     * Filtering stopped because the worker went away (Wi-Fi dropped, debugging stopped).
+     * When the worker returns within three hours, Sukut turns filtering back on by itself.
+     * Any explicit On/Off by the user clears it.
+     */
+    fun markResumeAfterWorker(context: Context) { prefs(context).edit().putLong("resume_after_worker", System.currentTimeMillis()).apply() }
+    fun resumeAfterWorkerPending(context: Context): Boolean {
+        val at = prefs(context).getLong("resume_after_worker", 0L)
+        return at != 0L && System.currentTimeMillis() - at in 0..3 * 3600_000L
+    }
+    fun clearResumeAfterWorker(context: Context) { prefs(context).edit().remove("resume_after_worker").apply() }
     fun clearStartPending(context: Context) { prefs(context).edit().remove("pending_start_pid").remove("pending_start_time").apply() }
 
     fun setEnabled(context: Context, enabled: Boolean) {

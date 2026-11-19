@@ -41,6 +41,17 @@ internal object DeveloperOptionsControl {
     }
     fun dismissCleanup(context: Context) { prefs(context).edit().remove("offer_cleanup").apply() }
     fun usesWireless(context: Context) = android.os.Build.VERSION.SDK_INT >= 30 && UiPrefs.activationMethod(context) == WorkerGuide.PHONE
+    /**
+     * Wireless debugging works only while this phone is joined to a Wi-Fi network. Any
+     * network counts, with or without internet (another phone's hotspot is fine).
+     */
+    fun wifiConnected(context: Context): Boolean {
+        val manager = context.getSystemService(android.net.ConnectivityManager::class.java) ?: return true
+        @Suppress("DEPRECATION")
+        return runCatching { manager.allNetworks.any { manager.getNetworkCapabilities(it)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) == true } }.getOrDefault(true)
+    }
+    /** Phone activation is chosen but there is no Wi-Fi: say so instead of failing silently. */
+    fun needsWifi(context: Context) = usesWireless(context) && !wifiConnected(context)
     fun readyForActivation(context: Context) = developerEnabled(context) && if(usesWireless(context)) wirelessEnabled(context) else usbEnabled(context)
 
     /** No generic setting writer or remote command interface is exposed. */
@@ -90,8 +101,10 @@ internal object DeveloperOptionsControl {
      */
     /** Wi-Fi is back: switch Wireless debugging on again if Sukut may, then try to activate. */
     fun wifiReturned(context: Context) {
-        if (!UiPrefs.setupCompleted(context) || !usesWireless(context) || WorkerConnection.ready || !available(context) || !developerEnabled(context)) return
-        if (!wirelessEnabled(context)) runCatching { Settings.Global.putInt(context.contentResolver, WIFI, 1) }
+        if (!UiPrefs.setupCompleted(context) || !usesWireless(context) || WorkerConnection.ready || !available(context)) return
+        // Developer options off: switch everything back on only when Sukut was filtering when it lost Wi-Fi.
+        if (!developerEnabled(context)) { if (!CleanerPrefs.resumeAfterWorkerPending(context) || !setEnabled(context, true)) return }
+        else if (!wirelessEnabled(context)) runCatching { Settings.Global.putInt(context.contentResolver, WIFI, 1) }
         // Give Wireless debugging a moment to start listening on the new network.
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ activateQuietly(context) }, 2500)
     }

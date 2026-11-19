@@ -18,6 +18,8 @@ internal object AudioTools {
         if (target?.exported == true && target.enabled && runCatching { activity.startActivity(xiaomi) }.isSuccess) return
         open(activity, listOf(Intent(Settings.ACTION_SOUND_SETTINGS)))
     }
+    /** Android's Wi-Fi panel over Sukut where available, otherwise Wi-Fi settings. */
+    fun openWifi(activity: Activity) = open(activity, listOf(Intent(Settings.Panel.ACTION_WIFI), Intent(Settings.ACTION_WIFI_SETTINGS)))
     fun openAboutPhone(activity: Activity) = open(activity, listOf(
         Intent(Settings.ACTION_DEVICE_INFO_SETTINGS), Intent(Settings.ACTION_SETTINGS)))
     fun website(activity: Activity, url: String) = open(activity, listOf(Intent(Intent.ACTION_VIEW, Uri.parse(url))))

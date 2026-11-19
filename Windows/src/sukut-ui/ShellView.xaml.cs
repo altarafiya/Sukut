@@ -174,7 +174,7 @@ public sealed partial class ShellView : UserControl
 
     private void HomePanel_Loaded(object sender, RoutedEventArgs args)
     {
-        FitPageViewport(); ApplyHomeTypography();
+        FitPageViewport(); ApplyHomeTypography(); AttachAdvancedMixHold();
         if (_apps.Count == 0) _apps.Add(new SourceApp { Name = L("All system audio", "صوت النظام بالكامل") });
         RenderHome(); RenderStatus(); RenderError(); QueueTypography();
         _ = RefreshRoutingChoices(includeApps: true);

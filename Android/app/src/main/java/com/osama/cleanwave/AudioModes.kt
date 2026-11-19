@@ -33,4 +33,15 @@ internal object AudioModes {
         }
         return result
     }
+
+    /** What Sukut is doing right now, for Home while it filters. Plain text. */
+    fun onDetail(context: Context, id: Int): String {
+        val parts = when {
+            id == CleanerPrefs.SOURCE_STRICT -> listOf(R.string.on_music_background_muted, R.string.on_only_voices)
+            id == CleanerPrefs.SOURCE_OPTIMIZED && CleanerPrefs.advancedMix(context) -> listOf(R.string.on_your_mix)
+            id == CleanerPrefs.SOURCE_OPTIMIZED -> listOf(R.string.on_music_muted, R.string.on_voices_clear, R.string.on_background_softer)
+            else -> listOf(R.string.on_music_muted, R.string.on_voices_effects)
+        }
+        return parts.joinToString(" · ") { context.getString(it) }
+    }
 }

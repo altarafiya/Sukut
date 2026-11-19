@@ -15,7 +15,7 @@ if(-not(Test-Path -LiteralPath $taskApk)){
     $taskApk=Join-Path $taskRepo ('Android/releases/Sukut-'+$taskAndroidVersion+'-code'+$code+'-android-arm64.apk')
 }
 $taskBundle=Join-Path $taskRoot ('build/sukut-'+$taskVersion+'/Assets/Phone/Sukut.apk')
-$taskCurrentApk=if($CompanionApk){$taskApk}else{Join-Path $taskRepo 'app/build/outputs/apk/engine/app-engine.apk'}
+$taskCurrentApk=if($CompanionApk){$taskApk}else{Join-Path $taskRepo 'Android/app/build/outputs/apk/engine/app-engine.apk'}
 $taskApkHash=(Get-FileHash -LiteralPath $taskApk -Algorithm SHA256).Hash
 if((Get-FileHash -LiteralPath $taskCurrentApk -Algorithm SHA256).Hash -ne $taskApkHash){throw 'Release APK differs from current Android output'}
 if((Get-FileHash -LiteralPath $taskBundle -Algorithm SHA256).Hash -ne $taskApkHash){throw 'Bundled Android APK is out of date'}

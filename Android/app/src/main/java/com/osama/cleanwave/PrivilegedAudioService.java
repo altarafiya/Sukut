@@ -53,6 +53,8 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
     private IOutputRouteListener routeObserver;
     private ScreenRecordingRouter recordingRouter;
     private final AtomicBoolean recordingRoutingEnabled = new AtomicBoolean();
+    /** Sukut's output is kept out of captures because recorders cannot be narrowed here. */
+    private volatile boolean recordingExcluded;
     private volatile BufferedAudioPipeline pipeline;
     private MusicRemovalProcessor processor;
     private boolean closing;
@@ -358,7 +360,7 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
                     + (pipeline == null ? "" : pipeline.queueMetrics())
                     + "; buffering=" + bufferingProfile + "; amplification_db=" + amplificationDb
                     + "; silent_recovery=" + silentRecovery + "; effects_compatibility=" + effectsCompatibility
-                    + "; recording_capture=" + (recordingRouter==null?"idle":recordingRouter.status())
+                    + "; recording_capture=" + (recordingExcluded?"output_excluded":recordingRouter==null?"idle":recordingRouter.status())
                     + timingMetrics();
     }
 
@@ -529,6 +531,10 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
         if (Build.VERSION.SDK_INT >= 32) {
             playbackAttributes.setSpatializationBehavior(AudioAttributes.SPATIALIZATION_BEHAVIOR_AUTO);
         }
+        // Where a screen recorder's capture cannot be narrowed to Sukut's output, keep
+        // that output out of every capture, so recordings never hold the sound twice.
+        recordingExcluded = !ScreenRecordingRouter.canNarrow();
+        if (recordingExcluded) playbackAttributes.setAllowedCapturePolicy(AudioAttributes.ALLOW_CAPTURE_BY_NONE);
         AudioTrack.Builder trackBuilder = new AudioTrack.Builder()
                 .setAudioAttributes(playbackAttributes.build())
                 .setAudioFormat(format)
@@ -554,7 +560,7 @@ public final class PrivilegedAudioService extends ICleanWaveService.Stub {
         configureOutputBuffer();
         audioTrack.addOnRoutingChangedListener(outputRouteListener,
                 new Handler(Looper.getMainLooper()));
-        if(recordingRouter==null)try{recordingRouter=new ScreenRecordingRouter(audioManager,recordingRoutingEnabled::get);}
+        if(recordingRouter==null && !recordingExcluded)try{recordingRouter=new ScreenRecordingRouter(audioManager,recordingRoutingEnabled::get);}
         catch(RuntimeException unavailable){Log.w("SukutRecording","Playback capture compatibility unavailable",unavailable);}
     }
 

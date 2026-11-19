@@ -149,6 +149,8 @@ class CleanerService : Service() {
                     "Could not start"
                 }
                 CleanerPrefs.setEnabled(this@CleanerService, false)
+                // Sukut was filtering and lost its worker: come back on by itself once it returns.
+                if (routeStarted) CleanerPrefs.markResumeAfterWorker(this@CleanerService)
                 CleanerPrefs.setStatus(this@CleanerService, failureStatus, reason)
                 updateNotification(ErrorText.friendly(UiPrefs.wrapLocale(this@CleanerService), reason))
                 CleanerTileService.requestRefresh(this@CleanerService)

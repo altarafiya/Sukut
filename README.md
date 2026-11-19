@@ -13,18 +13,18 @@ Sukut mutes music from app audio while keeping speech. It works in real time, on
 
 | Windows | Android | Linux |
 | :---: | :---: | :---: |
-| [<img src="docs/artwork/stores/microsoft-en.svg" height="44" width="161" alt="Download from Microsoft Store">](https://apps.microsoft.com/detail/9NL67C3CS7QR) | [<img src="docs/artwork/stores/google-play-en.png" height="64" width="165" alt="Google Play — coming soon">](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut) | [<img src="docs/artwork/stores/snap-en.svg" height="44" width="143" alt="Get it from the Snap Store">](https://snapcraft.io/sukut) |
-| Available now | **Coming soon — in review** | **Stable** |
+| [<img src="docs/artwork/stores/microsoft-en.svg" height="44" width="161" alt="Download from Microsoft Store">](https://apps.microsoft.com/detail/9NL67C3CS7QR) | [<img src="docs/artwork/stores/google-play-en.png" height="64" width="165" alt="Get it on Google Play">](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut) | [<img src="docs/artwork/stores/snap-en.svg" height="44" width="143" alt="Get it from the Snap Store">](https://snapcraft.io/sukut) |
+| Available now | **Available now** | **Stable** |
 
 **Direct downloads**
 
 | Platform | Download | Needs |
 | --- | --- | --- |
-| Windows | [ZIP 0.4.2](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.2-Windows-x64.zip) | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
-| Android | [APK 0.5.6](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Android-arm64.apk) | Android 10+, ARM64 |
+| Windows | [ZIP 0.5.8](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Windows-x64.zip) | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
+| Android | [APK 0.5.8](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Android-arm64.apk) | Android 10+, ARM64 |
 | Linux | [Flatpak 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak) · [.deb 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb) | x64, PipeWire. See [package requirements](Linux/README.md#packages) |
 
-On Ubuntu, use Snap. The stable Snap Store version is 0.5.1.
+On Ubuntu, use Snap. The stable Snap Store version is 0.5.7.
 [All releases and checksums](https://github.com/altarafiya/Sukut/releases).
 
 ## Audio modes
@@ -43,7 +43,7 @@ Choose English or Arabic, light or dark themes, and your app icon. Windows and L
 ## Setup
 
 - **Windows:** Install from Microsoft Store, or extract the ZIP and open `Sukut.exe`. Install [VB-CABLE](https://vb-audio.com/Cable/), then follow the welcome guide. The ZIP is unsigned.
-- **Android:** Install the APK while Google Play is in review. Follow the guide to activate through Wireless debugging (Android 11+) or USB from Sukut on Windows or Linux (Android 10+).
+- **Android:** Install from [Google Play](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut), or install the APK. Follow the guide to activate through Wireless debugging (Android 11+) or USB from Sukut on Windows or Linux (Android 10+).
 - **Other Linux:** Download the Flatpak above, then run `flatpak install --user ./Sukut-0.5.7-Linux-x86_64.flatpak`. Open Sukut from your apps.
 - **Ubuntu:** Run `sudo snap install sukut`, then open Sukut. Follow any audio permission steps shown in the app. For other packages, see the [Linux guide](Linux/README.md#packages).
 

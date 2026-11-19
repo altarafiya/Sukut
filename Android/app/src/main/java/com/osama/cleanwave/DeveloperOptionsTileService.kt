@@ -41,6 +41,10 @@ class DeveloperOptionsTileService : TileService() {
             Toast.makeText(this, UiPrefs.wrapLocale(this).getString(R.string.dev_computer_required), Toast.LENGTH_LONG).show(); refresh(); return
         }
         val enabled = !DeveloperOptionsControl.readyForActivation(this)
+        if (enabled && DeveloperOptionsControl.needsWifi(this)) {
+            // Wireless debugging cannot stay on without Wi-Fi; explain instead of a vague failure.
+            Toast.makeText(this, UiPrefs.wrapLocale(this).getString(R.string.no_wifi_short), Toast.LENGTH_LONG).show(); refresh(); return
+        }
         val success = DeveloperOptionsControl.setEnabled(this, enabled)
         if (!success) Toast.makeText(this, UiPrefs.wrapLocale(this).getString(R.string.dev_change_failed), Toast.LENGTH_LONG).show()
         // This tile tap is the explicit request. Discovery exists only for the

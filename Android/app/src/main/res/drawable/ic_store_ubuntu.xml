@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ubuntu circle of friends, simplified, for the Snap Store option. Not tinted. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#FFE95420" android:pathData="M24,2a22,22 0,1 1,0 44a22,22 0,1 1,0 -44z"/>
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.6" android:fillColor="#00000000" android:pathData="M24,13a11,11 0,1 1,0 22a11,11 0,1 1,0 -22z"/>
+    <path android:fillColor="#FFE95420" android:pathData="M10.5,24a4.6,4.6 0,1 1,9.2 0a4.6,4.6 0,1 1,-9.2 0z M29.2,13.8a4.6,4.6 0,1 1,9.2 0a4.6,4.6 0,1 1,-9.2 0z M29.2,34.2a4.6,4.6 0,1 1,9.2 0a4.6,4.6 0,1 1,-9.2 0z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M11.6,24a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0z M30.3,13.8a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0z M30.3,34.2a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0z"/>
+</vector>

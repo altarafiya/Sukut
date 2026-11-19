@@ -17,18 +17,18 @@
 
 | ويندوز | أندرويد | لينكس |
 | :---: | :---: | :---: |
-| [<img src="docs/artwork/stores/microsoft-ar.svg" height="44" width="161" alt="التنزيل من متجر مايكروسوفت">](https://apps.microsoft.com/detail/9NL67C3CS7QR) | [<img src="docs/artwork/stores/google-play-ar.png" height="64" width="165" alt="جوجل بلاي — قريبًا">](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut) | [<img src="docs/artwork/stores/snap-ar.svg" height="44" width="143" alt="التنزيل من متجر سناب">](https://snapcraft.io/sukut) |
-| متوفر الآن | **قريبًا — قيد المراجعة** | **مستقر** |
+| [<img src="docs/artwork/stores/microsoft-ar.svg" height="44" width="161" alt="التنزيل من متجر مايكروسوفت">](https://apps.microsoft.com/detail/9NL67C3CS7QR) | [<img src="docs/artwork/stores/google-play-ar.png" height="64" width="165" alt="احصل عليه من جوجل بلاي">](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut) | [<img src="docs/artwork/stores/snap-ar.svg" height="44" width="143" alt="التنزيل من متجر سناب">](https://snapcraft.io/sukut) |
+| متوفر الآن | **متوفر الآن** | **مستقر** |
 
 **التنزيل المباشر**
 
 | المنصة | التنزيل | المتطلبات |
 | --- | --- | --- |
-| ويندوز | [ZIP 0.4.2](https://github.com/altarafiya/Sukut/releases/download/v0.4.2-linux-beta.7/Sukut-0.4.2-Windows-x64.zip) | ويندوز 10 أو 11، ومعمارية x64، و[VB-CABLE](https://vb-audio.com/Cable/) |
-| أندرويد | [APK 0.5.6](https://github.com/altarafiya/Sukut/releases/download/v0.5.6/Sukut-0.5.6-Android-arm64.apk) | أندرويد 10 أو أحدث، ومعمارية ARM64 |
+| ويندوز | [ZIP 0.5.8](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Windows-x64.zip) | ويندوز 10 أو 11، ومعمارية x64، و[VB-CABLE](https://vb-audio.com/Cable/) |
+| أندرويد | [APK 0.5.8](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Android-arm64.apk) | أندرويد 10 أو أحدث، ومعمارية ARM64 |
 | لينكس | [Flatpak 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak) · [.deb 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb) | معمارية x64، وPipeWire. راجع [متطلبات الحزم](Linux/README.md#packages) |
 
-على أوبونتو، استخدم سناب. الإصدار المستقر على متجر سناب هو 0.5.1.
+على أوبونتو، استخدم سناب. الإصدار المستقر على متجر سناب هو 0.5.7.
 [جميع الإصدارات وبصمات التحقق](https://github.com/altarafiya/Sukut/releases).
 
 ## أوضاع الصوت
@@ -47,7 +47,7 @@
 ## الإعداد
 
 - **ويندوز:** ثبّت من متجر مايكروسوفت، أو استخرج ملف ZIP وافتح `Sukut.exe`. ثبّت [VB-CABLE](https://vb-audio.com/Cable/)، ثم اتبع دليل الترحيب. نسخة ZIP غير موقّعة.
-- **أندرويد:** ثبّت ملف APK حتى يتوفر التطبيق على جوجل بلاي. اتبع دليل التفعيل عبر التصحيح اللاسلكي (أندرويد 11 أو أحدث)، أو عبر USB من سُكوت على ويندوز أو لينكس (أندرويد 10 أو أحدث).
+- **أندرويد:** ثبّت التطبيق من [جوجل بلاي](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut)، أو ثبّت ملف APK. اتبع دليل التفعيل عبر التصحيح اللاسلكي (أندرويد 11 أو أحدث)، أو عبر USB من سُكوت على ويندوز أو لينكس (أندرويد 10 أو أحدث).
 - **توزيعات لينكس الأخرى:** نزّل حزمة Flatpak من الأعلى، وثبّتها بالأمر التالي، ثم افتح سُكوت من قائمة التطبيقات.
 
 </div>
