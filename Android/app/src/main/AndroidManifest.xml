@@ -44,6 +44,16 @@
             android:theme="@style/Theme.Sukut.Launch"
             android:launchMode="singleTop"
             android:exported="true">
+        </activity>
+        <!-- Long-press on a Sukut tile: Developer mode opens Developer options, the others open Sukut.
+             Only the system's Quick Settings (which holds BIND_QUICK_SETTINGS_TILE) can open it. -->
+        <activity
+            android:name=".TilePreferencesActivity"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -199,6 +209,10 @@
             android:theme="@android:style/Theme.NoDisplay" />
         <activity android:name=".LocalActivationActivity" android:exported="false" />
         <activity android:name=".ReactivationActivity" android:exported="false" android:launchMode="singleTop" />
+        <!-- Opened by Sukut on the computer over ADB while it activates the worker. Only the ADB
+             shell (which holds WRITE_SECURE_SETTINGS) can start it; it only shows progress. -->
+        <activity android:name=".ComputerActivationActivity" android:exported="true" android:launchMode="singleTop"
+            android:permission="android.permission.WRITE_SECURE_SETTINGS" />
         <service android:name=".LocalActivationService" android:exported="false" android:foregroundServiceType="shortService" />
 
         <service

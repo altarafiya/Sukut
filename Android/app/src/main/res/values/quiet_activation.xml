@@ -40,4 +40,11 @@
     <string name="guide_store_linux_title">Using Ubuntu or Linux?</string>
     <string name="guide_store_linux_detail">Snap Store</string>
     <string name="guide_get_app_done">Already installed on your computer? Tap Next.</string>
+    <!-- 0.5.9: the computer method shows the same spark screen while the PC activates -->
+    <string name="pc_auto_step">Your computer is starting the audio worker…</string>
+    <string name="pc_auto_hint">Keep the phone unlocked and the cable plugged in.</string>
+    <string name="pc_auto_slow">Still working. Keep the phone unlocked and check the computer.</string>
+    <string name="pc_auto_ready_detail">You can unplug the cable.</string>
+    <string name="pc_auto_close">Hide</string>
+    <string name="dev_mode_no_wifi">Developer options are on. Wireless debugging turns on when you join Wi-Fi (no internet needed).</string>
 </resources>

@@ -15,5 +15,5 @@
     <string name="dev_wireless_on">Developer options and Wireless debugging are on.</string>
     <string name="dev_tile_wireless_on">Wireless debugging on</string>
     <string name="shortcut_optional_title">Optional debugging shortcut</string>
-    <string name="shortcut_optional_detail">Optional: add the Debugging tile. It switches Developer options and your activation connection. Turning it off can stop Sukut.</string>
+    <string name="shortcut_optional_detail">Optional: add the Developer mode tile. One tap turns on Developer options and Wireless debugging; another tap turns them off, so banking apps work. Turning it off stops Sukut until you activate again.</string>
 </resources>

@@ -51,7 +51,7 @@
  <string name="next">Next</string>
  <string name="finish_setup">Get started</string>
  <string name="developed_by">Developed by</string>
- <string name="sukut_changelog_latest">0.5.7\n• A calmer set of app icon colours.\n• After activating, Sukut starts filtering by itself.\n• The Debugging tile turns debugging on and reconnects in the background, without opening Sukut.\n• Phone activation returns to Sukut as soon as the code is accepted, retries by itself, and reconnects when Wi-Fi comes back.\n• Clearer error messages, and the activation screen closes by itself when done.</string>
+ <string name="sukut_changelog_latest">0.5.9\n• Developer mode tile: one tap turns on Developer options and Wireless debugging, another turns them off so banking apps work.\n• Activating from your computer shows the spark animation on the phone too.\n• Switching between Bluetooth, the speaker and wired headphones restarts the sound cleanly, and Sukut recovers by itself if the sound keeps cutting out.\n• One-tap activation, a clear no-Wi-Fi message, and no repeated sound in screen recordings (0.5.8).</string>
  <string name="notification_mode">Audio Mode: %1$s</string>
  <string name="home_tap_to_start">Tap to start · %1$s</string>
  <string name="power_turn_on">Turn Sukut on</string>

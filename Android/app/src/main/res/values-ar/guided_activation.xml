@@ -15,15 +15,15 @@
     <string name="guide_code_title">اعرف أين تُدخل الرمز</string>
     <string name="guide_pair_title">أقرن هذا الهاتف</string>
     <string name="guide_phone_ready_title">جاهز على هذا الهاتف</string>
-    <string name="dev_tile_label">تصحيح الأخطاء</string>
+    <string name="dev_tile_label">وضع المطوّر</string>
     <string name="dev_tile_setup">فعّل سُكوت مرة واحدة</string>
     <string name="dev_tile_usb_on">تصحيح أخطاء USB مفعّل</string>
-    <string name="dev_tile_partial">اضغط لتفعيل تصحيح الأخطاء</string>
+    <string name="dev_tile_partial">خيارات المطوّر مفعّلة</string>
     <string name="dev_enable_usb">تفعيل خيارات المطوّر وتصحيح أخطاء USB</string>
     <string name="dev_usb_on">خيارات المطوّر وتصحيح أخطاء USB مفعّلان.</string>
     <string name="dev_options_off">خيارات المطوّر وتصحيح الأخطاء معطّلان.</string>
     <string name="dev_add_tile">إضافة إلى الإعدادات السريعة</string>
-    <string name="dev_computer_required">فعّل سُكوت مرة واحدة عبر إقران الهاتف أو عبر الكمبيوتر لإعداد هذا الاختصار الاختياري. قد يقيّد أندرويد هذا الإذن.</string>
+    <string name="dev_computer_required">فعّل سُكوت مرة واحدة لإعداد هذا الاختصار. في شاومي، شغّل أولًا «تصحيح أخطاء USB (إعدادات الأمان)» من خيارات المطوّر، ثم فعّل سُكوت مجددًا.</string>
     <string name="dev_change_failed">لم يسمح أندرويد بالتغيير. تحقّق من خيارات المطوّر في الإعدادات. قد توجد قيود من سياسة الجهاز أو الشركة المصنّعة.</string>
-    <string name="dev_tile_off">معطّل</string>
+    <string name="dev_tile_off">معطّل · تطبيقات البنوك تعمل</string>
 </resources>

@@ -1,5 +1,19 @@
 # What’s new
 
+## Windows 0.5.9 · Android 0.5.9 · 20 November 2026
+
+- **Android:** a new **Developer mode** tile: one tap turns on Developer options and Wireless debugging, another tap turns them off so banking apps work; hold it to open Developer options. It also works on the Xiaomi Pad 6 now. Activating from your computer shows the spark animation on the phone. Switching between Bluetooth, the speaker and wired headphones restarts the sound cleanly, and Sukut recovers by itself if the sound keeps cutting out.
+- **Windows:** Install Sukut opens Sukut's Google Play page on your phone and guides you (phones without Google Play get the included version). While activating, the phone shows the spark animation. Includes Android 0.5.9.
+- Linux stays 0.5.7.
+
+<div lang="ar" dir="rtl">
+
+- **أندرويد:** زر جديد «وضع المطوّر»: لمسة تشغّل خيارات المطوّر والتصحيح اللاسلكي، ولمسة أخرى توقفها لتعمل تطبيقات البنوك، والضغط المطوّل يفتح خيارات المطوّر. يعمل الآن على Xiaomi Pad 6 أيضًا. التفعيل من الحاسوب يعرض حركة الشرارة على الهاتف. التبديل بين البلوتوث ومكبّر الصوت والسماعات السلكية يعيد تشغيل الصوت بسلاسة، ويتعافى سُكوت بنفسه إذا ظل الصوت يتقطّع.
+- **ويندوز:** «تثبيت سُكوت» يفتح صفحة سُكوت في جوجل بلاي على هاتفك ويرشدك (الهواتف التي لا تحتوي على جوجل بلاي تحصل على النسخة المرفقة). أثناء التفعيل يعرض الهاتف حركة الشرارة. يتضمن أندرويد 0.5.9.
+- لينكس يبقى 0.5.7.
+
+</div>
+
 ## Windows 0.5.8 · Android 0.5.8 · 19 November 2026
 
 - **Google Play:** Sukut for Android is now on [Google Play](https://play.google.com/store/apps/details?id=com.altarafiyah.sukut).

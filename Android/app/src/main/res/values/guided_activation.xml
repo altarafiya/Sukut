@@ -15,15 +15,15 @@
     <string name="guide_code_title">Know where to enter the code</string>
     <string name="guide_pair_title">Pair this phone</string>
     <string name="guide_phone_ready_title">Ready on this phone</string>
-    <string name="dev_tile_label">Debugging</string>
+    <string name="dev_tile_label">Developer mode</string>
     <string name="dev_tile_setup">Activate Sukut once</string>
     <string name="dev_tile_usb_on">USB debugging on</string>
-    <string name="dev_tile_partial">Tap to enable debugging</string>
+    <string name="dev_tile_partial">Developer options on</string>
     <string name="dev_enable_usb">Enable Developer options and USB debugging</string>
     <string name="dev_usb_on">Developer options and USB debugging are on.</string>
     <string name="dev_options_off">Developer options and debugging are off.</string>
     <string name="dev_add_tile">Add to Quick Settings</string>
-    <string name="dev_computer_required">Activate through phone pairing or a computer once to prepare this optional shortcut. Android may restrict this permission.</string>
+    <string name="dev_computer_required">Activate Sukut once to prepare this shortcut. On Xiaomi, first turn on USB debugging (Security settings) in Developer options, then activate again.</string>
     <string name="dev_change_failed">Android did not allow the change. Check Developer options in Settings. A device policy or manufacturer restriction may apply.</string>
-    <string name="dev_tile_off">Off</string>
+    <string name="dev_tile_off">Off · banking apps work</string>
 </resources>

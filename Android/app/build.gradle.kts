@@ -27,8 +27,8 @@ android {
         applicationId = "com.altarafiyah.sukut"
         minSdk = 29
         targetSdk = 36
-        versionCode = 69
-        versionName = "0.5.8"
+        versionCode = 70
+        versionName = "0.5.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
     }

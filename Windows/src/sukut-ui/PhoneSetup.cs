@@ -106,13 +106,13 @@ public sealed partial class ShellView
         _phoneActions = new StackPanel { Spacing = 14 };
         _phonePageHost!.Children.Add(_phoneActions);
         PhoneChoice(PhoneTask.FullSetup,"\uE713","ModeOptimizedText",L("Full setup","الإعداد الكامل"),
-            L("Connect, install and activate. We’ll guide you through each step.","توصيل وتثبيت وتفعيل. نرشدك في كل خطوة."),"PhoneFullSetupOption");
+            L("Connect, install from Google Play and activate. We’ll guide you through each step.","توصيل، وتثبيت من جوجل بلاي، وتفعيل. نرشدك في كل خطوة."),"PhoneFullSetupOption");
         var tools=new StackPanel { Spacing=6 };
         tools.Children.Add(new TextBlock { Text=L("Tools","الأدوات"), Style=PhoneText("BodyStrongTextBlockStyle"), Margin=new Thickness(4,0,4,2) });
         PhoneChoice(PhoneTask.ActivateWorker,"\uE90F","GainRaised",L("Activate Sukut","تفعيل سُكوت"),
             L("Activate the audio worker over USB.","تفعيل عامل الصوت عبر USB."),"PhoneActivateWorkerOption",tools);
         PhoneChoice(PhoneTask.SmartSukut,"\uE895","ModeOptimizedText",L("Install or update Sukut","تثبيت سُكوت أو تحديثه"),
-            L("Install, update or open it. Keep your settings.","تثبيت التطبيق أو تحديثه أو فتحه، مع الاحتفاظ بإعداداتك."),"PhoneSmartSukutOption",tools);
+            L("From Google Play on your phone. Your settings are kept.","من جوجل بلاي على هاتفك، مع الاحتفاظ بإعداداتك."),"PhoneSmartSukutOption",tools);
         _phoneActions.Children.Add(new Border { Style=(Style)Application.Current.Resources["SetupGuideCard"], Padding=new Thickness(8), Child=tools });
         var connection=new HyperlinkButton { Content=L("USB connection help","المساعدة في اتصال USB"), HorizontalAlignment=HorizontalAlignment.Left, Padding=new Thickness(4,6,4,6) };
         connection.Click+=(_,_)=>SelectPhoneTask(PhoneTask.UsbHelp);
@@ -311,9 +311,14 @@ public sealed partial class ShellView
 
     private void PhoneSukutPage()
     {
-        var page=PhonePage(L("Install or update Sukut","تثبيت سُكوت أو تحديثه"));
-        page.Children.Add(PhoneBody(L("Your settings and newer versions are kept.","نحتفظ بإعداداتك والنسخ الأحدث.")));
-        PhoneToolActions(page,"Set up Sukut","إعداد سُكوت",device=>_phoneTools.SetupSukut(device),"\uE895");
+        var page=PhonePage(L("Install Sukut from Google Play","ثبّت سُكوت من جوجل بلاي"));
+        page.Children.Add(PhoneBody(L("Sukut opens its Google Play page on your phone. Google Play then keeps it up to date.","يفتح سُكوت صفحته في جوجل بلاي على هاتفك، وبعدها يحدّثه جوجل بلاي تلقائيًا.")));
+        page.Children.Add(PhoneBullets(
+            ("\uE895", "AccentText", L("1 · Open Google Play","١ · افتح جوجل بلاي"), L("Choose Install Sukut below. Keep the phone unlocked.","اختر «تثبيت سُكوت» في الأسفل، وأبقِ الهاتف مفتوحًا.")),
+            ("\uE8FB", "GainRaised", L("2 · Tap Install on the phone","٢ · اضغط «تثبيت» في الهاتف"), L("Wait until Google Play shows Open. Sign in to Google Play first if it asks.","انتظر حتى يظهر «فتح» في جوجل بلاي. سجّل الدخول إلى جوجل بلاي أولًا إذا طُلب منك.")),
+            ("\uE768", "ModeHalalText", L("3 · Come back and activate","٣ · عُد وفعّل"), L("Then choose Next and Activate Sukut here.","ثم اختر «التالي» و«تفعيل سُكوت» هنا."))));
+        page.Children.Add(PhoneNote("ModeOptimizedText", L("Already installed? This opens Sukut instead. Phones without Google Play get the version included with this app.","مثبّت بالفعل؟ سيفتح سُكوت بدلًا من ذلك. الهواتف التي لا تحتوي على جوجل بلاي تحصل على النسخة المرفقة بهذا التطبيق.")));
+        PhoneToolActions(page,"Install Sukut","تثبيت سُكوت",device=>_phoneTools.SetupSukut(device),"\uE895");
     }
 
     private Button PhoneToolActions(StackPanel page, string en, string ar, Func<PhoneDevice, Task<string>> action, string? glyph = null)
@@ -431,6 +436,8 @@ public sealed partial class ShellView
             "Sukut opened. Activate its audio worker, then press Start on the phone." => "تم فتح سُكوت. فعّل عامل الصوت، ثم اضغط زر التشغيل في الهاتف.",
             "Tools ready. Refresh devices." => "الأدوات جاهزة. حدّث قائمة الأجهزة.",
             "Sukut is installed and ready for activation." => "سُكوت مثبّت وجاهز للتفعيل.",
+            PhoneTools.PlayInstallMessage => "جوجل بلاي مفتوح على هاتفك. اضغط «تثبيت» (أو «تحديث»)، وانتظر حتى ينتهي، ثم عُد واختر «تفعيل سُكوت».",
+            PhoneTools.PlayActivationMessage => "سُكوت غير مثبّت بعد. جوجل بلاي مفتوح على هاتفك: اضغط «تثبيت»، وانتظر حتى ينتهي، ثم اضغط «تفعيل سُكوت» مجددًا.",
             "Sukut audio worker is already ready. Press Start on the phone." => "عامل الصوت جاهز بالفعل. اضغط زر التشغيل في الهاتف.",
             "Sukut audio worker is ready. You can unplug USB, then press Start on the phone. Repeat activation after a phone restart." => "عامل الصوت جاهز. يمكنك فصل USB والضغط على زر التشغيل في الهاتف. أعد التفعيل بعد إعادة تشغيل الهاتف.",
             PhoneTools.ComputerShortcutReady => "عامل الصوت جاهز. اختر وضعًا واضغط التشغيل في الهاتف. يمكنك فصل USB.",

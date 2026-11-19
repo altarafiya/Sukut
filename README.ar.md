@@ -24,8 +24,8 @@
 
 | المنصة | التنزيل | المتطلبات |
 | --- | --- | --- |
-| ويندوز | [ZIP 0.5.8](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Windows-x64.zip) | ويندوز 10 أو 11، ومعمارية x64، و[VB-CABLE](https://vb-audio.com/Cable/) |
-| أندرويد | [APK 0.5.8](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Android-arm64.apk) | أندرويد 10 أو أحدث، ومعمارية ARM64 |
+| ويندوز | [ZIP 0.5.9](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.9-Windows-x64.zip) | ويندوز 10 أو 11، ومعمارية x64، و[VB-CABLE](https://vb-audio.com/Cable/) |
+| أندرويد | [APK 0.5.9](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.9-Android-arm64.apk) | أندرويد 10 أو أحدث، ومعمارية ARM64 |
 | لينكس | [Flatpak 0.5.7](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak) · [.deb 0.5.7](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb) | معمارية x64، وPipeWire. راجع [متطلبات الحزم](Linux/README.md#packages) |
 
 على أوبونتو، استخدم سناب. الإصدار المستقر على متجر سناب هو 0.5.7.

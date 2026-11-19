@@ -28,14 +28,20 @@ internal sealed partial class PhoneTools
     {
         await EnsureAuthorized(device);
         var installation = await SukutStatus(device);
-        if (NeedsActivationInstall(installation.InstalledCode)) await InstallSukut(device, installation.InstalledCode != null);
+        // Not installed (or too old): Google Play on the phone, or the bundled APK on phones without it.
+        if (NeedsActivationInstall(installation.InstalledCode))
+        {
+            if (await OpenGooglePlay(device)) return PlayActivationMessage;
+            await InstallSukut(device, installation.InstalledCode != null);
+        }
         long version = (await SukutStatus(device)).InstalledCode ?? 0;
         if (version < 49) throw new IOException("Update Sukut on your phone before activation.");
         int user = await CurrentUser(device);
         bool alreadyReady = WorkerIsReady(await WorkerState(device,user),version);
         if (!alreadyReady)
         {
-            await OpenSukut(device);
+            // Android 0.5.9+: the phone shows the spark screen while this runs, then catches fire.
+            await OpenActivationScreen(device);
             string script = Path.Combine(AppContext.BaseDirectory, "Assets", "Phone", "activate-worker.sh");
             string expected = (await File.ReadAllTextAsync(script + ".sha256")).Trim();
             if (!Regex.IsMatch(expected, "^[A-Fa-f0-9]{64}$") || !string.Equals(await Hash(script), expected, StringComparison.OrdinalIgnoreCase))

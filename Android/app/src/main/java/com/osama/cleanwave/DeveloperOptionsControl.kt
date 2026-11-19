@@ -54,6 +54,34 @@ internal object DeveloperOptionsControl {
     fun needsWifi(context: Context) = usesWireless(context) && !wifiConnected(context)
     fun readyForActivation(context: Context) = developerEnabled(context) && if(usesWireless(context)) wirelessEnabled(context) else usbEnabled(context)
 
+    enum class DeveloperMode { WIRELESS, USB, NO_WIFI, FAILED }
+    /**
+     * The Developer mode tile (0.5.9): one tap turns Developer options on together with
+     * Wireless debugging (and USB debugging for the computer method), so activation is
+     * one step away; the next tap turns everything off again, so banking and other apps
+     * that refuse to run with Developer options on work normally.
+     */
+    fun setDeveloperMode(context: Context, on: Boolean): DeveloperMode {
+        if (!on) return if (setEnabled(context, false)) DeveloperMode.USB else DeveloperMode.FAILED
+        if (!available(context)) return DeveloperMode.FAILED
+        if (context.getSystemService(UserManager::class.java).hasUserRestriction(UserManager.DISALLOW_DEBUGGING_FEATURES)) return DeveloperMode.FAILED
+        val resolver = context.contentResolver
+        fun write(key: String, value: Int) = runCatching { Settings.Global.putInt(resolver, key, value) }.getOrDefault(false)
+        if (!write(Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1) || !developerEnabled(context)) {
+            DeveloperOptionsTileService.requestRefresh(context); return DeveloperMode.FAILED
+        }
+        // The computer method reconnects over the cable: keep USB debugging ready too.
+        if (!usesWireless(context)) write(Settings.Global.ADB_ENABLED, 1)
+        val wifi = Build.VERSION.SDK_INT >= 30 && wifiConnected(context)
+        if (wifi) write(WIFI, 1)
+        DeveloperOptionsTileService.requestRefresh(context)
+        return when {
+            wifi && wirelessEnabled(context) -> DeveloperMode.WIRELESS
+            Build.VERSION.SDK_INT >= 30 && !wifi -> DeveloperMode.NO_WIFI
+            else -> DeveloperMode.USB
+        }
+    }
+
     /** No generic setting writer or remote command interface is exposed. */
     fun setEnabled(context: Context, enabled: Boolean): Boolean {
         if (!available(context)) return false

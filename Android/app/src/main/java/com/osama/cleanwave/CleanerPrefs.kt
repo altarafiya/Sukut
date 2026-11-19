@@ -113,9 +113,22 @@ object CleanerPrefs {
     internal const val BLUETOOTH_OUTPUT_KEY = "bluetooth_output_key"
     fun bluetoothOutput(context: Context) = prefs(context).contains(BLUETOOTH_OUTPUT_KEY)
 
-    /** Only the privileged playback track reports routes: paired/idle devices do not count. */
-    fun observeOutputRoute(context: Context, deviceId: Int, deviceType: Int) {
-        if (deviceId < 0 || deviceType <= android.media.AudioDeviceInfo.TYPE_UNKNOWN) return
+    /** Output device class for restart decisions: 0 speaker/other, 1 Bluetooth, 2 wired/USB. */
+    fun outputClass(deviceType: Int): Int = when (deviceType) {
+        android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+        android.media.AudioDeviceInfo.TYPE_HEARING_AID, android.media.AudioDeviceInfo.TYPE_BLE_HEADSET,
+        android.media.AudioDeviceInfo.TYPE_BLE_SPEAKER, android.media.AudioDeviceInfo.TYPE_BLE_BROADCAST -> 1
+        android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET, android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+        android.media.AudioDeviceInfo.TYPE_USB_HEADSET, android.media.AudioDeviceInfo.TYPE_USB_DEVICE,
+        android.media.AudioDeviceInfo.TYPE_LINE_ANALOG, android.media.AudioDeviceInfo.TYPE_LINE_DIGITAL -> 2
+        else -> 0
+    }
+
+    /** Only the privileged playback track reports routes: paired/idle devices do not count.
+     *  Returns true when the Bluetooth options changed and the route must be rebuilt; the
+     *  caller restarts once, after the route has settled. */
+    fun observeOutputRoute(context: Context, deviceId: Int, deviceType: Int): Boolean {
+        if (deviceId < 0 || deviceType <= android.media.AudioDeviceInfo.TYPE_UNKNOWN) return false
         val bluetooth = deviceType in setOf(android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
             android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO, android.media.AudioDeviceInfo.TYPE_HEARING_AID,
             android.media.AudioDeviceInfo.TYPE_BLE_HEADSET, android.media.AudioDeviceInfo.TYPE_BLE_SPEAKER,
@@ -127,7 +140,7 @@ object CleanerPrefs {
             state.getBoolean("bluetooth_previous_custom", false)) else null
         val before = BluetoothPerformancePolicy.State(state.getString(BLUETOOTH_OUTPUT_KEY, null), previous)
         val change = BluetoothPerformancePolicy.observe(before, "$deviceType:$deviceId", bluetooth, current)
-        if (change.state == before && change.options == current) return
+        if (change.state == before && change.options == current) return false
         val options = change.options
         // Route marker, snapshot and both options become visible atomically.
         state.edit().apply {
@@ -147,7 +160,7 @@ object CleanerPrefs {
             if (options != current) remove("recovery_until").putBoolean("overload_tip", false)
         }.apply()
         // A custom-label-only change must not rebuild an identical audio route.
-        if (options.effects != current.effects || options.buffering != current.buffering) reconfigure(context)
+        return options.effects != current.effects || options.buffering != current.buffering
     }
 
     fun setEnginePerformance(context: Context, effects: Boolean, profile: Int, custom: Boolean = false) {

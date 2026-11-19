@@ -20,8 +20,8 @@ Sukut mutes music from app audio while keeping speech. It works in real time, on
 
 | Platform | Download | Needs |
 | --- | --- | --- |
-| Windows | [ZIP 0.5.8](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Windows-x64.zip) | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
-| Android | [APK 0.5.8](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Android-arm64.apk) | Android 10+, ARM64 |
+| Windows | [ZIP 0.5.9](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.9-Windows-x64.zip) | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
+| Android | [APK 0.5.9](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.9-Android-arm64.apk) | Android 10+, ARM64 |
 | Linux | [Flatpak 0.5.7](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak) · [.deb 0.5.7](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb) | x64, PipeWire. See [package requirements](Linux/README.md#packages) |
 
 On Ubuntu, use Snap. The stable Snap Store version is 0.5.7.

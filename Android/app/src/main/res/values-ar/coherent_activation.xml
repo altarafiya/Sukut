@@ -15,5 +15,5 @@
     <string name="dev_wireless_on">خيارات المطوّر وتصحيح الأخطاء اللاسلكي مفعّلان.</string>
     <string name="dev_tile_wireless_on">تصحيح الأخطاء اللاسلكي مفعّل</string>
     <string name="shortcut_optional_title">اختصار اختياري لتصحيح الأخطاء</string>
-    <string name="shortcut_optional_detail">اختياري: أضف زر «تصحيح الأخطاء» إلى الإعدادات السريعة. يبدّل خيارات المطوّر واتصال التفعيل، وقد يتوقف سُكوت عند إيقافه.</string>
+    <string name="shortcut_optional_detail">اختياري: أضف زر «وضع المطوّر». لمسة تشغّل خيارات المطوّر والتصحيح اللاسلكي، ولمسة أخرى توقفها لتعمل تطبيقات البنوك. إيقافه يوقف سُكوت حتى تفعّله مجددًا.</string>
 </resources>

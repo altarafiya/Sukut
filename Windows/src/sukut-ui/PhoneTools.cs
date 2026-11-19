@@ -172,6 +172,25 @@ internal sealed partial class PhoneTools
         if (verified.InstalledCode != status.BundledCode) throw new IOException("Sukut APK installation did not report the expected version. Check the phone and retry.");
         return status.InstalledCode != null ? "Sukut updated. Your settings are kept." : "Sukut installed. Continue to open it on the phone.";
     }
+    internal const string PlayInstallMessage = "Google Play is open on your phone. Tap Install (or Update), wait until it finishes, then come back and choose Activate Sukut.";
+    internal const string PlayActivationMessage = "Sukut is not installed yet. Google Play is open on your phone: tap Install, wait until it finishes, then press Activate Sukut again.";
+    /** Opens Sukut's Google Play page on the phone. False when the phone has no Google Play. */
+    internal async Task<bool> OpenGooglePlay(PhoneDevice device)
+    {
+        await EnsureAuthorized(device);
+        string store = await Run(["-s", device.Serial, "shell", "pm", "path", "com.android.vending"], 15, true);
+        if (!store.Contains("package:", StringComparison.Ordinal)) return false;
+        string result = await Run(["-s", device.Serial, "shell", "am", "start", "-a", "android.intent.action.VIEW",
+            "-d", "market://details?id=" + SukutPackage, "-p", "com.android.vending", "-f", "0x10000000"], 20, true);
+        return !result.Contains("Error", StringComparison.OrdinalIgnoreCase) && !result.Contains("Exception", StringComparison.Ordinal);
+    }
+    /** The phone's spark screen for computer activation; older Android apps just open Home. */
+    internal async Task OpenActivationScreen(PhoneDevice device)
+    {
+        string result = await Run(["-s", device.Serial, "shell", "am", "start", "-f", "0x10000000",
+            "-n", SukutPackage + "/com.osama.cleanwave.ComputerActivationActivity"], 20, true);
+        if (result.Contains("Error", StringComparison.OrdinalIgnoreCase) || result.Contains("Exception", StringComparison.Ordinal)) await OpenSukut(device);
+    }
     public async Task<string> OpenSukut(PhoneDevice device)
     {
         await EnsureAuthorized(device);
@@ -185,8 +204,15 @@ internal sealed partial class PhoneTools
         if (!(await Devices()).Exists(x => x.Serial == device.Serial && x.State == "device"))
             throw new IOException("Unlock the phone, allow USB debugging, then refresh devices.");
     }
-    public Task<string> SetupSukut(PhoneDevice device) => SetupSukutCore(()=>SukutStatus(device),
-        update=>InstallSukut(device,update),()=>OpenSukut(device));
+    // Install Sukut: from Google Play on the phone (the Play app keeps it updated). Phones
+    // without Google Play get the APK bundled with this app, as before.
+    public async Task<string> SetupSukut(PhoneDevice device)
+    {
+        var status = await SukutStatus(device);
+        if (status.InstalledCode != null && status.InstalledCode >= status.BundledCode) { await OpenSukut(device); return "Sukut is installed and ready for activation."; }
+        if (await OpenGooglePlay(device)) return PlayInstallMessage;
+        return await SetupSukutCore(()=>SukutStatus(device), update=>InstallSukut(device,update),()=>OpenSukut(device));
+    }
 
     internal static async Task<string> SetupSukutCore(Func<Task<SukutInstallation>> readStatus,
         Func<bool,Task<string>> install,Func<Task<string>> open)

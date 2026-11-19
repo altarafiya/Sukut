@@ -7,7 +7,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 
@@ -18,6 +20,10 @@ class CleanerService : Service() {
         const val ACTION_CONFIGURE = "com.osama.cleanwave.action.CONFIGURE"
         const val CHANNEL_ID = "cleanwave_processing"
         const val NOTIFICATION_ID = 1001
+        /** Quick taps through the modes restart once, after the last tap. */
+        private const val RESTART_SETTLE_MS = 350L
+        /** A new output device settles (and Android stops moving the track) before the rebuild. */
+        private const val ROUTE_SETTLE_MS = 800L
 
         @Volatile
         var isAlive: Boolean = false
@@ -40,6 +46,16 @@ class CleanerService : Service() {
     private val packetPattern = Regex("\\bpackets=(\\d+)")
     private val counterPattern = Regex("(?:^|; )(?<name>fallback_events|recoveries|recovery_probe_failures|output_underruns)=(?<value>[0-9]+)")
     private var destroyed = false
+    private val handler = Handler(Looper.getMainLooper())
+    /** The output device class (speaker, Bluetooth, wired) the running route plays to. */
+    private var outputClass = -1
+    /** Output underruns seen while playback progresses; a clean restart heals a starved route. */
+    private val underrunPolls = java.util.ArrayDeque<Long>()
+    private var lastAutoRestart = 0L
+    private var routeStartedAt = 0L
+    private var lastPackets = -1L
+    /** One clean rebuild, applied after taps and route changes have settled. */
+    private val restart = Runnable { restartNow() }
     private var switchingMode = false
     private var routeStarted = false
     private var notifiedBypass = false
@@ -67,17 +83,7 @@ class CleanerService : Service() {
             if (backend != null && (activeMode != CleanerPrefs.processingMode(this) ||
                     activeBuffering != CleanerPrefs.buffering(this) || activeEffects != CleanerPrefs.effectsCompatibility(this) ||
                     activeSource != CleanerPrefs.sourceApp(this))) {
-                activeMode = CleanerPrefs.processingMode(this)
-                activeBuffering = CleanerPrefs.buffering(this)
-                activeEffects = CleanerPrefs.effectsCompatibility(this)
-                activeSource = CleanerPrefs.sourceApp(this)
-                lastFallbacks = 0; lastRecoveries = 0; lastProbeFailures = 0; lastUnderruns = 0
-                playbackAdvice.reset()
-                CleanerPrefs.resetRecovery(this)
-                switchingMode = true
-                CleanerPrefs.setStatus(this, "Starting privileged audio route")
-                updateNotification(uiString(R.string.notification_starting))
-                backend?.restartRoute()
+                scheduleRestart(RESTART_SETTLE_MS)
             } else {
                 backend?.updateMusicReduction()
                 updateNotification(uiString(if (notifiedBypass) R.string.recovering else R.string.notification_active))
@@ -125,7 +131,15 @@ class CleanerService : Service() {
         CleanerPrefs.setStatus(this, "Starting privileged audio route")
         val next = WorkerBackend(this, object : WorkerBackend.Listener {
             override fun onOutputRoute(deviceId: Int, deviceType: Int) {
-                if (!destroyed && !stopRequested) CleanerPrefs.observeOutputRoute(this@CleanerService, deviceId, deviceType)
+                if (destroyed || stopRequested) return
+                val optionsChanged = CleanerPrefs.observeOutputRoute(this@CleanerService, deviceId, deviceType)
+                val kind = CleanerPrefs.outputClass(deviceType)
+                val moved = outputClass >= 0 && kind != outputClass
+                outputClass = kind
+                // Bluetooth, speaker, wired: Android moves the playing track, but its queued
+                // reserve and size can be lost on the way and the sound can starve. Rebuild
+                // the route once, cleanly, after the new device has settled.
+                if (optionsChanged || moved) scheduleRestart(ROUTE_SETTLE_MS)
             }
 
             override fun onStarted(detail: String) {
@@ -133,6 +147,7 @@ class CleanerService : Service() {
                 switchingMode = false
                 routeGeneration++
                 routeStarted = true
+                routeStartedAt = SystemClock.elapsedRealtime(); underrunPolls.clear(); lastPackets = -1
                 notifiedBypass = false
                 CleanerPrefs.setEnabled(this@CleanerService, true)
                 CleanerPrefs.setStatus(this@CleanerService, "Active", detail)
@@ -180,8 +195,30 @@ class CleanerService : Service() {
         next.start()
     }
 
+    private fun scheduleRestart(delay: Long) {
+        if (destroyed || stopRequested || backend == null) return
+        handler.removeCallbacks(restart); handler.postDelayed(restart, delay)
+    }
+    /** Rebuild capture and playback with the current settings and a fresh reserve. */
+    private fun restartNow() {
+        if (destroyed || stopRequested || backend == null) return
+        activeMode = CleanerPrefs.processingMode(this)
+        activeBuffering = CleanerPrefs.buffering(this)
+        activeEffects = CleanerPrefs.effectsCompatibility(this)
+        activeSource = CleanerPrefs.sourceApp(this)
+        lastFallbacks = 0; lastRecoveries = 0; lastProbeFailures = 0; lastUnderruns = 0
+        underrunPolls.clear(); lastPackets = -1
+        playbackAdvice.reset()
+        CleanerPrefs.resetRecovery(this)
+        switchingMode = true
+        CleanerPrefs.setStatus(this, "Starting privileged audio route")
+        updateNotification(uiString(R.string.notification_starting))
+        backend?.restartRoute()
+    }
+
     override fun onDestroy() {
         destroyed = true
+        handler.removeCallbacks(restart)
         backend?.stop()
         backend = null
         isAlive = false
@@ -252,8 +289,28 @@ class CleanerService : Service() {
         val packets = packetPattern.find(metrics)?.groupValues?.get(1)?.toLongOrNull()
         if (packets != null) CleanerPrefs.setBufferingAdvice(this,
             playbackAdvice.observe(now, packets, fallbacks, underruns))
+        healStarvedRoute(now, packets, underruns)
         lastUnderruns = underruns
         lastFallbacks = fallbacks; lastRecoveries = recoveries; lastProbeFailures = failures
+    }
+
+    /**
+     * Self-healing: if the output keeps running dry while audio is flowing (underruns in
+     * three health checks within 20 s, after the first seconds of a start), rebuild the
+     * route once. At most once a minute, so a phone that is simply too busy is not
+     * restarted in a loop; the buffering advice still appears for that case.
+     */
+    private fun healStarvedRoute(now: Long, packets: Long?, underruns: Long) {
+        val flowing = packets != null && lastPackets >= 0 && packets > lastPackets
+        if (packets != null) lastPackets = packets
+        if (!flowing || switchingMode || now - routeStartedAt < 4_000) return
+        if (underruns > lastUnderruns) underrunPolls.addLast(now)
+        while (underrunPolls.isNotEmpty() && now - underrunPolls.first() > 20_000) underrunPolls.removeFirst()
+        if (underrunPolls.size >= 3 && now - lastAutoRestart > 60_000) {
+            lastAutoRestart = now
+            Log.i("CleanWaveAudio", "Output kept running dry; rebuilding the route once")
+            scheduleRestart(0)
+        }
     }
 
     private var lastNotificationText: String? = null

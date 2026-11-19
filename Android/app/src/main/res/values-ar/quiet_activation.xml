@@ -39,4 +39,10 @@
     <string name="guide_store_linux_title">تستخدم Ubuntu أو Linux؟</string>
     <string name="guide_store_linux_detail">Snap Store</string>
     <string name="guide_get_app_done">مثبّت على الكمبيوتر بالفعل؟ اضغط «التالي».</string>
+    <string name="pc_auto_step">يشغّل حاسوبك عامل الصوت…</string>
+    <string name="pc_auto_hint">أبقِ الهاتف مفتوحًا والكابل موصولًا.</string>
+    <string name="pc_auto_slow">ما زال العمل جاريًا. أبقِ الهاتف مفتوحًا وتحقّق من الحاسوب.</string>
+    <string name="pc_auto_ready_detail">يمكنك فصل الكابل.</string>
+    <string name="pc_auto_close">إخفاء</string>
+    <string name="dev_mode_no_wifi">خيارات المطوّر مفعّلة. يعمل التصحيح اللاسلكي عند الاتصال بشبكة Wi-Fi (لا حاجة للإنترنت).</string>
 </resources>

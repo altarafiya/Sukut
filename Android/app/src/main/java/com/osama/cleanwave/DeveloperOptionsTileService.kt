@@ -40,29 +40,42 @@ class DeveloperOptionsTileService : TileService() {
         if (!DeveloperOptionsControl.available(this)) {
             Toast.makeText(this, UiPrefs.wrapLocale(this).getString(R.string.dev_computer_required), Toast.LENGTH_LONG).show(); refresh(); return
         }
-        val enabled = !DeveloperOptionsControl.readyForActivation(this)
-        if (enabled && DeveloperOptionsControl.needsWifi(this)) {
-            // Wireless debugging cannot stay on without Wi-Fi; explain instead of a vague failure.
-            Toast.makeText(this, UiPrefs.wrapLocale(this).getString(R.string.no_wifi_short), Toast.LENGTH_LONG).show(); refresh(); return
+        // Developer mode: on means Developer options plus Wireless debugging; off turns
+        // all of it off, so apps that refuse Developer options (banks) work again.
+        val enabled = !DeveloperOptionsControl.developerEnabled(this)
+        val result = DeveloperOptionsControl.setDeveloperMode(this, enabled)
+        val localized = UiPrefs.wrapLocale(this)
+        when (result) {
+            DeveloperOptionsControl.DeveloperMode.FAILED -> Toast.makeText(this, localized.getString(R.string.dev_change_failed), Toast.LENGTH_LONG).show()
+            // Developer options are on; Wireless debugging waits for Wi-Fi (no internet needed).
+            DeveloperOptionsControl.DeveloperMode.NO_WIFI -> Toast.makeText(this, localized.getString(R.string.dev_mode_no_wifi), Toast.LENGTH_LONG).show()
+            else -> Unit
         }
-        val success = DeveloperOptionsControl.setEnabled(this, enabled)
-        if (!success) Toast.makeText(this, UiPrefs.wrapLocale(this).getString(R.string.dev_change_failed), Toast.LENGTH_LONG).show()
         // This tile tap is the explicit request. Discovery exists only for the
         // bounded activation session, never continuously or after boot.
-        // Turning debugging on stays in the shade: Sukut tries to activate in the
+        // Turning it on stays in the shade: Sukut tries to activate in the
         // background, and failing quietly is fine; the Activate button remains.
-        if(success && enabled) DeveloperOptionsControl.activateQuietly(this)
+        if (enabled && result != DeveloperOptionsControl.DeveloperMode.FAILED && DeveloperOptionsControl.readyForActivation(this))
+            DeveloperOptionsControl.activateQuietly(this)
         refresh()
     }
     private fun refresh() {
         val localized = UiPrefs.wrapLocale(this)
         qsTile?.apply {
             label = localized.getString(R.string.dev_tile_label)
-            state = if (!DeveloperOptionsControl.available(this@DeveloperOptionsTileService)) Tile.STATE_UNAVAILABLE
-                else if (DeveloperOptionsControl.readyForActivation(this@DeveloperOptionsTileService)) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-            subtitle = localized.getString(if (state == Tile.STATE_UNAVAILABLE) R.string.dev_tile_setup
-                else if (DeveloperOptionsControl.readyForActivation(this@DeveloperOptionsTileService)) {if(DeveloperOptionsControl.usesWireless(this@DeveloperOptionsTileService)) R.string.dev_tile_wireless_on else R.string.dev_tile_usb_on}
-                else if (state == Tile.STATE_ACTIVE) R.string.dev_tile_partial else R.string.dev_tile_off)
+            val service = this@DeveloperOptionsTileService
+            val developer = DeveloperOptionsControl.developerEnabled(service)
+            val ready = DeveloperOptionsControl.available(service)
+            // Never STATE_UNAVAILABLE: Android ignores taps on it, so the tile looked dead
+            // (Xiaomi Pad 6). Without the permission a tap explains how to prepare it.
+            state = if (ready && developer) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+            subtitle = localized.getString(when {
+                !ready -> R.string.dev_tile_setup
+                !developer -> R.string.dev_tile_off
+                DeveloperOptionsControl.wirelessEnabled(service) -> R.string.dev_tile_wireless_on
+                DeveloperOptionsControl.usbEnabled(service) -> R.string.dev_tile_usb_on
+                else -> R.string.dev_tile_partial
+            })
             contentDescription = "$label, $subtitle"
             updateTile()
         }
