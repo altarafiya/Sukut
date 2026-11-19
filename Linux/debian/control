@@ -15,7 +15,7 @@ Build-Depends: debhelper-compat (= 13),
                python3
 Standards-Version: 4.7.2
 Rules-Requires-Root: no
-Homepage: https://altarafiya.github.io/Sukut
+Homepage: https://altarafiyah.github.io/Sukut
 
 Package: sukut
 Architecture: amd64

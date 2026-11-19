@@ -13,10 +13,10 @@ base: core26
 grade: stable
 confinement: strict
 license: Proprietary
-contact: https://github.com/altarafiya/Sukut/issues
-website: https://altarafiya.github.io/Sukut
-issues: https://github.com/altarafiya/Sukut/issues
-source-code: https://github.com/altarafiya/Sukut
+contact: https://github.com/altarafiyah/Sukut/issues
+website: https://altarafiyah.github.io/Sukut
+issues: https://github.com/altarafiyah/Sukut/issues
+source-code: https://github.com/altarafiyah/Sukut
 platforms:
   amd64:
 apps:

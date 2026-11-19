@@ -20,12 +20,12 @@ Sukut mutes music from app audio while keeping speech. It works in real time, on
 
 | Platform | Download | Needs |
 | --- | --- | --- |
-| Windows | [ZIP 0.5.8](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Windows-x64.zip) | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
-| Android | [APK 0.5.8](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Android-arm64.apk) | Android 10+, ARM64 |
-| Linux | [Flatpak 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak) · [.deb 0.5.7](https://github.com/altarafiya/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb) | x64, PipeWire. See [package requirements](Linux/README.md#packages) |
+| Windows | [ZIP 0.5.8](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Windows-x64.zip) | Windows 10/11, x64, [VB-CABLE](https://vb-audio.com/Cable/) |
+| Android | [APK 0.5.8](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.8-Android-arm64.apk) | Android 10+, ARM64 |
+| Linux | [Flatpak 0.5.7](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-x86_64.flatpak) · [.deb 0.5.7](https://github.com/altarafiyah/Sukut/releases/download/v0.5.7/Sukut-0.5.7-Linux-amd64.deb) | x64, PipeWire. See [package requirements](Linux/README.md#packages) |
 
 On Ubuntu, use Snap. The stable Snap Store version is 0.5.7.
-[All releases and checksums](https://github.com/altarafiya/Sukut/releases).
+[All releases and checksums](https://github.com/altarafiyah/Sukut/releases).
 
 ## Audio modes
 
@@ -51,6 +51,6 @@ The GitHub APK and Google Play app have different signatures. Uninstall one befo
 
 ## Support
 
-[What's new](CHANGELOG.md) · [Report a problem](https://github.com/altarafiya/Sukut/issues/new/choose) · [Privacy](https://altarafiya.github.io/Sukut/privacy.html)
+[What's new](CHANGELOG.md) · [Report a problem](https://github.com/altarafiyah/Sukut/issues/new/choose) · [Privacy](https://altarafiyah.github.io/Sukut/privacy.html)
 
 Developed by Altarafiyah. [Build guide](AGENTS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md).

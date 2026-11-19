@@ -92,7 +92,7 @@
 
 - Activation one step at a time: choose Computer (recommended) or this phone.
 - Clearer recovery when the audio worker stops, with an optional Debugging tile (new icon).
-- Fixed filtering on Android 12 and 13 ([#1](https://github.com/altarafiya/Sukut/issues/1)).
+- Fixed filtering on Android 12 and 13 ([#1](https://github.com/altarafiyah/Sukut/issues/1)).
 - The Quick Settings tile now starts Sukut while the app is closed.
 - Corrected Arabic wording and grammar.
 

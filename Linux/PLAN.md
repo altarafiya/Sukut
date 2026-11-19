@@ -500,7 +500,7 @@ Each stage ends with its evidence and the owner's confirmation.
 
 When implementation started on 28 October 2026, the defaults below were taken for decisions 1 and 2. Either can still be changed before stage 5.
 
-1. **App ID** `io.github.altarafiya.Sukut` (default in use). It matches the published `altarafiya.github.io/Sukut` site and the Flathub naming rule.
+1. **App ID** `io.github.altarafiya.Sukut` (default in use). It matches the published `altarafiyah.github.io/Sukut` site and the Flathub naming rule.
 2. **Shared engine folder** (default in use): build from `Windows/src`. The alternative is to move `dsp`, `model` and `realtime` to a common `engine/` folder for both platforms.
 3. **Licence wording** for Sukut's code and for the model in `debian/copyright`. *Decided on 29 October 2026:* Sukut's code is all rights reserved; the model is proprietary data that ships with Sukut, not for separate use or redistribution.
 4. **Distribution channel** for the `.deb`, when the time comes.

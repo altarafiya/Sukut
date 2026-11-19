@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Sukut
 Upstream-Contact: الطرفية <altarafiyah@gmail.com>
-Source: https://altarafiya.github.io/Sukut
+Source: https://altarafiyah.github.io/Sukut
 Comment: Sukut is not free software and is not for Debian's archive. The full
  licence texts of the bundled third-party components are installed in
  /usr/share/doc/sukut/licenses/.

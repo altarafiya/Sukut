@@ -3,7 +3,7 @@
 <component type="desktop-application">
   <id>io.github.altarafiya.Sukut</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>LicenseRef-proprietary=https://github.com/altarafiya/Sukut/blob/main/LICENSE</project_license>
+  <project_license>LicenseRef-proprietary=https://github.com/altarafiyah/Sukut/blob/main/LICENSE</project_license>
   <name>Sukut</name>
   <name xml:lang="ar">سُكوت</name>
   <summary>Internet without music</summary>
@@ -26,20 +26,20 @@
     </ul>
   </description>
   <launchable type="desktop-id">io.github.altarafiya.Sukut.desktop</launchable>
-  <url type="homepage">https://altarafiya.github.io/Sukut</url>
-  <url type="bugtracker">https://github.com/altarafiya/Sukut/issues</url>
-  <url type="vcs-browser">https://github.com/altarafiya/Sukut</url>
+  <url type="homepage">https://altarafiyah.github.io/Sukut</url>
+  <url type="bugtracker">https://github.com/altarafiyah/Sukut/issues</url>
+  <url type="vcs-browser">https://github.com/altarafiyah/Sukut</url>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/altarafiya/Sukut/v0.4.0-beta.8/docs/screenshots/linux-audio-dark.png</image>
+      <image>https://raw.githubusercontent.com/altarafiyah/Sukut/v0.4.0-beta.8/docs/screenshots/linux-audio-dark.png</image>
       <caption>Choose a mode, an output and which app to filter</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/altarafiya/Sukut/v0.4.0-beta.8/docs/screenshots/linux-audio-light.png</image>
+      <image>https://raw.githubusercontent.com/altarafiyah/Sukut/v0.4.0-beta.8/docs/screenshots/linux-audio-light.png</image>
       <caption>Strict mode in the light theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/altarafiya/Sukut/v0.4.0-beta.8/docs/screenshots/linux-settings.png</image>
+      <image>https://raw.githubusercontent.com/altarafiyah/Sukut/v0.4.0-beta.8/docs/screenshots/linux-settings.png</image>
       <caption>Settings</caption>
     </screenshot>
   </screenshots>

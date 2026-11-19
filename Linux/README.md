@@ -3,7 +3,7 @@
 The plan is in [PLAN.md](PLAN.md): Debian 13 first, with stages and owner gates.
 
 Stable releases: **0.5.7** as Flatpak and `.deb`; **0.5.1** on the Snap Store.
-For Ubuntu, the Snap is recommended: it bundles its own libraries and avoids the older `.deb`’s PipeWire dependency issue ([#2](https://github.com/altarafiya/Sukut/issues/2)).
+For Ubuntu, the Snap is recommended: it bundles its own libraries and avoids the older `.deb`’s PipeWire dependency issue ([#2](https://github.com/altarafiyah/Sukut/issues/2)).
 
 ## Packages
 
@@ -12,8 +12,8 @@ Three builds of the same Sukut. Pick one; they don't share settings.
 | Package | Version | Where | Works on |
 |---|---|---|---|
 | Snap | 0.5.1 (stable) | [Snap Store](https://snapcraft.io/sukut) | Ubuntu 24.04 and 26.04 (tested), other distributions with snapd |
-| Flatpak | 0.5.7 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.7) (`.flatpak` file) | Most distributions with Flatpak; it uses the GNOME 51 runtime from Flathub |
-| `.deb` | 0.5.7 | [GitHub release](https://github.com/altarafiya/Sukut/releases/tag/v0.5.7) | Ubuntu 26.04 or newer, PikaOS 4: it needs `libc6` 2.43. On older Ubuntu, use the snap |
+| Flatpak | 0.5.7 | [GitHub release](https://github.com/altarafiyah/Sukut/releases/tag/v0.5.7) (`.flatpak` file) | Most distributions with Flatpak; it uses the GNOME 51 runtime from Flathub |
+| `.deb` | 0.5.7 | [GitHub release](https://github.com/altarafiyah/Sukut/releases/tag/v0.5.7) | Ubuntu 26.04 or newer, PikaOS 4: it needs `libc6` 2.43. On older Ubuntu, use the snap |
 
 All three need PipeWire and an x86-64 PC.
 

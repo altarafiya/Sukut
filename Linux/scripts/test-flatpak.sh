@@ -11,7 +11,7 @@ mkdir -p "$WORK" "$EVIDENCE"
 BUNDLE=$(ls -t "$ROOT"/Linux/dist/Sukut-*-Flatpak-x86_64.tar.xz | head -n1)
 cp "$BUNDLE" "$WORK/bundle.tar.xz"
 SHA=$(sha256sum "$WORK/bundle.tar.xz" | cut -d' ' -f1)
-sed -e "s#^        url: https://github.com/altarafiya/Sukut/releases/download/.*#        path: bundle.tar.xz#" \
+sed -e "s#^        url: https://github.com/altarafiyah/Sukut/releases/download/.*#        path: bundle.tar.xz#" \
     -e "s#^        sha256: [0-9a-f]\{64\}\$#&#" "$ROOT/Linux/flatpak/$APP.yaml" > "$WORK/$APP.yaml"
 python3 -I - "$WORK/$APP.yaml" "$SHA" <<'PY'
 import re,sys
